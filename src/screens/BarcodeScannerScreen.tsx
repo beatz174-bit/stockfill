@@ -1,6 +1,20 @@
-import { Alert, Card, CardContent, Chip, Container, Divider, Stack, Typography } from '@mui/material';
+import {
+  Alert,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Container,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { liveQuery } from 'dexie';
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BarcodeScannerView } from '../components/BarcodeScannerView';
 import { useDatabase } from '../context/DBProvider';
 import { Area } from '../models/Area';
@@ -14,8 +28,10 @@ interface ProductLookup {
 
 export const BarcodeScannerScreen = () => {
   const db = useDatabase();
+  const navigate = useNavigate();
   const [lastCode, setLastCode] = useState('');
   const [lookup, setLookup] = useState<ProductLookup>({ pickLists: [] });
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   useEffect(() => {
     if (!lastCode) {
@@ -54,13 +70,45 @@ export const BarcodeScannerScreen = () => {
 
   const hasProduct = useMemo(() => lookup.product && lookup.product !== null, [lookup.product]);
 
+  const handleDetected = (code: string) => {
+    setLastCode(code);
+    setScannerOpen(false);
+  };
+
+  const handleAddProduct = () => {
+    if (!lastCode) return;
+    navigate('/products', { state: { newBarcode: lastCode } });
+  };
+
   return (
     <Container sx={{ py: 4 }}>
       <Typography variant="h5" gutterBottom>
         Barcode Scanner
       </Typography>
-      <BarcodeScannerView onDetected={(code) => setLastCode(code)} />
       <Stack spacing={2} sx={{ mt: 2 }}>
+        <Card variant="outlined">
+          <CardContent>
+            <Stack spacing={1.5}>
+              <Stack spacing={0.25}>
+                <Typography variant="subtitle1">Scan barcodes</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Open the camera in a popup to keep scanned details easy to read.
+                </Typography>
+              </Stack>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Button variant="contained" onClick={() => setScannerOpen(true)}>
+                  Scan barcode
+                </Button>
+                {lastCode ? (
+                  <Button variant="outlined" onClick={() => setScannerOpen(true)}>
+                    Scan another
+                  </Button>
+                ) : null}
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+
         {lastCode ? (
           <Card variant="outlined">
             <CardContent>
@@ -77,7 +125,14 @@ export const BarcodeScannerScreen = () => {
               </Typography>
               {lookup.product === null ? (
                 <Alert severity="warning" sx={{ mt: 2 }}>
-                  This barcode is not present in the product list.
+                  <Stack spacing={1}>
+                    <Typography variant="body2">
+                      This barcode is not present in the product list.
+                    </Typography>
+                    <Button variant="outlined" size="small" onClick={handleAddProduct}>
+                      Add barcode to products
+                    </Button>
+                  </Stack>
                 </Alert>
               ) : null}
             </CardContent>
@@ -129,6 +184,12 @@ export const BarcodeScannerScreen = () => {
           </Card>
         ) : null}
       </Stack>
+      <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} fullWidth>
+        <DialogTitle>Scan a barcode</DialogTitle>
+        <DialogContent>
+          <BarcodeScannerView onDetected={handleDetected} />
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 };

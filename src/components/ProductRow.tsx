@@ -50,28 +50,41 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
   const [isEditing, setIsEditing] = useState(false);
   const [formState, setFormState] = useState<ProductFormState>(() => getInitialFormState(product));
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     setFormState(getInitialFormState(product));
+    setSaveError('');
   }, [product]);
 
   const handleChange = (field: keyof ProductFormState) => (event: ChangeEvent<HTMLInputElement>) => {
     setFormState((prev) => ({ ...prev, [field]: event.target.value }));
+    setSaveError('');
   };
 
   const handleSave = async () => {
     if (!formState.name) return;
-    await onSave(product.id, {
-      name: formState.name,
-      category: formState.category,
-      barcode: formState.barcode || undefined,
-    });
-    setIsEditing(false);
+    try {
+      await onSave(product.id, {
+        name: formState.name,
+        category: formState.category,
+        barcode: formState.barcode || undefined,
+      });
+      setIsEditing(false);
+      setSaveError('');
+    } catch (error) {
+      if (error instanceof Error && error.name === 'DuplicateBarcodeError') {
+        setSaveError('This barcode is already assigned to another product.');
+        return;
+      }
+      throw error;
+    }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
     setFormState(getInitialFormState(product));
+    setSaveError('');
   };
 
   return (
@@ -99,9 +112,17 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
                 value={formState.barcode}
                 onChange={handleChange('barcode')}
                 size="small"
+                error={Boolean(saveError)}
+                helperText={saveError || undefined}
                 InputProps={{
                   endAdornment: (
-                    <Button size="small" onClick={() => setFormState((prev) => ({ ...prev, barcode: '' }))}>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        setFormState((prev) => ({ ...prev, barcode: '' }));
+                        setSaveError('');
+                      }}
+                    >
                       Clear
                     </Button>
                   ),

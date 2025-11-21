@@ -51,6 +51,45 @@ export class StockFillDB extends Dexie {
           })),
         );
       });
+
+    this.version(3)
+      .stores({
+        products:
+          'id, name, category, barcode, archived, created_at, updated_at',
+        areas: 'id, name, created_at, updated_at',
+        pickLists: 'id, area_id, created_at, completed_at',
+        pickItems: 'id, pick_list_id, product_id, status, created_at, updated_at',
+        categories: 'id, name, created_at, updated_at',
+      })
+      .upgrade(async (tx) => {
+        const products = await tx.table('products').toArray();
+        const seenBarcodes = new Set<string>();
+        const now = Date.now();
+
+        await Promise.all(
+          products.map((product) => {
+            if (!product.barcode) return undefined;
+
+            if (seenBarcodes.has(product.barcode)) {
+              return tx.table('products').update(product.id, {
+                barcode: undefined,
+                updated_at: now,
+              });
+            }
+
+            seenBarcodes.add(product.barcode);
+            return undefined;
+          }),
+        );
+      });
+
+    this.version(4).stores({
+      products: 'id, name, category, &barcode, archived, created_at, updated_at',
+      areas: 'id, name, created_at, updated_at',
+      pickLists: 'id, area_id, created_at, completed_at',
+      pickItems: 'id, pick_list_id, product_id, status, created_at, updated_at',
+      categories: 'id, name, created_at, updated_at',
+    });
   }
 }
 

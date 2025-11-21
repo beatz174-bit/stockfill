@@ -30,6 +30,7 @@ export const ManageProductsScreen = () => {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [barcode, setBarcode] = useState('');
+  const [barcodeError, setBarcodeError] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'loading' | 'found' | 'notfound' | 'offline'>(
     'idle',
@@ -66,6 +67,30 @@ export const ManageProductsScreen = () => {
     return Array.from(new Set([...categoryNames, ...productCategories]));
   }, [categories, products]);
 
+  const findBarcodeConflict = useCallback(
+    (value?: string, productId?: string) =>
+      value
+        ? products.find((product) => product.barcode === value && product.id !== productId)
+        : undefined,
+    [products],
+  );
+
+  const assertUniqueBarcode = useCallback(
+    async (value?: string, productId?: string) => {
+      if (!value) return;
+
+      const conflict =
+        findBarcodeConflict(value, productId) ?? (await db.products.where('barcode').equals(value).first());
+
+      if (conflict && conflict.id !== productId) {
+        const error = new Error('This barcode is already assigned to another product.');
+        error.name = 'DuplicateBarcodeError';
+        throw error;
+      }
+    },
+    [db.products, findBarcodeConflict],
+  );
+
   useEffect(() => {
     if (categoryOptions.length === 0) return;
     if (!categoryOptions.includes(category)) {
@@ -94,10 +119,22 @@ export const ManageProductsScreen = () => {
       setLookupStatus('idle');
       setExternalProduct(null);
     }
+    setBarcodeError('');
   }, [barcode]);
 
   const addProduct = async () => {
     if (!name || !category) return;
+
+    try {
+      await assertUniqueBarcode(barcode || undefined);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'DuplicateBarcodeError') {
+        setBarcodeError(error.message);
+        return;
+      }
+      throw error;
+    }
+
     await db.products.add({
       id: uuidv4(),
       name,
@@ -121,6 +158,8 @@ export const ManageProductsScreen = () => {
       barcode?: string;
     },
   ) => {
+    await assertUniqueBarcode(updates.barcode, productId);
+
     await db.products.update(productId, {
       ...updates,
       unit_type: DEFAULT_UNIT_TYPE,
@@ -185,6 +224,8 @@ export const ManageProductsScreen = () => {
                 label="Barcode"
                 value={barcode}
                 onChange={(event) => setBarcode(event.target.value)}
+                error={Boolean(barcodeError)}
+                helperText={barcodeError || undefined}
                 InputProps={{
                   endAdornment: (
                     <Button onClick={() => setBarcode('')} size="small">

@@ -8,16 +8,17 @@ import {
   InputAdornment,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { NumericStepper } from '../components/NumericStepper';
-import { useProducts } from '../hooks/dataHooks';
+import { usePickItems, useProducts } from '../hooks/dataHooks';
 import { useDatabase } from '../context/DBProvider';
 
 export const AddItemScreen = () => {
   const { id } = useParams();
   const db = useDatabase();
+  const items = usePickItems(id);
   const products = useProducts();
   const [productId, setProductId] = useState('');
   const [query, setQuery] = useState('');
@@ -25,16 +26,33 @@ export const AddItemScreen = () => {
   const [bulk, setBulk] = useState(0);
   const navigate = useNavigate();
 
-  const filteredProducts = useMemo(
-    () =>
-      products.filter((product) =>
-        `${product.name} ${product.category}`.toLowerCase().includes(query.toLowerCase()),
-      ),
-    [products, query],
+  const existingProductIds = useMemo(
+    () => new Set(items.map((item) => item.product_id)),
+    [items],
   );
 
+  const availableProducts = useMemo(
+    () => products.filter((product) => !existingProductIds.has(product.id)),
+    [existingProductIds, products],
+  );
+
+  const filteredProducts = useMemo(
+    () =>
+      availableProducts.filter((product) =>
+        `${product.name} ${product.category}`.toLowerCase().includes(query.toLowerCase()),
+      ),
+    [availableProducts, query],
+  );
+
+  useEffect(() => {
+    if (!productId) return;
+    if (!filteredProducts.some((product) => product.id === productId)) {
+      setProductId('');
+    }
+  }, [filteredProducts, productId]);
+
   const addItem = async () => {
-    if (!id || !productId) return;
+    if (!id || !productId || existingProductIds.has(productId)) return;
     await db.pickItems.add({
       id: uuidv4(),
       pick_list_id: id,

@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc && cp src/pwa/manifest.json public/manifest.json && cp src/pwa/service-worker.js public/service-worker.js && vite build",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest"
   },
   "dependencies": {
     "@emotion/react": "^11.13.0",
@@ -29,11 +30,17 @@
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
     "@vitejs/plugin-react": "^4.3.1",
     "eslint": "^8.57.1",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.7",
+    "jsdom": "^24.1.0",
+    "msw": "^2.6.5",
     "typescript": "^5.5.4",
-    "vite": "^7.2.4"
+    "vite": "^7.2.4",
+    "vitest": "^2.1.4"
   }
 }

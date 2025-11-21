@@ -14,6 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ProductRow } from '../components/ProductRow';
 import { useCategories, useProducts } from '../hooks/dataHooks';
 import { useDatabase } from '../context/DBProvider';
+import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE } from '../models/Product';
 
 export const ManageProductsScreen = () => {
   const db = useDatabase();
@@ -22,8 +23,6 @@ export const ManageProductsScreen = () => {
   const [search, setSearch] = useState('');
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
-  const [unitType, setUnitType] = useState('unit');
-  const [bulkName, setBulkName] = useState('case');
   const [unitsPerBulk, setUnitsPerBulk] = useState(6);
 
   const categoryOptions = useMemo(() => {
@@ -53,8 +52,8 @@ export const ManageProductsScreen = () => {
       id: uuidv4(),
       name,
       category,
-      unit_type: unitType,
-      bulk_name: bulkName,
+      unit_type: DEFAULT_UNIT_TYPE,
+      bulk_name: DEFAULT_BULK_NAME,
       units_per_bulk: unitsPerBulk,
       archived: false,
       created_at: Date.now(),
@@ -68,12 +67,15 @@ export const ManageProductsScreen = () => {
     updates: {
       name: string;
       category: string;
-      unit_type: string;
-      bulk_name?: string;
       units_per_bulk?: number;
     },
   ) => {
-    await db.products.update(productId, { ...updates, updated_at: Date.now() });
+    await db.products.update(productId, {
+      ...updates,
+      unit_type: DEFAULT_UNIT_TYPE,
+      bulk_name: DEFAULT_BULK_NAME,
+      updated_at: Date.now(),
+    });
   };
 
   const deleteProduct = async (productId: string) => {
@@ -111,8 +113,6 @@ export const ManageProductsScreen = () => {
               </MenuItem>
             ))}
           </TextField>
-          <TextField label="Unit Type" value={unitType} onChange={(event) => setUnitType(event.target.value)} />
-          <TextField label="Bulk Name" value={bulkName} onChange={(event) => setBulkName(event.target.value)} />
           <TextField
             label="Units per Bulk"
             type="number"

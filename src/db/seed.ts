@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { StockFillDB } from './index';
+import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE } from '../models/Product';
 
 const now = () => Date.now();
 
@@ -30,8 +31,8 @@ export const seedDatabase = async (db: StockFillDB) => {
         id: uuidv4(),
         name: 'Sparkling Water 500ml',
         category: 'Drinks',
-        unit_type: 'bottle',
-        bulk_name: 'case',
+        unit_type: DEFAULT_UNIT_TYPE,
+        bulk_name: DEFAULT_BULK_NAME,
         units_per_bulk: 12,
         archived: false,
         created_at: now(),
@@ -41,8 +42,8 @@ export const seedDatabase = async (db: StockFillDB) => {
         id: uuidv4(),
         name: 'Salted Chips 50g',
         category: 'Snacks',
-        unit_type: 'bag',
-        bulk_name: 'box',
+        unit_type: DEFAULT_UNIT_TYPE,
+        bulk_name: DEFAULT_BULK_NAME,
         units_per_bulk: 24,
         archived: false,
         created_at: now(),
@@ -52,8 +53,8 @@ export const seedDatabase = async (db: StockFillDB) => {
         id: uuidv4(),
         name: 'Chocolate Bar',
         category: 'Confectionery',
-        unit_type: 'bar',
-        bulk_name: 'slab',
+        unit_type: DEFAULT_UNIT_TYPE,
+        bulk_name: DEFAULT_BULK_NAME,
         units_per_bulk: 32,
         archived: false,
         created_at: now(),

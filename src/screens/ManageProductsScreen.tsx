@@ -150,7 +150,22 @@ export const ManageProductsScreen = () => {
         />
         <Stack spacing={1}>
           <Typography variant="subtitle1">Add Product</Typography>
-          <TextField label="Name" value={name} onChange={(event) => setName(event.target.value)} />
+          <TextField
+            label="Name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            InputProps={
+              name
+                ? {
+                    endAdornment: (
+                      <Button onClick={() => setName('')} size="small">
+                        Clear
+                      </Button>
+                    ),
+                  }
+                : undefined
+            }
+          />
           <TextField
             select
             label="Category"

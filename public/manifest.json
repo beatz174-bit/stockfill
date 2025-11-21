@@ -1,7 +1,7 @@
 {
   "name": "StockFill",
   "short_name": "StockFill",
-  "start_url": "stockfill.lan.ddnsgeek.com",
+  "start_url": "https://stockfill.lan.ddnsgeek.com",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0d6efd",

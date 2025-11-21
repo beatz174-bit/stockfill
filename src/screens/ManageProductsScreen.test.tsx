@@ -24,6 +24,9 @@ vi.mock('../hooks/dataHooks', () => ({
   useCategories: () => mockUseCategories(),
 }));
 
+const productDeleteMock = vi.fn();
+const pickItemCountMock = vi.fn();
+
 vi.mock('../context/DBProvider', () => ({
   useDatabase: () => mockDb,
 }));
@@ -158,6 +161,24 @@ describe('ManageProductsScreen barcode lookup', () => {
       expect(barcodeField).toHaveAttribute('aria-invalid', 'true');
     });
     expect(mockDb.products.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('ManageProductsScreen deletion safeguards', () => {
+  it('blocks deletion when pick items reference the product', async () => {
+    pickItemCountMock.mockResolvedValueOnce(2);
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <ManageProductsScreen />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /delete chips/i }));
+
+    expect(productDeleteMock).not.toHaveBeenCalled();
+    expect(await screen.findByText(/cannot delete this product while 2 pick item\(s\) reference it/i)).toBeVisible();
   });
 });
 

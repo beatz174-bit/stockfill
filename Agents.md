@@ -63,6 +63,7 @@ Codex must always generate files within this structure:
       docker-compose.yml
       vite.config.ts
       AGENTS.md
+    /.vscode (workspace-level editor settings and launch/task config)
 
 Codex must not introduce alternative or conflicting structures.
 

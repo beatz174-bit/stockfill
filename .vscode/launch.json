@@ -12,7 +12,7 @@
       "name": "Launch Preview (Test) Server",
       "type": "node-terminal",
       "request": "launch",
-      "command": "npm run preview",
+      "command": "npm run test",
       "cwd": "${workspaceFolder}"
     }
   ]

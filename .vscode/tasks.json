@@ -5,9 +5,8 @@
       "label": "npm: dev server",
       "type": "npm",
       "script": "dev",
-      "path": "app",
       "options": {
-        "cwd": "${workspaceFolder}/app"
+        "cwd": "${workspaceFolder}"
       },
       "problemMatcher": {
         "owner": "vite-dev",
@@ -31,9 +30,8 @@
       "label": "npm: preview server",
       "type": "npm",
       "script": "preview",
-      "path": "app",
       "options": {
-        "cwd": "${workspaceFolder}/app"
+        "cwd": "${workspaceFolder}"
       },
       "problemMatcher": {
         "owner": "vite-preview",

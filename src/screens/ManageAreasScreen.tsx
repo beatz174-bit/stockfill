@@ -1,4 +1,6 @@
 import {
+  Alert,
+  AlertColor,
   Button,
   Container,
   IconButton,
@@ -24,6 +26,7 @@ export const ManageAreasScreen = () => {
   const [name, setName] = useState('');
   const [editingAreaId, setEditingAreaId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [feedback, setFeedback] = useState<{ text: string; severity: AlertColor } | null>(null);
 
   const addArea = async () => {
     if (!name) return;
@@ -34,6 +37,7 @@ export const ManageAreasScreen = () => {
   const startEditing = (areaId: string, currentName: string) => {
     setEditingAreaId(areaId);
     setEditName(currentName);
+    setFeedback(null);
   };
 
   const saveArea = async () => {
@@ -41,6 +45,7 @@ export const ManageAreasScreen = () => {
     await db.areas.update(editingAreaId, { name: editName, updated_at: Date.now() });
     setEditingAreaId(null);
     setEditName('');
+    setFeedback({ text: 'Area updated.', severity: 'success' });
   };
 
   const cancelEditing = () => {
@@ -49,10 +54,19 @@ export const ManageAreasScreen = () => {
   };
 
   const deleteArea = async (areaId: string) => {
+    const usageCount = await db.pickLists.where('area_id').equals(areaId).count();
+    if (usageCount > 0) {
+      setFeedback({
+        text: `Cannot delete this area while ${usageCount} pick list(s) use it. Remove those lists first.`,
+        severity: 'error',
+      });
+      return;
+    }
     await db.areas.delete(areaId);
     if (editingAreaId === areaId) {
       cancelEditing();
     }
+    setFeedback({ text: 'Area deleted.', severity: 'success' });
   };
 
   return (
@@ -61,6 +75,7 @@ export const ManageAreasScreen = () => {
         Manage Areas
       </Typography>
       <Stack spacing={2}>
+        {feedback ? <Alert severity={feedback.severity}>{feedback.text}</Alert> : null}
         <Stack direction="row" spacing={1}>
           <TextField fullWidth label="Area name" value={name} onChange={(event) => setName(event.target.value)} />
           <Button variant="contained" onClick={addArea} disabled={!name}>

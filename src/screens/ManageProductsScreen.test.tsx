@@ -6,17 +6,30 @@ import userEvent from '@testing-library/user-event';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ManageProductsScreen } from './ManageProductsScreen';
 
+const productsMock = [{ id: 'prod-1', name: 'Chips', category: 'Snacks', archived: false, created_at: 0, updated_at: 0 }];
+const categoriesMock = [{ id: 'cat-1', name: 'Snacks', created_at: 0, updated_at: 0 }];
+
 vi.mock('../hooks/dataHooks', () => ({
-  useProducts: () => [],
-  useCategories: () => [{ id: 'cat-1', name: 'Snacks', created_at: 0, updated_at: 0 }],
+  useProducts: () => productsMock,
+  useCategories: () => categoriesMock,
 }));
+
+const productDeleteMock = vi.fn();
+const pickItemCountMock = vi.fn();
 
 vi.mock('../context/DBProvider', () => ({
   useDatabase: () => ({
     products: {
       add: vi.fn(),
       update: vi.fn(),
-      delete: vi.fn(),
+      delete: productDeleteMock,
+    },
+    pickItems: {
+      where: () => ({
+        equals: () => ({
+          count: pickItemCountMock,
+        }),
+      }),
     },
   }),
 }));
@@ -61,6 +74,24 @@ describe('ManageProductsScreen barcode lookup', () => {
     await waitFor(() => {
       expect(screen.getByLabelText(/name/i)).toHaveValue('OFF Test Product');
     });
+  });
+});
+
+describe('ManageProductsScreen deletion safeguards', () => {
+  it('blocks deletion when pick items reference the product', async () => {
+    pickItemCountMock.mockResolvedValueOnce(2);
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <ManageProductsScreen />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('button', { name: /delete chips/i }));
+
+    expect(productDeleteMock).not.toHaveBeenCalled();
+    expect(await screen.findByText(/cannot delete this product while 2 pick item\(s\) reference it/i)).toBeVisible();
   });
 });
 

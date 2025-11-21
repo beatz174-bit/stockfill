@@ -11,7 +11,7 @@ import {
   DialogContent,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { ProductRow } from '../components/ProductRow';
@@ -24,6 +24,7 @@ export const ManageProductsScreen = () => {
   const db = useDatabase();
   const products = useProducts();
   const categories = useCategories();
+  const location = useLocation();
   const [search, setSearch] = useState('');
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
@@ -50,6 +51,13 @@ export const ManageProductsScreen = () => {
       ),
     [products, search],
   );
+
+  useEffect(() => {
+    const state = location.state as { newBarcode?: string } | null;
+    if (state?.newBarcode) {
+      setBarcode(state.newBarcode);
+    }
+  }, [location.state]);
 
   const addProduct = async () => {
     if (!name || !category) return;

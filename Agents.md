@@ -32,9 +32,13 @@ All data stays local to the device.
 
 ## 2. Directory Structure
 
-Codex must always generate files within this structure:
+Codex must always generate files within this structure (project root is
+where `package.json` lives and all npm commands run from there):
 
-    /app
+    /
+      /public
+        manifest.json (copied from src/pwa)
+        service-worker.js (copied from src/pwa)
       /src
         /components
         /screens
@@ -61,11 +65,14 @@ Codex must always generate files within this structure:
         main.tsx
       Dockerfile
       docker-compose.yml
+      nginx.conf
       vite.config.ts
       AGENTS.md
     /.vscode (workspace-level editor settings and launch/task config)
 
-Codex must not introduce alternative or conflicting structures.
+Codex must not introduce alternative or conflicting structures, and all
+commands such as `npm install`, `npm run dev`, and `npm run build` must
+execute from the project root (not a nested `app` folder).
 
 ------------------------------------------------------------------------
 

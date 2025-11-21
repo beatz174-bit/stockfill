@@ -1,6 +1,7 @@
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { DBProvider } from './context/DBProvider';
+import { AppLayout } from './components/AppLayout';
 import { HomeScreen } from './screens/HomeScreen';
 import { StartPickListScreen } from './screens/StartPickListScreen';
 import { PickListsScreen } from './screens/PickListsScreen';
@@ -24,14 +25,16 @@ const AppRoutes = () => {
   useServiceWorker();
   return (
     <Routes>
-      <Route path="/" element={<HomeScreen />} />
-      <Route path="/start" element={<StartPickListScreen />} />
-      <Route path="/pick-lists" element={<PickListsScreen />} />
-      <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
-      <Route path="/pick-lists/:id/add-item" element={<AddItemScreen />} />
-      <Route path="/products" element={<ManageProductsScreen />} />
-      <Route path="/areas" element={<ManageAreasScreen />} />
-      <Route path="/scan" element={<BarcodeScannerScreen />} />
+      <Route element={<AppLayout />}>
+        <Route path="/" element={<HomeScreen />} />
+        <Route path="/start" element={<StartPickListScreen />} />
+        <Route path="/pick-lists" element={<PickListsScreen />} />
+        <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        <Route path="/pick-lists/:id/add-item" element={<AddItemScreen />} />
+        <Route path="/products" element={<ManageProductsScreen />} />
+        <Route path="/areas" element={<ManageAreasScreen />} />
+        <Route path="/scan" element={<BarcodeScannerScreen />} />
+      </Route>
     </Routes>
   );
 };

@@ -6,6 +6,7 @@ const navLinks = [
   { to: '/start', label: 'Start' },
   { to: '/pick-lists', label: 'Pick Lists' },
   { to: '/products', label: 'Products' },
+  { to: '/categories', label: 'Categories' },
   { to: '/areas', label: 'Areas' },
   { to: '/scan', label: 'Scan' },
 ];

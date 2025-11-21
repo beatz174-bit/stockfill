@@ -13,6 +13,16 @@ export const seedDatabase = async (db: StockFillDB) => {
     ]);
   }
 
+  const categoryCount = await db.categories.count();
+  if (categoryCount === 0) {
+    await db.categories.bulkAdd([
+      { id: uuidv4(), name: 'Drinks', created_at: now(), updated_at: now() },
+      { id: uuidv4(), name: 'Snacks', created_at: now(), updated_at: now() },
+      { id: uuidv4(), name: 'Dairy', created_at: now(), updated_at: now() },
+      { id: uuidv4(), name: 'Confectionery', created_at: now(), updated_at: now() },
+    ]);
+  }
+
   const productCount = await db.products.count();
   if (productCount === 0) {
     await db.products.bulkAdd([

@@ -1,0 +1,84 @@
+import { Button, Container, Stack, Typography } from '@mui/material';
+import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
+import { useEffect, useMemo } from 'react';
+import { useAreas, usePickItems, usePickList, useProducts } from '../hooks/dataHooks';
+import { useDatabase } from '../context/DBProvider';
+import { PickItemRow } from '../components/PickItemRow';
+
+export const ActivePickListScreen = () => {
+  const { id } = useParams();
+  const pickList = usePickList(id);
+  const items = usePickItems(id);
+  const products = useProducts();
+  const areas = useAreas();
+  const db = useDatabase();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!id || !pickList) return;
+  }, [id, pickList]);
+
+  const areaName = useMemo(
+    () => areas.find((area) => area.id === pickList?.area_id)?.name ?? 'Area',
+    [areas, pickList?.area_id],
+  );
+
+  const handleIncrementUnit = async (itemId: string) => {
+    const existing = await db.pickItems.get(itemId);
+    if (!existing) return;
+    await db.pickItems.update(itemId, {
+      quantity_units: existing.quantity_units + 1,
+      updated_at: Date.now(),
+    });
+  };
+
+  const handleIncrementBulk = async (itemId: string) => {
+    const existing = await db.pickItems.get(itemId);
+    if (!existing) return;
+    await db.pickItems.update(itemId, {
+      quantity_bulk: existing.quantity_bulk + 1,
+      updated_at: Date.now(),
+    });
+  };
+
+  const handleSwipeLeft = async (itemId: string) => {
+    await db.pickItems.update(itemId, { status: 'picked', updated_at: Date.now() });
+  };
+
+  const handleSwipeRight = async (itemId: string) => {
+    await db.pickItems.delete(itemId);
+  };
+
+  const completeList = async () => {
+    if (!id) return;
+    await db.pickLists.update(id, { completed_at: Date.now() });
+    navigate('/pick-lists');
+  };
+
+  return (
+    <Container sx={{ py: 4 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h5">{areaName} List</Typography>
+        <Button component={RouterLink} to={`/pick-lists/${id}/add-item`} variant="contained">
+          Add Item
+        </Button>
+      </Stack>
+      <Stack spacing={1}>
+        {items.map((item) => (
+          <PickItemRow
+            key={item.id}
+            item={item}
+            product={products.find((p) => p.id === item.product_id)}
+            onIncrementUnit={() => handleIncrementUnit(item.id)}
+            onIncrementBulk={() => handleIncrementBulk(item.id)}
+            onSwipeLeft={() => handleSwipeLeft(item.id)}
+            onSwipeRight={() => handleSwipeRight(item.id)}
+          />
+        ))}
+      </Stack>
+      <Button fullWidth sx={{ mt: 3 }} variant="outlined" onClick={completeList}>
+        Complete List
+      </Button>
+    </Container>
+  );
+};

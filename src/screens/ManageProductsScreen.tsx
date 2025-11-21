@@ -6,6 +6,9 @@ import {
   TextField,
   Typography,
   InputAdornment,
+  Dialog,
+  DialogTitle,
+  DialogContent,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { Link as RouterLink } from 'react-router-dom';
@@ -15,6 +18,7 @@ import { ProductRow } from '../components/ProductRow';
 import { useCategories, useProducts } from '../hooks/dataHooks';
 import { useDatabase } from '../context/DBProvider';
 import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE } from '../models/Product';
+import { BarcodeScannerView } from '../components/BarcodeScannerView';
 
 export const ManageProductsScreen = () => {
   const db = useDatabase();
@@ -23,7 +27,8 @@ export const ManageProductsScreen = () => {
   const [search, setSearch] = useState('');
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
-  const [unitsPerBulk, setUnitsPerBulk] = useState(6);
+  const [barcode, setBarcode] = useState('');
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const categoryOptions = useMemo(() => {
     const categoryNames = categories.map((item) => item.name);
@@ -54,12 +59,13 @@ export const ManageProductsScreen = () => {
       category,
       unit_type: DEFAULT_UNIT_TYPE,
       bulk_name: DEFAULT_BULK_NAME,
-      units_per_bulk: unitsPerBulk,
+      barcode: barcode || undefined,
       archived: false,
       created_at: Date.now(),
       updated_at: Date.now(),
     });
     setName('');
+    setBarcode('');
   };
 
   const updateProduct = async (
@@ -67,7 +73,7 @@ export const ManageProductsScreen = () => {
     updates: {
       name: string;
       category: string;
-      units_per_bulk?: number;
+      barcode?: string;
     },
   ) => {
     await db.products.update(productId, {
@@ -113,12 +119,24 @@ export const ManageProductsScreen = () => {
               </MenuItem>
             ))}
           </TextField>
-          <TextField
-            label="Units per Bulk"
-            type="number"
-            value={unitsPerBulk}
-            onChange={(event) => setUnitsPerBulk(Number(event.target.value))}
-          />
+          {barcode ? (
+            <TextField
+              label="Barcode"
+              value={barcode}
+              onChange={(event) => setBarcode(event.target.value)}
+              InputProps={{
+                endAdornment: (
+                  <Button onClick={() => setBarcode('')} size="small">
+                    Clear
+                  </Button>
+                ),
+              }}
+            />
+          ) : (
+            <Button variant="outlined" onClick={() => setScannerOpen(true)}>
+              Scan Barcode
+            </Button>
+          )}
           <Button variant="contained" onClick={addProduct} disabled={!name || !category}>
             Save Product
           </Button>
@@ -133,6 +151,17 @@ export const ManageProductsScreen = () => {
           />
         ))}
       </Stack>
+      <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} fullWidth>
+        <DialogTitle>Scan Barcode</DialogTitle>
+        <DialogContent>
+          <BarcodeScannerView
+            onDetected={(code) => {
+              setBarcode(code);
+              setScannerOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </Container>
   );
 };

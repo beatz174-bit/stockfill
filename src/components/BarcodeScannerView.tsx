@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Alert, Card, CardContent, Typography } from '@mui/material';
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
 
@@ -8,9 +9,11 @@ interface BarcodeScannerViewProps {
 export const BarcodeScannerView = ({ onDetected }: BarcodeScannerViewProps) => {
   const { videoRef, result } = useBarcodeScanner();
 
-  if (result.code && onDetected) {
-    onDetected(result.code);
-  }
+  useEffect(() => {
+    if (result.code && onDetected) {
+      onDetected(result.code);
+    }
+  }, [onDetected, result.code]);
 
   return (
     <Card variant="outlined">

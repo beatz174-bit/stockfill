@@ -2,18 +2,23 @@ import {
   Card,
   CardActions,
   CardContent,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   IconButton,
   MenuItem,
   Stack,
   TextField,
   Typography,
+  Button,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { ChangeEvent, useEffect, useState } from 'react';
-import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE, Product } from '../models/Product';
+import { DEFAULT_UNIT_TYPE, Product } from '../models/Product';
+import { BarcodeScannerView } from './BarcodeScannerView';
 
 interface ProductRowProps {
   product: Product;
@@ -23,7 +28,7 @@ interface ProductRowProps {
     updates: {
       name: string;
       category: string;
-      units_per_bulk?: number;
+      barcode?: string;
     },
   ) => Promise<void> | void;
   onDelete: (productId: string) => Promise<void> | void;
@@ -32,18 +37,19 @@ interface ProductRowProps {
 interface ProductFormState {
   name: string;
   category: string;
-  unitsPerBulk: string;
+  barcode: string;
 }
 
 const getInitialFormState = (product: Product): ProductFormState => ({
   name: product.name,
   category: product.category,
-  unitsPerBulk: product.units_per_bulk?.toString() ?? '',
+  barcode: product.barcode ?? '',
 });
 
 export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRowProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formState, setFormState] = useState<ProductFormState>(() => getInitialFormState(product));
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   useEffect(() => {
     setFormState(getInitialFormState(product));
@@ -58,7 +64,7 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
     await onSave(product.id, {
       name: formState.name,
       category: formState.category,
-      units_per_bulk: formState.unitsPerBulk ? Number(formState.unitsPerBulk) : undefined,
+      barcode: formState.barcode || undefined,
     });
     setIsEditing(false);
   };
@@ -87,13 +93,25 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
                 </MenuItem>
               ))}
             </TextField>
-            <TextField
-              label="Units per Bulk"
-              type="number"
-              value={formState.unitsPerBulk}
-              onChange={handleChange('unitsPerBulk')}
-              size="small"
-            />
+            {formState.barcode ? (
+              <TextField
+                label="Barcode"
+                value={formState.barcode}
+                onChange={handleChange('barcode')}
+                size="small"
+                InputProps={{
+                  endAdornment: (
+                    <Button size="small" onClick={() => setFormState((prev) => ({ ...prev, barcode: '' }))}>
+                      Clear
+                    </Button>
+                  ),
+                }}
+              />
+            ) : (
+              <Button variant="outlined" onClick={() => setIsScannerOpen(true)}>
+                Scan Barcode
+              </Button>
+            )}
           </Stack>
         ) : (
           <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -103,9 +121,9 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
                 {product.category} • {product.unit_type || DEFAULT_UNIT_TYPE}
               </Typography>
             </div>
-            {product.units_per_bulk ? (
+            {product.barcode ? (
               <Typography variant="caption" color="text.secondary">
-                {product.units_per_bulk} per {product.bulk_name || DEFAULT_BULK_NAME}
+                Barcode: {product.barcode}
               </Typography>
             ) : null}
           </Stack>
@@ -132,6 +150,17 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
           </>
         )}
       </CardActions>
+      <Dialog open={isScannerOpen} onClose={() => setIsScannerOpen(false)} fullWidth>
+        <DialogTitle>Scan Barcode</DialogTitle>
+        <DialogContent>
+          <BarcodeScannerView
+            onDetected={(code) => {
+              setFormState((prev) => ({ ...prev, barcode: code }));
+              setIsScannerOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

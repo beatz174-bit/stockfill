@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/browser';
 
+type BarcodeDetection = { rawValue: string };
+type BarcodeDetectorClass = new () => { detect: (source: ImageBitmapSource) => Promise<BarcodeDetection[]> };
+
 export interface BarcodeResult {
   code?: string;
   error?: string;
@@ -14,15 +17,20 @@ export const useBarcodeScanner = () => {
     const reader = new BrowserMultiFormatReader();
     let active = true;
     let stop: (() => void) | undefined;
+    let currentVideoElement: HTMLVideoElement | null = null;
 
     const start = async () => {
       try {
-        if ('BarcodeDetector' in window) {
-          const detector = new (window as typeof window & { BarcodeDetector: any }).BarcodeDetector();
+        const detectorClass = (
+          window as typeof window & { BarcodeDetector?: BarcodeDetectorClass }
+        ).BarcodeDetector;
+        if (detectorClass) {
+          const detector = new detectorClass();
           const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
             await videoRef.current.play();
+            currentVideoElement = videoRef.current;
           }
           const scan = async () => {
             if (!active || !videoRef.current) return;
@@ -58,8 +66,9 @@ export const useBarcodeScanner = () => {
     return () => {
       active = false;
       stop?.();
-      if (videoRef.current?.srcObject) {
-        (videoRef.current.srcObject as MediaStream).getTracks().forEach((track) => track.stop());
+      const stream = currentVideoElement?.srcObject as MediaStream | null;
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);

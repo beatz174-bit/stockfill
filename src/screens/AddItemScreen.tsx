@@ -36,13 +36,15 @@ export const AddItemScreen = () => {
     [existingProductIds, products],
   );
 
-  const filteredProducts = useMemo(
-    () =>
-      availableProducts.filter((product) =>
-        `${product.name} ${product.category}`.toLowerCase().includes(query.toLowerCase()),
-      ),
-    [availableProducts, query],
-  );
+  const filteredProducts = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return availableProducts;
+
+    return availableProducts.filter((product) => {
+      const searchableText = `${product.name} ${product.category} ${product.barcode ?? ''}`.toLowerCase();
+      return searchableText.includes(normalizedQuery);
+    });
+  }, [availableProducts, query]);
 
   useEffect(() => {
     if (!productId) return;

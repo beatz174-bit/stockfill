@@ -1,14 +1,16 @@
 import {
+  Alert,
+  AlertColor,
   Button,
   Container,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  InputAdornment,
   MenuItem,
   Stack,
   TextField,
   Typography,
-  InputAdornment,
-  Dialog,
-  DialogTitle,
-  DialogContent,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
@@ -35,6 +37,7 @@ export const ManageProductsScreen = () => {
     'idle',
   );
   const [externalProduct, setExternalProduct] = useState<ExternalProductInfo | null>(null);
+  const [feedback, setFeedback] = useState<{ text: string; severity: AlertColor } | null>(null);
 
   const lookupBarcode = useCallback(async (code: string) => {
     if (!code) return;
@@ -111,6 +114,7 @@ export const ManageProductsScreen = () => {
     });
     setName('');
     setBarcode('');
+    setFeedback({ text: 'Product added.', severity: 'success' });
   };
 
   const updateProduct = async (
@@ -127,10 +131,20 @@ export const ManageProductsScreen = () => {
       bulk_name: DEFAULT_BULK_NAME,
       updated_at: Date.now(),
     });
+    setFeedback({ text: 'Product updated.', severity: 'success' });
   };
 
   const deleteProduct = async (productId: string) => {
+    const usageCount = await db.pickItems.where('product_id').equals(productId).count();
+    if (usageCount > 0) {
+      setFeedback({
+        text: `Cannot delete this product while ${usageCount} pick item(s) reference it. Remove those items first.`,
+        severity: 'error',
+      });
+      return;
+    }
     await db.products.delete(productId);
+    setFeedback({ text: 'Product deleted.', severity: 'success' });
   };
 
   return (
@@ -139,6 +153,7 @@ export const ManageProductsScreen = () => {
         Manage Products
       </Typography>
       <Stack spacing={2}>
+        {feedback ? <Alert severity={feedback.severity}>{feedback.text}</Alert> : null}
         <Button component={RouterLink} to="/categories" variant="outlined" sx={{ alignSelf: 'flex-start' }}>
           Edit Categories
         </Button>

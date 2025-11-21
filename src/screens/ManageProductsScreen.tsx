@@ -12,13 +12,14 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { ProductRow } from '../components/ProductRow';
 import { useCategories, useProducts } from '../hooks/dataHooks';
 import { useDatabase } from '../context/DBProvider';
 import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE } from '../models/Product';
 import { BarcodeScannerView } from '../components/BarcodeScannerView';
+import { ExternalProductInfo, fetchProductFromOFF } from '../modules/openFoodFacts';
 
 export const ManageProductsScreen = () => {
   const db = useDatabase();
@@ -30,6 +31,34 @@ export const ManageProductsScreen = () => {
   const [category, setCategory] = useState('');
   const [barcode, setBarcode] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [lookupStatus, setLookupStatus] = useState<'idle' | 'loading' | 'found' | 'notfound' | 'offline'>(
+    'idle',
+  );
+  const [externalProduct, setExternalProduct] = useState<ExternalProductInfo | null>(null);
+
+  const lookupBarcode = useCallback(async (code: string) => {
+    if (!code) return;
+
+    if (typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine) {
+      setLookupStatus('offline');
+      setExternalProduct(null);
+      return;
+    }
+
+    setLookupStatus('loading');
+    const result = await fetchProductFromOFF(code);
+
+    if (result) {
+      setExternalProduct(result);
+      setLookupStatus('found');
+      if (result.name) {
+        setName((prev) => prev || result.name || '');
+      }
+    } else {
+      setExternalProduct(null);
+      setLookupStatus('notfound');
+    }
+  }, []);
 
   const categoryOptions = useMemo(() => {
     const categoryNames = categories.map((item) => item.name);
@@ -56,8 +85,16 @@ export const ManageProductsScreen = () => {
     const state = location.state as { newBarcode?: string } | null;
     if (state?.newBarcode) {
       setBarcode(state.newBarcode);
+      void lookupBarcode(state.newBarcode);
     }
-  }, [location.state]);
+  }, [location.state, lookupBarcode]);
+
+  useEffect(() => {
+    if (!barcode) {
+      setLookupStatus('idle');
+      setExternalProduct(null);
+    }
+  }, [barcode]);
 
   const addProduct = async () => {
     if (!name || !category) return;
@@ -128,18 +165,36 @@ export const ManageProductsScreen = () => {
             ))}
           </TextField>
           {barcode ? (
-            <TextField
-              label="Barcode"
-              value={barcode}
-              onChange={(event) => setBarcode(event.target.value)}
-              InputProps={{
-                endAdornment: (
-                  <Button onClick={() => setBarcode('')} size="small">
-                    Clear
-                  </Button>
-                ),
-              }}
-            />
+            <Stack spacing={1}>
+              <TextField
+                label="Barcode"
+                value={barcode}
+                onChange={(event) => setBarcode(event.target.value)}
+                InputProps={{
+                  endAdornment: (
+                    <Button onClick={() => setBarcode('')} size="small">
+                      Clear
+                    </Button>
+                  ),
+                }}
+              />
+              {lookupStatus === 'loading' ? <Typography variant="body2">Looking up product…</Typography> : null}
+              {lookupStatus === 'found' && externalProduct ? (
+                <Typography variant="body2" color="text.secondary">
+                  Found {externalProduct.name ?? 'product'} via Open Food Facts. Please confirm details.
+                </Typography>
+              ) : null}
+              {lookupStatus === 'notfound' ? (
+                <Typography variant="body2" color="text.secondary">
+                  Product not found. Add it manually.
+                </Typography>
+              ) : null}
+              {lookupStatus === 'offline' ? (
+                <Typography variant="body2" color="text.secondary">
+                  You are offline. Enter details manually.
+                </Typography>
+              ) : null}
+            </Stack>
           ) : (
             <Button variant="outlined" onClick={() => setScannerOpen(true)}>
               Scan Barcode
@@ -165,6 +220,7 @@ export const ManageProductsScreen = () => {
           <BarcodeScannerView
             onDetected={(code) => {
               setBarcode(code);
+              void lookupBarcode(code);
               setScannerOpen(false);
             }}
           />

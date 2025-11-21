@@ -22,6 +22,9 @@ export const HomeScreen = () => (
       <Button component={RouterLink} to="/scan" variant="outlined">
         Scan Barcode
       </Button>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+        Product data provided by Open Food Facts (openfoodfacts.org)
+      </Typography>
     </Stack>
   </Container>
 );

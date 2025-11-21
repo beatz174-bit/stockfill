@@ -8,10 +8,10 @@ export const HomeScreen = () => (
     </Typography>
     <Stack spacing={2}>
       <Button component={RouterLink} to="/start" variant="contained">
-        Start New Pick List
+        Create Pick List
       </Button>
       <Button component={RouterLink} to="/pick-lists" variant="outlined">
-        View Pick Lists
+        View & Edit Pick Lists
       </Button>
       <Button component={RouterLink} to="/products" variant="outlined">
         Manage Products

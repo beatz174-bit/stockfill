@@ -1,6 +1,6 @@
 import { Button, Container, Stack, Typography } from '@mui/material';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useAreas, usePickItems, usePickList, useProducts } from '../hooks/dataHooks';
 import { useDatabase } from '../context/DBProvider';
 import { PickItemRow } from '../components/PickItemRow';
@@ -13,10 +13,6 @@ export const ActivePickListScreen = () => {
   const areas = useAreas();
   const db = useDatabase();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!id || !pickList) return;
-  }, [id, pickList]);
 
   const areaName = useMemo(
     () => areas.find((area) => area.id === pickList?.area_id)?.name ?? 'Area',
@@ -49,9 +45,7 @@ export const ActivePickListScreen = () => {
     await db.pickItems.delete(itemId);
   };
 
-  const completeList = async () => {
-    if (!id) return;
-    await db.pickLists.update(id, { completed_at: Date.now() });
+  const returnToLists = () => {
     navigate('/pick-lists');
   };
 
@@ -63,6 +57,11 @@ export const ActivePickListScreen = () => {
           Add Item
         </Button>
       </Stack>
+      {pickList?.notes ? (
+        <Typography variant="body2" color="text.secondary" mb={2}>
+          {pickList.notes}
+        </Typography>
+      ) : null}
       <Stack spacing={1}>
         {items.map((item) => (
           <PickItemRow
@@ -76,8 +75,8 @@ export const ActivePickListScreen = () => {
           />
         ))}
       </Stack>
-      <Button fullWidth sx={{ mt: 3 }} variant="outlined" onClick={completeList}>
-        Complete List
+      <Button fullWidth sx={{ mt: 3 }} variant="outlined" onClick={returnToLists}>
+        Save and Return
       </Button>
     </Container>
   );

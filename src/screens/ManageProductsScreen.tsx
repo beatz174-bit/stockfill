@@ -50,6 +50,23 @@ export const ManageProductsScreen = () => {
     setName('');
   };
 
+  const updateProduct = async (
+    productId: string,
+    updates: {
+      name: string;
+      category: string;
+      unit_type: string;
+      bulk_name?: string;
+      units_per_bulk?: number;
+    },
+  ) => {
+    await db.products.update(productId, { ...updates, updated_at: Date.now() });
+  };
+
+  const deleteProduct = async (productId: string) => {
+    await db.products.delete(productId);
+  };
+
   return (
     <Container sx={{ py: 4 }}>
       <Typography variant="h5" gutterBottom>
@@ -85,7 +102,13 @@ export const ManageProductsScreen = () => {
           </Button>
         </Stack>
         {filtered.map((product) => (
-          <ProductRow key={product.id} product={product} />
+          <ProductRow
+            key={product.id}
+            product={product}
+            categories={categories}
+            onSave={updateProduct}
+            onDelete={deleteProduct}
+          />
         ))}
       </Stack>
     </Container>

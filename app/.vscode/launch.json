@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Vite Dev Server",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://localhost:5173/",
+      "webRoot": "${workspaceFolder}/src",
+      "preLaunchTask": "npm: dev server"
+    },
+    {
+      "name": "Launch Preview (Test) Server",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "url": "http://localhost:4173/",
+      "webRoot": "${workspaceFolder}/src",
+      "preLaunchTask": "npm: preview server"
+    }
+  ]
+}

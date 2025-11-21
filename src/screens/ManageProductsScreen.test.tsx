@@ -9,12 +9,17 @@ import { ManageProductsScreen } from './ManageProductsScreen';
 let mockScannedBarcode = '123456';
 const mockUseProducts = vi.fn();
 const mockUseCategories = vi.fn();
+const productDeleteMock = vi.fn();
+const pickItemCountMock = vi.fn();
 
 const mockDb = {
   products: {
     add: vi.fn(),
     update: vi.fn(),
-    delete: vi.fn(),
+    delete: productDeleteMock,
+    where: vi.fn(),
+  },
+  pickItems: {
     where: vi.fn(),
   },
 };
@@ -23,9 +28,6 @@ vi.mock('../hooks/dataHooks', () => ({
   useProducts: () => mockUseProducts(),
   useCategories: () => mockUseCategories(),
 }));
-
-const productDeleteMock = vi.fn();
-const pickItemCountMock = vi.fn();
 
 vi.mock('../context/DBProvider', () => ({
   useDatabase: () => mockDb,
@@ -41,6 +43,23 @@ vi.mock('../components/BarcodeScannerView', () => ({
 
 const server = setupServer();
 
+beforeEach(() => {
+  mockUseProducts.mockReset();
+  mockUseCategories.mockReset();
+  mockScannedBarcode = '123456';
+  Object.values(mockDb.products).forEach((fn) => fn.mockReset());
+  mockDb.products.where.mockImplementation(() => ({
+    equals: (value: string) => ({
+      first: () => Promise.resolve(mockUseProducts().find((product: any) => product.barcode === value)),
+    }),
+  }));
+  pickItemCountMock.mockReset();
+  mockDb.pickItems.where.mockReset();
+  mockDb.pickItems.where.mockImplementation(() => ({
+    equals: () => ({ count: pickItemCountMock }),
+  }));
+});
+
 describe('ManageProductsScreen barcode lookup', () => {
   beforeAll(() => server.listen());
   afterEach(() => server.resetHandlers());
@@ -49,13 +68,6 @@ describe('ManageProductsScreen barcode lookup', () => {
   beforeEach(() => {
     mockUseProducts.mockReturnValue([]);
     mockUseCategories.mockReturnValue([{ id: 'cat-1', name: 'Snacks', created_at: 0, updated_at: 0 }]);
-    mockScannedBarcode = '123456';
-    Object.values(mockDb.products).forEach((fn) => fn.mockReset());
-    mockDb.products.where.mockImplementation(() => ({
-      equals: (value: string) => ({
-        first: () => Promise.resolve(mockUseProducts().find((product: any) => product.barcode === value)),
-      }),
-    }));
   });
 
   it('prefills the product name after scanning a barcode', async () => {
@@ -166,6 +178,19 @@ describe('ManageProductsScreen barcode lookup', () => {
 
 describe('ManageProductsScreen deletion safeguards', () => {
   it('blocks deletion when pick items reference the product', async () => {
+    mockUseProducts.mockReturnValue([
+      {
+        id: 'prod-chips',
+        name: 'Chips',
+        category: 'Snacks',
+        unit_type: 'unit',
+        bulk_name: 'pack',
+        archived: false,
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+    mockUseCategories.mockReturnValue([{ id: 'cat-1', name: 'Snacks', created_at: 0, updated_at: 0 }]);
     pickItemCountMock.mockResolvedValueOnce(2);
 
     const user = userEvent.setup();

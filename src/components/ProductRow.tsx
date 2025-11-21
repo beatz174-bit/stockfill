@@ -13,7 +13,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { ChangeEvent, useEffect, useState } from 'react';
-import { Product } from '../models/Product';
+import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE, Product } from '../models/Product';
 
 interface ProductRowProps {
   product: Product;
@@ -23,8 +23,6 @@ interface ProductRowProps {
     updates: {
       name: string;
       category: string;
-      unit_type: string;
-      bulk_name?: string;
       units_per_bulk?: number;
     },
   ) => Promise<void> | void;
@@ -34,16 +32,12 @@ interface ProductRowProps {
 interface ProductFormState {
   name: string;
   category: string;
-  unitType: string;
-  bulkName: string;
   unitsPerBulk: string;
 }
 
 const getInitialFormState = (product: Product): ProductFormState => ({
   name: product.name,
   category: product.category,
-  unitType: product.unit_type,
-  bulkName: product.bulk_name ?? '',
   unitsPerBulk: product.units_per_bulk?.toString() ?? '',
 });
 
@@ -64,8 +58,6 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
     await onSave(product.id, {
       name: formState.name,
       category: formState.category,
-      unit_type: formState.unitType,
-      bulk_name: formState.bulkName || undefined,
       units_per_bulk: formState.unitsPerBulk ? Number(formState.unitsPerBulk) : undefined,
     });
     setIsEditing(false);
@@ -95,27 +87,11 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
                 </MenuItem>
               ))}
             </TextField>
-            <Stack direction="row" spacing={1}>
-              <TextField
-                label="Unit Type"
-                value={formState.unitType}
-                onChange={handleChange('unitType')}
-                size="small"
-                fullWidth
-              />
-              <TextField
-                label="Units per Bulk"
-                type="number"
-                value={formState.unitsPerBulk}
-                onChange={handleChange('unitsPerBulk')}
-                size="small"
-                fullWidth
-              />
-            </Stack>
             <TextField
-              label="Bulk Name"
-              value={formState.bulkName}
-              onChange={handleChange('bulkName')}
+              label="Units per Bulk"
+              type="number"
+              value={formState.unitsPerBulk}
+              onChange={handleChange('unitsPerBulk')}
               size="small"
             />
           </Stack>
@@ -124,12 +100,12 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
             <div>
               <Typography variant="subtitle1">{product.name}</Typography>
               <Typography variant="caption" color="text.secondary">
-                {product.category} • {product.unit_type}
+                {product.category} • {product.unit_type || DEFAULT_UNIT_TYPE}
               </Typography>
             </div>
-            {product.bulk_name && product.units_per_bulk ? (
+            {product.units_per_bulk ? (
               <Typography variant="caption" color="text.secondary">
-                {product.units_per_bulk} per {product.bulk_name}
+                {product.units_per_bulk} per {product.bulk_name || DEFAULT_BULK_NAME}
               </Typography>
             ) : null}
           </Stack>

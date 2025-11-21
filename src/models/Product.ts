@@ -10,3 +10,6 @@ export interface Product {
   created_at: number;
   updated_at: number;
 }
+
+export const DEFAULT_UNIT_TYPE = 'unit';
+export const DEFAULT_BULK_NAME = 'carton';

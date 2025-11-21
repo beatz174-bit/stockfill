@@ -9,6 +9,7 @@ import { ActivePickListScreen } from './screens/ActivePickListScreen';
 import { AddItemScreen } from './screens/AddItemScreen';
 import { ManageProductsScreen } from './screens/ManageProductsScreen';
 import { ManageAreasScreen } from './screens/ManageAreasScreen';
+import { ManageCategoriesScreen } from './screens/ManageCategoriesScreen';
 import { BarcodeScannerScreen } from './screens/BarcodeScannerScreen';
 import { useServiceWorker } from './hooks/useServiceWorker';
 
@@ -32,6 +33,7 @@ const AppRoutes = () => {
         <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         <Route path="/pick-lists/:id/add-item" element={<AddItemScreen />} />
         <Route path="/products" element={<ManageProductsScreen />} />
+        <Route path="/categories" element={<ManageCategoriesScreen />} />
         <Route path="/areas" element={<ManageAreasScreen />} />
         <Route path="/scan" element={<BarcodeScannerScreen />} />
       </Route>

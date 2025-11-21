@@ -2,6 +2,7 @@ import { liveQuery } from 'dexie';
 import { useEffect, useState } from 'react';
 import { useDatabase } from '../context/DBProvider';
 import { Area } from '../models/Area';
+import { Category } from '../models/Category';
 import { PickItem } from '../models/PickItem';
 import { PickList } from '../models/PickList';
 import { Product } from '../models/Product';
@@ -44,6 +45,19 @@ export const useAreas = () => {
     return () => subscription.unsubscribe();
   }, [db]);
   return areas;
+};
+
+export const useCategories = () => {
+  const db = useDatabase();
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    const subscription = liveQuery(() => db.categories.toArray()).subscribe({
+      next: setCategories,
+    });
+    return () => subscription.unsubscribe();
+  }, [db]);
+  return categories;
 };
 
 export const usePickLists = () => {

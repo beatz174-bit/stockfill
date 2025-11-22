@@ -55,9 +55,8 @@ describe('AddItemScreen product search', () => {
     );
 
     await user.type(screen.getByPlaceholderText(/search products/i), 'cola');
-    await user.click(screen.getByLabelText(/product/i));
 
-    expect(screen.getByRole('option', { name: /cola \(drinks\)/i })).toBeVisible();
+    expect(await screen.findByRole('option', { name: /cola \(drinks\)/i })).toBeVisible();
     expect(screen.queryByRole('option', { name: /chips \(snacks\)/i })).not.toBeInTheDocument();
   });
 });

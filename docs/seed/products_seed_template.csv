@@ -1,0 +1,4 @@
+name,category,unit_type,bulk_name,units_per_bulk,barcode,archived
+Sparkling Water 500ml,Drinks,units,carton,24,012345678905,false
+Salted Chips 50g,Snacks,units,carton,48,023456789012,false
+Chocolate Bar,Confectionery,units,box,30,034567890129,false

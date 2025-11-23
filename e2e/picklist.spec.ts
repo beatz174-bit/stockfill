@@ -2,6 +2,9 @@ import { expect, test } from '@playwright/test';
 
 const areaName = 'Drinks';
 const additionalProduct = 'Pump 750';
+const searchTerm = 'E2E Search';
+const matchingProducts = [`${searchTerm} Alpha`, `${searchTerm} Beta`];
+const nonMatchingProduct = 'E2E Other Gamma';
 
 test.describe('Active pick list', () => {
   test('creates a pick list and adds products from the search bar', async ({ page }) => {
@@ -52,5 +55,33 @@ test.describe('Active pick list', () => {
     await saveButton.click();
 
     await expect(page.getByText('Playwright Cola Zero')).toBeVisible();
+  });
+
+  test('filters the manage products list using the search bar', async ({ page }) => {
+    await page.goto('/');
+
+    await page.getByRole('link', { name: 'Manage Products' }).click();
+
+    const addProduct = async (name: string) => {
+      await page.getByLabel('Name').fill(name);
+      await page.getByLabel('Add product category').click();
+      await page.getByRole('option', { name: areaName }).first().click();
+      await page.getByRole('button', { name: 'Save Product' }).click();
+      await expect(page.getByText('Product added.')).toBeVisible();
+      await expect(page.getByRole('button', { name: `Edit ${name}` })).toBeVisible();
+    };
+
+    for (const productName of [...matchingProducts, nonMatchingProduct]) {
+      await addProduct(productName);
+    }
+
+    const searchInput = page.getByPlaceholder('Search');
+    await searchInput.fill(searchTerm);
+
+    for (const productName of matchingProducts) {
+      await expect(page.getByRole('button', { name: `Edit ${productName}` })).toBeVisible();
+    }
+
+    await expect(page.getByRole('button', { name: `Edit ${nonMatchingProduct}` })).toHaveCount(0);
   });
 });

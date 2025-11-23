@@ -169,7 +169,7 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
                   {product.name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" noWrap>
-                  {product.category} • {product.unit_type || DEFAULT_UNIT_TYPE}
+                  {product.category}
                 </Typography>
               </Stack>
               {product.barcode ? (

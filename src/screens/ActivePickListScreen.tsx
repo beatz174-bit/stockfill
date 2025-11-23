@@ -37,11 +37,14 @@ export const ActivePickListScreen = () => {
     });
   };
 
-  const handleSwipeLeft = async (itemId: string) => {
-    await db.pickItems.update(itemId, { status: 'picked', updated_at: Date.now() });
+  const handleToggleStatus = async (itemId: string) => {
+    const existing = await db.pickItems.get(itemId);
+    if (!existing) return;
+    const nextStatus = existing.status === 'picked' ? 'pending' : 'picked';
+    await db.pickItems.update(itemId, { status: nextStatus, updated_at: Date.now() });
   };
 
-  const handleSwipeRight = async (itemId: string) => {
+  const handleDeleteItem = async (itemId: string) => {
     await db.pickItems.delete(itemId);
   };
 
@@ -70,8 +73,8 @@ export const ActivePickListScreen = () => {
             product={products.find((p) => p.id === item.product_id)}
             onIncrementUnit={() => handleIncrementUnit(item.id)}
             onIncrementBulk={() => handleIncrementBulk(item.id)}
-            onSwipeLeft={() => handleSwipeLeft(item.id)}
-            onSwipeRight={() => handleSwipeRight(item.id)}
+            onToggleStatus={() => handleToggleStatus(item.id)}
+            onDelete={() => handleDeleteItem(item.id)}
           />
         ))}
       </Stack>

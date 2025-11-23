@@ -17,7 +17,7 @@ declare global {
 }
 
 const createMediaStream = (stopSpy: MockInstance = vi.fn()) => {
-  const track = { stop: stopSpy } as MediaStreamTrack;
+  const track = { stop: stopSpy } as unknown as MediaStreamTrack;
   return {
     getTracks: vi.fn(() => [track]),
     getVideoTracks: vi.fn(() => [track]),
@@ -58,7 +58,8 @@ describe('useBarcodeScanner', () => {
   it('uses native BarcodeDetector when available and sets the detected code', async () => {
     const trackStop = vi.fn();
     const stream = createMediaStream(trackStop);
-    (navigator.mediaDevices.getUserMedia as unknown as vi.Mock).mockResolvedValue(stream);
+    const getUserMediaMock = navigator.mediaDevices.getUserMedia as unknown as MockInstance;
+    getUserMediaMock.mockResolvedValue(stream);
 
     class MockBarcodeDetector {
       detect = vi.fn(async () => [{ rawValue: 'NATIVE-123' }]);
@@ -108,7 +109,8 @@ describe('useBarcodeScanner', () => {
   });
 
   it('surfaces errors encountered while starting the scanner', async () => {
-    (navigator.mediaDevices.getUserMedia as unknown as vi.Mock).mockRejectedValue(new Error('Camera denied'));
+    const getUserMediaMock = navigator.mediaDevices.getUserMedia as unknown as MockInstance;
+    getUserMediaMock.mockRejectedValue(new Error('Camera denied'));
 
     class MockBarcodeDetector {
       detect = vi.fn(async () => []);

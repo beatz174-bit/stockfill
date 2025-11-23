@@ -25,12 +25,14 @@ const addProductToPickList = async (page: Page, productName: string) => {
   const searchInput = page.getByPlaceholder('Search products');
   await searchInput.click();
   await searchInput.fill(productName);
-  await page
+  const productOption = page
     .getByRole('option', { name: new RegExp(`${productName} \\(${areaName}\\)`, 'i') })
-    .first()
-    .click();
+    .first();
 
-  await expect(page.getByText(productName).first()).toBeVisible();
+  await expect(productOption).toBeVisible({ timeout: 15000 });
+  await productOption.click();
+
+  await expect(page.getByText(productName).first()).toBeVisible({ timeout: 15000 });
 };
 
 test.describe('Active pick list', () => {

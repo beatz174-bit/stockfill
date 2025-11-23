@@ -1,5 +1,5 @@
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ActivePickListScreen } from './ActivePickListScreen';
@@ -331,6 +331,94 @@ describe('ActivePickListScreen product search', () => {
       .map((element) => element.textContent);
 
     expect(itemLabels).toEqual(['Apple Juice', 'Chips', 'Cola', 'Cola']);
+  });
+
+  it('disables packaging filters when only one packaging type is present', () => {
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-1',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('radio', { name: /cartons/i })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: /units/i })).toBeEnabled();
+  });
+
+  it('resets the filter when the selected packaging type is unavailable', async () => {
+    const user = userEvent.setup();
+
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-1',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        is_carton: true,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-2',
+        pick_list_id: 'list-1',
+        product_id: 'prod-2',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    const { rerender } = render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole('radio', { name: /cartons/i }));
+    expect(screen.getByRole('radio', { name: /cartons/i })).toBeChecked();
+
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-2',
+        pick_list_id: 'list-1',
+        product_id: 'prod-2',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    rerender(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(screen.getByRole('radio', { name: /cartons/i })).toBeDisabled());
+    expect(screen.getByRole('radio', { name: /units/i })).toBeChecked();
   });
 
   it('hides picked items when show picked is unchecked', async () => {

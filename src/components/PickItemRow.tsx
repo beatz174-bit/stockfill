@@ -1,5 +1,5 @@
-import { Add, Delete } from '@mui/icons-material';
-import { Button, Checkbox, IconButton, Stack, Typography } from '@mui/material';
+import { Add, Delete, Remove, SwapHoriz } from '@mui/icons-material';
+import { Checkbox, IconButton, Stack, Typography } from '@mui/material';
 import { PickItem } from '../models/PickItem';
 import { Product } from '../models/Product';
 
@@ -7,6 +7,7 @@ interface PickItemRowProps {
   item: PickItem;
   product?: Product | null;
   onIncrementQuantity: () => void;
+  onDecrementQuantity: () => void;
   onToggleCarton: () => void;
   onStatusChange: (status: PickItem['status']) => void;
   onDelete: () => void;
@@ -16,6 +17,7 @@ export const PickItemRow = ({
   item,
   product,
   onIncrementQuantity,
+  onDecrementQuantity,
   onToggleCarton,
   onStatusChange,
   onDelete,
@@ -54,16 +56,27 @@ export const PickItemRow = ({
       </Stack>
 
       <Stack direction="row" spacing={1} alignItems="center">
-        <Button
-          variant={item.is_carton ? 'contained' : 'outlined'}
-          size="small"
+        <IconButton
+          aria-label={`Toggle packaging type (currently ${item.is_carton ? 'carton' : 'unit'})`}
+          color={item.is_carton ? 'primary' : 'default'}
           onClick={onToggleCarton}
         >
-          {item.is_carton ? 'Carton' : 'Unit'}
-        </Button>
-        <Button variant="contained" size="small" startIcon={<Add />} onClick={onIncrementQuantity}>
-          Add 1
-        </Button>
+          <SwapHoriz />
+        </IconButton>
+        <IconButton
+          aria-label="Decrease quantity"
+          color="primary"
+          onClick={onDecrementQuantity}
+        >
+          <Remove />
+        </IconButton>
+        <IconButton
+          aria-label="Increase quantity"
+          color="primary"
+          onClick={onIncrementQuantity}
+        >
+          <Add />
+        </IconButton>
         <IconButton color="error" onClick={onDelete} aria-label="Delete item">
           <Delete />
         </IconButton>

@@ -10,7 +10,7 @@ RUN --mount=type=cache,target=/root/.npm \
 COPY index.html ./
 COPY src ./src
 COPY public ./public
-RUN npm run build
+RUN --mount=type=cache,target=/app/node_modules npm run build
 
 # Serve stage
 FROM nginx:1.27-alpine

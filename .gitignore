@@ -3,3 +3,5 @@ dist
 .vite
 app/build/
 .gradle
+test-results/
+playwright-report/

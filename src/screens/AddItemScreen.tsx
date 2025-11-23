@@ -1,11 +1,20 @@
-import { Autocomplete, Button, Container, InputAdornment, Stack, TextField, Typography } from '@mui/material';
+import {
+  Autocomplete,
+  Button,
+  Checkbox,
+  Container,
+  FormControlLabel,
+  InputAdornment,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
 import { usePickItems, useProducts } from '../hooks/dataHooks';
 import { useDatabase } from '../context/DBProvider';
-import { NumericStepper } from '../components/NumericStepper';
 
 export const AddItemScreen = () => {
   const { id } = useParams();
@@ -14,8 +23,8 @@ export const AddItemScreen = () => {
   const products = useProducts();
   const [selectedProduct, setSelectedProduct] = useState<typeof products[number] | null>(null);
   const [query, setQuery] = useState('');
-  const [units, setUnits] = useState(0);
-  const [cartons, setCartons] = useState(0);
+  const [quantity, setQuantity] = useState(1);
+  const [isCarton, setIsCarton] = useState(false);
   const navigate = useNavigate();
   const unitLabel = selectedProduct?.unit_type ?? 'Units';
   const cartonLabel = selectedProduct?.bulk_name ?? 'Cartons';
@@ -38,8 +47,8 @@ export const AddItemScreen = () => {
   }, [filteredProducts, selectedProduct]);
 
   useEffect(() => {
-    setUnits(0);
-    setCartons(0);
+    setQuantity(1);
+    setIsCarton(false);
   }, [selectedProduct]);
 
   const packagingLabel = isCarton ? cartonLabel : unitLabel;

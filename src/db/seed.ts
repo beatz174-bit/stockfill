@@ -1,10 +1,13 @@
+import { Table } from 'dexie';
 import { v4 as uuidv4 } from 'uuid';
 import { StockFillDB } from './index';
 import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE } from '../models/Product';
 
 const now = () => Date.now();
 
-const seedProducts = [
+export const seedAreas = ['Drinks', 'Snacks', 'Dairy'];
+
+export const seedProducts = [
   { name: 'Nutrient Water Endurance', category: 'Drinks' },
   { name: 'Nutrient Water Focus', category: 'Drinks' },
   { name: 'Cocobella Choc', category: 'Drinks' },
@@ -33,9 +36,38 @@ const seedProducts = [
   { name: 'Mars Bar', category: 'Chocolates' },
 ];
 
-const seedCategories = Array.from(
+export const seedCategories = Array.from(
   new Set(seedProducts.map(({ category }) => category)),
 ).sort();
+
+const normalizeName = (name: string) => name.trim().toLowerCase();
+
+const dedupeSeedRecords = async <T extends { id: string; name: string }>(
+  table: Table<T>,
+  seededNames: Set<string>,
+) => {
+  const existing = await table.toArray();
+  const seen = new Set<string>();
+  const duplicateIds: string[] = [];
+
+  existing.forEach((record) => {
+    const normalized = normalizeName(record.name);
+    if (!seededNames.has(normalized)) return;
+
+    if (seen.has(normalized)) {
+      duplicateIds.push(record.id);
+      return;
+    }
+
+    seen.add(normalized);
+  });
+
+  if (duplicateIds.length > 0) {
+    await table.bulkDelete(duplicateIds);
+  }
+
+  return seen;
+};
 
 const buildProductRecord = (product: { name: string; category: string }) => ({
   id: uuidv4(),
@@ -49,19 +81,30 @@ const buildProductRecord = (product: { name: string; category: string }) => ({
 });
 
 export const seedDatabase = async (db: StockFillDB) => {
-  const areaCount = await db.areas.count();
-  if (areaCount === 0) {
-    await db.areas.bulkAdd([
-      { id: uuidv4(), name: 'Drinks', created_at: now(), updated_at: now() },
-      { id: uuidv4(), name: 'Snacks', created_at: now(), updated_at: now() },
-      { id: uuidv4(), name: 'Dairy', created_at: now(), updated_at: now() },
-    ]);
+  const seededAreaNames = new Set(seedAreas.map(normalizeName));
+  const existingSeedAreas = await dedupeSeedRecords(db.areas, seededAreaNames);
+  const missingAreas = seedAreas.filter((area) => !existingSeedAreas.has(normalizeName(area)));
+
+  if (missingAreas.length > 0) {
+    await db.areas.bulkAdd(
+      missingAreas.map((name) => ({
+        id: uuidv4(),
+        name,
+        created_at: now(),
+        updated_at: now(),
+      })),
+    );
   }
 
-  const categoryCount = await db.categories.count();
-  if (categoryCount === 0) {
+  const seededCategoryNames = new Set(seedCategories.map(normalizeName));
+  const existingSeedCategories = await dedupeSeedRecords(db.categories, seededCategoryNames);
+  const missingCategories = seedCategories.filter(
+    (category) => !existingSeedCategories.has(normalizeName(category)),
+  );
+
+  if (missingCategories.length > 0) {
     await db.categories.bulkAdd(
-      seedCategories.map((category) => ({
+      missingCategories.map((category) => ({
         id: uuidv4(),
         name: category,
         created_at: now(),
@@ -70,8 +113,13 @@ export const seedDatabase = async (db: StockFillDB) => {
     );
   }
 
-  const productCount = await db.products.count();
-  if (productCount === 0) {
-    await db.products.bulkAdd(seedProducts.map(buildProductRecord));
+  const seededProductNames = new Set(seedProducts.map(({ name }) => normalizeName(name)));
+  const existingSeedProducts = await dedupeSeedRecords(db.products, seededProductNames);
+  const missingProducts = seedProducts.filter(
+    (product) => !existingSeedProducts.has(normalizeName(product.name)),
+  );
+
+  if (missingProducts.length > 0) {
+    await db.products.bulkAdd(missingProducts.map(buildProductRecord));
   }
 };

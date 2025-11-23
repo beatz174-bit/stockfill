@@ -9,7 +9,4 @@ export interface PickItem {
   status: PickItemStatus;
   created_at: number;
   updated_at: number;
-  // Legacy fields retained for backward compatibility with pre-v5 data.
-  quantity_units?: number;
-  quantity_bulk?: number;
 }

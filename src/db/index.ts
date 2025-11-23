@@ -112,8 +112,12 @@ export class StockFillDB extends Dexie {
 
             if (hasNewFields) return undefined;
 
-            const legacyUnits = Number((item as PickItem).quantity_units ?? 0);
-            const legacyBulk = Number((item as PickItem).quantity_bulk ?? 0);
+            const legacyUnits = Number(
+              (item as PickItem & { quantity_units?: number }).quantity_units ?? 0,
+            );
+            const legacyBulk = Number(
+              (item as PickItem & { quantity_bulk?: number }).quantity_bulk ?? 0,
+            );
 
             if (legacyUnits > 0 && legacyBulk > 0) {
               await tx.table('pickItems').update(item.id, {
@@ -145,6 +149,56 @@ export class StockFillDB extends Dexie {
               is_carton: false,
               updated_at: now,
             });
+          }),
+        );
+      });
+
+    this.version(6)
+      .stores({
+        products: 'id, name, category, &barcode, archived, created_at, updated_at',
+        areas: 'id, name, created_at, updated_at',
+        pickLists: 'id, area_id, created_at, completed_at',
+        pickItems:
+          'id, pick_list_id, product_id, status, is_carton, quantity, created_at, updated_at',
+        categories: 'id, name, created_at, updated_at',
+      })
+      .upgrade(async (tx) => {
+        const items = await tx.table('pickItems').toArray();
+        const now = Date.now();
+
+        await Promise.all(
+          items.map(async (item) => {
+            const legacyUnits = Number((item as PickItem & { quantity_units?: number }).quantity_units ?? 0);
+            const legacyBulk = Number((item as PickItem & { quantity_bulk?: number }).quantity_bulk ?? 0);
+            const hasQuantity = typeof (item as PickItem).quantity === 'number';
+            const hasCartonFlag = typeof (item as PickItem).is_carton === 'boolean';
+
+            const updateData: Partial<PickItem> & {
+              quantity_units?: undefined;
+              quantity_bulk?: undefined;
+            } = {};
+
+            if (!hasQuantity) {
+              updateData.quantity = legacyBulk > 0 ? legacyBulk : legacyUnits;
+            }
+
+            if (!hasCartonFlag) {
+              updateData.is_carton = legacyBulk > 0 && legacyUnits === 0;
+            }
+
+            if ('quantity_units' in item) {
+              updateData.quantity_units = undefined;
+            }
+
+            if ('quantity_bulk' in item) {
+              updateData.quantity_bulk = undefined;
+            }
+
+            if (Object.keys(updateData).length === 0) return undefined;
+
+            updateData.updated_at = now;
+
+            return tx.table('pickItems').update(item.id, updateData);
           }),
         );
       });

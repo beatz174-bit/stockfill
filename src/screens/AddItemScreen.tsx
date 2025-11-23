@@ -62,7 +62,7 @@ export const AddItemScreen = () => {
   const addItem = async () => {
     const productId = selectedProduct?.id;
 
-    if (!id || !productId || quantity <= 0) return;
+    if (!id || !productId || quantity <= 0 || Number.isNaN(quantity)) return;
 
     const existing = items.find((item) => item.product_id === productId && item.is_carton === isCarton);
 
@@ -135,7 +135,10 @@ export const AddItemScreen = () => {
           type="number"
           label={`Quantity (${packagingLabel})`}
           value={quantity}
-          onChange={(event) => setQuantity(Math.max(1, Number(event.target.value)))}
+          onChange={(event) => {
+            const nextValue = Number(event.target.value);
+            setQuantity(Number.isNaN(nextValue) ? 1 : Math.max(1, nextValue));
+          }}
           inputProps={{ min: 1 }}
           helperText={quantityHelperText}
         />

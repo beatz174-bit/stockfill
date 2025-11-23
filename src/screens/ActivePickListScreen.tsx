@@ -29,6 +29,18 @@ export const ActivePickListScreen = () => {
     });
   };
 
+  const handleDecrementQuantity = async (itemId: string) => {
+    const existing = await db.pickItems.get(itemId);
+    if (!existing) return;
+
+    const nextQuantity = Math.max(1, (existing.quantity || 1) - 1);
+
+    await db.pickItems.update(itemId, {
+      quantity: nextQuantity,
+      updated_at: Date.now(),
+    });
+  };
+
   const handleToggleCarton = async (itemId: string) => {
     const existing = await db.pickItems.get(itemId);
     if (!existing) return;
@@ -73,6 +85,7 @@ export const ActivePickListScreen = () => {
             item={item}
             product={products.find((p) => p.id === item.product_id)}
             onIncrementQuantity={() => handleIncrementQuantity(item.id)}
+            onDecrementQuantity={() => handleDecrementQuantity(item.id)}
             onToggleCarton={() => handleToggleCarton(item.id)}
             onStatusChange={(status) => handleStatusChange(item.id, status)}
             onDelete={() => handleDeleteItem(item.id)}

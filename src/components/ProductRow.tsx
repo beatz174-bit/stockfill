@@ -154,30 +154,18 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
             </Stack>
           </Stack>
         ) : (
-          <Stack direction="row" alignItems="center" spacing={1} justifyContent="space-between">
-            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
-              <Stack spacing={0.25} sx={{ minWidth: 0 }}>
-                <Typography variant="subtitle1" noWrap>
-                  {product.name}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" noWrap>
-                  {product.category} • {product.unit_type || DEFAULT_UNIT_TYPE}
-                </Typography>
-              </Stack>
-              {product.barcode ? (
-                <Typography variant="caption" color="text.secondary" noWrap>
-                  Barcode: {product.barcode}
-                </Typography>
-              ) : null}
-            </Stack>
-            <Box display="flex" alignItems="center" gap={0.5} sx={{ ml: 1 }}>
-              <IconButton aria-label={`Edit ${product.name}`} onClick={() => setIsEditing(true)} size="small">
-                <EditIcon fontSize="small" />
-              </IconButton>
-              <IconButton aria-label={`Delete ${product.name}`} onClick={() => onDelete(product.id)} size="small">
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Box>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <div>
+              <Typography variant="subtitle1">{product.name}</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {product.category}
+              </Typography>
+            </div>
+            {product.barcode ? (
+              <Typography variant="caption" color="text.secondary">
+                Barcode: {product.barcode}
+              </Typography>
+            ) : null}
           </Stack>
         )}
       </CardContent>

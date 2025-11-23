@@ -29,10 +29,12 @@ export const ManageProductsScreen = () => {
   const categories = useCategories();
   const location = useLocation();
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [barcode, setBarcode] = useState('');
   const [barcodeError, setBarcodeError] = useState('');
+  const [nameError, setNameError] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'loading' | 'found' | 'notfound' | 'offline'>(
     'idle',
@@ -78,6 +80,19 @@ export const ManageProductsScreen = () => {
     [products],
   );
 
+  const findNameConflict = useCallback(
+    (value?: string, productId?: string) => {
+      if (!value) return undefined;
+
+      const normalizedValue = value.trim().toLowerCase();
+
+      return products.find(
+        (product) => product.id !== productId && product.name.trim().toLowerCase() === normalizedValue,
+      );
+    },
+    [products],
+  );
+
   const assertUniqueBarcode = useCallback(
     async (value?: string, productId?: string) => {
       if (!value) return;
@@ -92,6 +107,22 @@ export const ManageProductsScreen = () => {
       }
     },
     [db.products, findBarcodeConflict],
+  );
+
+  const assertUniqueName = useCallback(
+    async (value: string, productId?: string) => {
+      const normalized = value.trim().toLowerCase();
+      if (!normalized) return;
+
+      const conflict = findNameConflict(value, productId);
+
+      if (conflict) {
+        const error = new Error('A product with this name already exists.');
+        error.name = 'DuplicateNameError';
+        throw error;
+      }
+    },
+    [findNameConflict],
   );
 
   const addProductToAutoLists = useCallback(
@@ -139,12 +170,27 @@ export const ManageProductsScreen = () => {
     }
   }, [category, categoryOptions]);
 
+  useEffect(() => {
+    if (selectedCategory !== 'all' && !categoryOptions.includes(selectedCategory)) {
+      setSelectedCategory('all');
+    }
+  }, [categoryOptions, selectedCategory]);
+
   const filtered = useMemo(
     () =>
-      products.filter((p) =>
-        `${p.name} ${p.category}`.toLowerCase().includes(search.toLowerCase()),
-      ),
-    [products, search],
+      products.filter((p) => {
+        const matchesSearch = `${p.name} ${p.category}`
+          .toLowerCase()
+          .includes(search.toLowerCase());
+        const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+      }),
+    [products, search, selectedCategory],
+  );
+
+  const sortedFiltered = useMemo(
+    () => filtered.slice().sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
+    [filtered],
   );
 
   useEffect(() => {
@@ -167,8 +213,13 @@ export const ManageProductsScreen = () => {
     if (!name || !category) return;
 
     try {
+      await assertUniqueName(name);
       await assertUniqueBarcode(barcode || undefined);
     } catch (error) {
+      if (error instanceof Error && error.name === 'DuplicateNameError') {
+        setNameError(error.message);
+        return;
+      }
       if (error instanceof Error && error.name === 'DuplicateBarcodeError') {
         setBarcodeError(error.message);
         return;
@@ -195,6 +246,7 @@ export const ManageProductsScreen = () => {
     });
     setName('');
     setBarcode('');
+    setNameError('');
     setFeedback({ text: 'Product added.', severity: 'success' });
   };
 
@@ -206,6 +258,7 @@ export const ManageProductsScreen = () => {
       barcode?: string;
     },
   ) => {
+    await assertUniqueName(updates.name, productId);
     await assertUniqueBarcode(updates.barcode, productId);
 
     await db.products.update(productId, {
@@ -240,23 +293,52 @@ export const ManageProductsScreen = () => {
         <Button component={RouterLink} to="/categories" variant="outlined" sx={{ alignSelf: 'flex-start' }}>
           Edit Categories
         </Button>
-        <TextField
-          placeholder="Search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          InputProps={{ startAdornment: <InputAdornment position="start">{<SearchIcon />}</InputAdornment> }}
-        />
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+          <TextField
+            placeholder="Search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            InputProps={{ startAdornment: <InputAdornment position="start">{<SearchIcon />}</InputAdornment> }}
+            fullWidth
+          />
+          <TextField
+            select
+            label="Filter by category"
+            value={selectedCategory}
+            onChange={(event) => setSelectedCategory(event.target.value)}
+            sx={{ minWidth: { sm: 180 } }}
+            inputProps={{ 'aria-label': 'Category filter' }}
+          >
+            <MenuItem value="all">All categories</MenuItem>
+            {categoryOptions.map((cat) => (
+              <MenuItem key={cat} value={cat}>
+                {cat}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Stack>
         <Stack spacing={1}>
           <Typography variant="subtitle1">Add Product</Typography>
           <TextField
             label="Name"
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              setName(event.target.value);
+              setNameError('');
+            }}
+            error={Boolean(nameError)}
+            helperText={nameError || undefined}
             InputProps={
               name
                 ? {
                     endAdornment: (
-                      <Button onClick={() => setName('')} size="small">
+                      <Button
+                        onClick={() => {
+                          setName('');
+                          setNameError('');
+                        }}
+                        size="small"
+                      >
                         Clear
                       </Button>
                     ),
@@ -266,7 +348,7 @@ export const ManageProductsScreen = () => {
           />
           <TextField
             select
-            label="Category"
+            label="Add product category"
             value={category}
             onChange={(event) => setCategory(event.target.value)}
             disabled={categoryOptions.length === 0}
@@ -319,15 +401,21 @@ export const ManageProductsScreen = () => {
             Save Product
           </Button>
         </Stack>
-        {filtered.map((product) => (
-          <ProductRow
-            key={product.id}
-            product={product}
-            categories={categoryOptions}
-            onSave={updateProduct}
-            onDelete={deleteProduct}
-          />
-        ))}
+        {sortedFiltered.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            No products match your search and category filter.
+          </Typography>
+        ) : (
+          sortedFiltered.map((product) => (
+            <ProductRow
+              key={product.id}
+              product={product}
+              categories={categoryOptions}
+              onSave={updateProduct}
+              onDelete={deleteProduct}
+            />
+          ))
+        )}
       </Stack>
       <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} fullWidth>
         <DialogTitle>Scan Barcode</DialogTitle>

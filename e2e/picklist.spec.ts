@@ -34,7 +34,7 @@ test.describe('Active pick list', () => {
 
     await page.getByLabel('Name').click();
     await page.getByLabel('Name').fill('Playwright Cola');
-    await page.getByLabel('Category').click();
+    await page.getByLabel('Add product category').click();
     await page.getByRole('option', { name: 'Drinks' }).click();
     await page.getByRole('button', { name: 'Save Product' }).click();
 

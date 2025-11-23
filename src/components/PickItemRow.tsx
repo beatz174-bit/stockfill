@@ -1,4 +1,4 @@
-import { Add, Delete, Inventory2, Remove, SwapHoriz } from '@mui/icons-material';
+import { Add, Delete, Inventory2, Remove } from '@mui/icons-material';
 import {
   Button,
   Checkbox,
@@ -11,6 +11,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useState } from 'react';
 import { PickItem } from '../models/PickItem';
 import { Product } from '../models/Product';
@@ -78,8 +79,13 @@ export const PickItemRow = ({
           aria-label={`Switch to ${item.is_carton ? 'unit' : 'carton'} packaging`}
           color={item.is_carton ? 'primary' : 'default'}
           onClick={onToggleCarton}
+          sx={{
+            boxShadow: item.is_carton
+              ? (theme) => `0 0 0 8px ${alpha(theme.palette.primary.main, 0.15)}`
+              : 'none',
+          }}
         >
-          {item.is_carton ? <SwapHoriz /> : <Inventory2 />}
+          <Inventory2 />
         </IconButton>
         <IconButton
           aria-label="Decrease quantity"

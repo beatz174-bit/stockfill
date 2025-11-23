@@ -13,8 +13,7 @@ test.describe('Active pick list', () => {
     await page.getByRole('link', { name: 'Create Pick List' }).click();
     await page.getByLabel('Area').click();
     await page.getByRole('option', { name: areaName }).first().click();
-    await page.getByLabel('Category (optional)').click();
-    await page.getByRole('option', { name: 'Chocolates' }).click();
+    await page.getByRole('checkbox', { name: 'Chocolates' }).click();
     await page.getByRole('checkbox', { name: 'Chips' }).click();
     await page.getByRole('button', { name: 'Save Pick List' }).click();
 

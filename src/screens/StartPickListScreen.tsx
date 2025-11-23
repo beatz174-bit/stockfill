@@ -23,7 +23,6 @@ export const StartPickListScreen = () => {
   const [areaId, setAreaId] = useState('');
   const [notes, setNotes] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [quickCategoryId, setQuickCategoryId] = useState('');
 
   const sortedCategories = useMemo(
     () =>
@@ -39,16 +38,6 @@ export const StartPickListScreen = () => {
         ? current.filter((id) => id !== categoryId)
         : [...current, categoryId],
     );
-  };
-
-  const handleSelectCategory = (categoryId: string) => {
-    setQuickCategoryId(categoryId);
-    if (!categoryId) return;
-
-    setSelectedCategories((current) =>
-      current.includes(categoryId) ? current : [...current, categoryId],
-    );
-    setQuickCategoryId('');
   };
 
   const start = async () => {
@@ -120,19 +109,13 @@ export const StartPickListScreen = () => {
           ))}
         </TextField>
         <TextField
-          select
           fullWidth
-          label="Category (optional)"
-          value={quickCategoryId}
-          onChange={(event) => handleSelectCategory(event.target.value as string)}
-        >
-          <MenuItem value="">None</MenuItem>
-          {sortedCategories.map((category) => (
-            <MenuItem key={category.id} value={category.id}>
-              {category.name}
-            </MenuItem>
-          ))}
-        </TextField>
+          label="Notes (optional)"
+          value={notes}
+          onChange={(event) => setNotes(event.target.value)}
+          multiline
+          minRows={2}
+        />
         <Stack spacing={1}>
           <Typography variant="subtitle2">Add categories to prefill products</Typography>
           <FormGroup>
@@ -150,13 +133,6 @@ export const StartPickListScreen = () => {
             ))}
           </FormGroup>
         </Stack>
-        <TextField
-          label="Notes (optional)"
-          value={notes}
-          onChange={(event) => setNotes(event.target.value)}
-          multiline
-          minRows={2}
-        />
         <Button variant="contained" disabled={!areaId} onClick={start}>
           Save Pick List
         </Button>

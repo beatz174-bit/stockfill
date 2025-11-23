@@ -97,7 +97,6 @@ describe('StartPickListScreen', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByLabelText(/category \(optional\)/i)).toBeVisible();
     categoriesMock.forEach((category) => {
       expect(screen.getByRole('checkbox', { name: category.name })).toBeInTheDocument();
     });
@@ -115,9 +114,7 @@ describe('StartPickListScreen', () => {
     await user.click(screen.getByLabelText(/area/i));
     await user.click(screen.getByRole('option', { name: /front counter/i }));
 
-    await user.click(screen.getByLabelText(/category \(optional\)/i));
-    await user.click(screen.getByRole('option', { name: /drinks/i }));
-
+    await user.click(screen.getByRole('checkbox', { name: /drinks/i }));
     await user.click(screen.getByRole('checkbox', { name: /snacks/i }));
 
     await user.click(screen.getByRole('button', { name: /save pick list/i }));

@@ -92,7 +92,7 @@ beforeEach(() => {
 describe('StartPickListScreen', () => {
   it('shows category selection controls', () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <StartPickListScreen />
       </MemoryRouter>,
     );
@@ -108,7 +108,7 @@ describe('StartPickListScreen', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <StartPickListScreen />
       </MemoryRouter>,
     );
@@ -149,7 +149,7 @@ describe('StartPickListScreen', () => {
     ]);
 
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <StartPickListScreen />
       </MemoryRouter>,
     );

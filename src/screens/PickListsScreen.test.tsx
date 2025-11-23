@@ -40,7 +40,7 @@ vi.mock('../context/DBProvider', () => ({
 describe('PickListsScreen sorting', () => {
   it('sorts pick lists alphabetically by area name', () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <PickListsScreen />
       </MemoryRouter>,
     );

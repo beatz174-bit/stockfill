@@ -114,17 +114,24 @@ export const ActivePickListScreen = () => {
   const packagingTypeCount = Number(hasCartonItems) + Number(hasUnitItems);
   const singlePackagingType = packagingTypeCount === 1;
 
-  const categoryFilteredProducts = useMemo(() => sortedProducts, [sortedProducts]);
+  const productIdsInList = useMemo(
+    () => new Set(items.map((item) => item.product_id)),
+    [items],
+  );
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return categoryFilteredProducts;
+    const availableProducts = categoryFilteredProducts.filter(
+      (product) => !productIdsInList.has(product.id),
+    );
 
-    return categoryFilteredProducts.filter((product) => {
+    if (!normalizedQuery) return availableProducts;
+
+    return availableProducts.filter((product) => {
       const searchableText = `${product.name} ${product.category} ${product.barcode ?? ''}`.toLowerCase();
       return searchableText.includes(normalizedQuery);
     });
-  }, [categoryFilteredProducts, query]);
+  }, [categoryFilteredProducts, productIdsInList, query]);
 
   useEffect(() => {
     if (!selectedProduct) return;
@@ -285,7 +292,7 @@ export const ActivePickListScreen = () => {
               }
             }}
             filterOptions={(options) => options}
-            noOptionsText={query.trim() ? 'No matching products' : 'No products available'}
+            noOptionsText="No available products"
             fullWidth
             renderInput={(params) => (
               <TextField
@@ -322,6 +329,11 @@ export const ActivePickListScreen = () => {
               />
             )}
           />
+          {filteredProducts.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No available products
+            </Typography>
+          ) : null}
           <Typography variant="caption" color="text.secondary">
             Selecting a product immediately adds it to the pick list.
           </Typography>

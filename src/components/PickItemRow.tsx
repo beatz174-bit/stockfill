@@ -75,11 +75,11 @@ export const PickItemRow = ({
 
       <Stack direction="row" spacing={1} alignItems="center">
         <IconButton
-          aria-label={`Toggle packaging type (currently ${item.is_carton ? 'carton' : 'unit'})`}
+          aria-label={`Switch to ${item.is_carton ? 'unit' : 'carton'} packaging`}
           color={item.is_carton ? 'primary' : 'default'}
           onClick={onToggleCarton}
         >
-          {item.is_carton ? <Inventory2 /> : <SwapHoriz />}
+          {item.is_carton ? <SwapHoriz /> : <Inventory2 />}
         </IconButton>
         <IconButton
           aria-label="Decrease quantity"

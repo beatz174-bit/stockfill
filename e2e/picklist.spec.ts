@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const areaName = 'Drinks';
 const additionalProduct = 'Pump 750';
+const secondaryProduct = 'Mount Franklin 600ml';
 
 test.describe('Active pick list', () => {
   test('adds a product via search and renders it with quantity and packaging', async ({ page }) => {
@@ -108,6 +109,9 @@ test.describe('Active pick list', () => {
     await expect(page.getByText('Playwright Cola Zero')).toBeVisible();
   });
 
+  test('toggles picked visibility and disables the filter when all items are picked', async ({ page }) => {
+    await page.goto('/');
+
   test('toggles a product to picked and updates status indicators', async ({ page }) => {
     await page.goto('/');
 
@@ -163,12 +167,41 @@ test.describe('Active pick list', () => {
 
     const searchInput = page.getByPlaceholder('Search products');
     await searchInput.click();
+    await searchInput.fill(secondaryProduct);
+    await page
+      .getByRole('option', { name: new RegExp(`${secondaryProduct} \\(${areaName}\\)`, 'i') })
+      .first()
+      .click();
+
     await searchInput.fill(additionalProduct);
     await page
       .getByRole('option', { name: new RegExp(`${additionalProduct} \\(${areaName}\\)`, 'i') })
       .first()
       .click();
 
+    const showPickedToggle = page.getByLabel('Show picked');
+    const itemToggles = page.getByRole('checkbox', { name: 'Toggle picked status' });
+
+    await expect(showPickedToggle).toBeChecked();
+    await expect(page.getByText(secondaryProduct)).toBeVisible();
+    await expect(page.getByText(additionalProduct)).toBeVisible();
+
+    await itemToggles.first().check();
+    await expect(itemToggles.first()).toBeChecked();
+
+    await showPickedToggle.click();
+    await expect(page.getByText(secondaryProduct)).toHaveCount(0);
+    await expect(page.getByText(additionalProduct)).toBeVisible();
+
+    await showPickedToggle.click();
+    await expect(showPickedToggle).toBeChecked();
+    await expect(page.getByText(secondaryProduct)).toBeVisible();
+
+    await itemToggles.nth(1).check();
+    await expect(itemToggles.nth(1)).toBeChecked();
+
+    await expect(showPickedToggle).toBeDisabled();
+    await expect(showPickedToggle).toBeChecked();
     const pickedToggle = page.getByLabel('Toggle picked status');
     await expect(pickedToggle).not.toBeChecked();
     await pickedToggle.click();

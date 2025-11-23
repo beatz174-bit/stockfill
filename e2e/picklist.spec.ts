@@ -86,6 +86,9 @@ test.describe('Active pick list', () => {
     await expect(page.getByText('Playwright Cola Zero')).toBeVisible();
   });
 
+  test('toggles packaging type and persists the selection', async ({ page }) => {
+    await page.goto('/');
+
   test('lets a user mark an item as picked then revert it back to pending', async ({ page }) => {
     await page.goto('/');
 
@@ -108,6 +111,32 @@ test.describe('Active pick list', () => {
       .first()
       .click();
 
+    const increaseButton = page.getByLabel('Increase quantity');
+    await increaseButton.click();
+    await expect(page.getByText('Qty: 2 unit')).toBeVisible();
+
+    await page.getByLabel('Switch to carton packaging').click();
+    await expect(page.getByText('Qty: 2 carton')).toBeVisible();
+
+    await page.getByLabel('Decrease quantity').click();
+    await expect(page.getByText('Qty: 1 carton')).toBeVisible();
+
+    await page.getByLabel('Switch to unit packaging').click();
+    await expect(page.getByText('Qty: 1 unit')).toBeVisible();
+
+    await increaseButton.click();
+    await increaseButton.click();
+    await page.getByLabel('Switch to carton packaging').click();
+    await expect(page.getByText('Qty: 3 carton')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Save and Return' }).click();
+    await expect(page.getByRole('heading', { name: 'Pick Lists' })).toBeVisible();
+
+    await page.reload();
+    await page.getByRole('link', { name: areaName }).first().click();
+    await expect(page.getByRole('heading', { name: `${areaName} List` })).toBeVisible();
+    await expect(page.getByText('Qty: 3 carton')).toBeVisible();
+    await expect(page.getByLabel('Switch to unit packaging')).toBeVisible();
     const itemStatusToggle = page.getByLabel('Toggle picked status').first();
     const showPickedToggle = page.getByLabel('Show picked');
 

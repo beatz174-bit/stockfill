@@ -6,7 +6,6 @@ import { HomeScreen } from './screens/HomeScreen';
 import { StartPickListScreen } from './screens/StartPickListScreen';
 import { PickListsScreen } from './screens/PickListsScreen';
 import { ActivePickListScreen } from './screens/ActivePickListScreen';
-import { AddItemScreen } from './screens/AddItemScreen';
 import { ManageProductsScreen } from './screens/ManageProductsScreen';
 import { ManageAreasScreen } from './screens/ManageAreasScreen';
 import { ManageCategoriesScreen } from './screens/ManageCategoriesScreen';
@@ -31,7 +30,6 @@ const AppRoutes = () => {
         <Route path="/start" element={<StartPickListScreen />} />
         <Route path="/pick-lists" element={<PickListsScreen />} />
         <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
-        <Route path="/pick-lists/:id/add-item" element={<AddItemScreen />} />
         <Route path="/products" element={<ManageProductsScreen />} />
         <Route path="/categories" element={<ManageCategoriesScreen />} />
         <Route path="/areas" element={<ManageAreasScreen />} />

@@ -37,10 +37,15 @@ export const ActivePickListScreen = () => {
   const [query, setQuery] = useState('');
   const [itemFilter, setItemFilter] = useState<'all' | 'cartons' | 'units'>('all');
   const [showPicked, setShowPicked] = useState(true);
+  const [itemState, setItemState] = useState(items);
+
+  useEffect(() => {
+    setItemState(items);
+  }, [items]);
 
   const allItemsPicked = useMemo(
-    () => items.length > 0 && items.every((item) => item.status === 'picked'),
-    [items],
+    () => itemState.length > 0 && itemState.every((item) => item.status === 'picked'),
+    [itemState],
   );
 
   const productMap = useMemo(() => {
@@ -58,8 +63,8 @@ export const ActivePickListScreen = () => {
   );
 
   const visibleItemsByStatus = useMemo(
-    () => (showPicked ? items : items.filter((item) => item.status !== 'picked')),
-    [items, showPicked],
+    () => (showPicked ? itemState : itemState.filter((item) => item.status !== 'picked')),
+    [itemState, showPicked],
   );
 
   const sortedItems = useMemo(() => {
@@ -138,8 +143,8 @@ export const ActivePickListScreen = () => {
   const singlePackagingType = packagingTypeCount === 1;
 
   const productIdsInList = useMemo(
-    () => new Set(items.map((item) => item.product_id)),
-    [items],
+    () => new Set(itemState.map((item) => item.product_id)),
+    [itemState],
   );
 
   const filteredProducts = useMemo(() => {
@@ -201,11 +206,18 @@ export const ActivePickListScreen = () => {
     return filteredItems;
   }, [itemFilter, showPicked, sortedItems]);
 
+  const updateItemState = (itemId: string, updater: (item: PickItem) => PickItem) => {
+    setItemState((current) => current.map((item) => (item.id === itemId ? updater(item) : item)));
+  };
+
   const handleIncrementQuantity = async (itemId: string) => {
     const existing = await db.pickItems.get(itemId);
     if (!existing) return;
+
+    const nextQuantity = existing.quantity + 1;
+    updateItemState(itemId, (item) => ({ ...item, quantity: nextQuantity, updated_at: Date.now() }));
     await db.pickItems.update(itemId, {
-      quantity: existing.quantity + 1,
+      quantity: nextQuantity,
       updated_at: Date.now(),
     });
   };
@@ -216,6 +228,7 @@ export const ActivePickListScreen = () => {
 
     const nextQuantity = Math.max(1, (existing.quantity || 1) - 1);
 
+    updateItemState(itemId, (item) => ({ ...item, quantity: nextQuantity, updated_at: Date.now() }));
     await db.pickItems.update(itemId, {
       quantity: nextQuantity,
       updated_at: Date.now(),
@@ -226,27 +239,41 @@ export const ActivePickListScreen = () => {
     const existing = await db.pickItems.get(itemId);
     if (!existing) return;
 
+    const nextCartonFlag = !existing.is_carton;
+    const nextQuantity = existing.quantity || 1;
+
+    updateItemState(itemId, (item) => ({
+      ...item,
+      is_carton: nextCartonFlag,
+      quantity: nextQuantity,
+      updated_at: Date.now(),
+    }));
     await db.pickItems.update(itemId, {
-      is_carton: !existing.is_carton,
-      quantity: existing.quantity || 1,
+      is_carton: nextCartonFlag,
+      quantity: nextQuantity,
       updated_at: Date.now(),
     });
   };
 
   const handleStatusChange = async (itemId: string, status: PickItem['status']) => {
     const nextStatus = status === 'picked' ? 'picked' : 'pending';
+    updateItemState(itemId, (item) => ({ ...item, status: nextStatus, updated_at: Date.now() }));
     await db.pickItems.update(itemId, { status: nextStatus, updated_at: Date.now() });
   };
 
   const handleDeleteItem = async (itemId: string) => {
+    setItemState((current) => current.filter((item) => item.id !== itemId));
     await db.pickItems.delete(itemId);
   };
 
   const handleMarkAllPicked = async () => {
     setShowPicked(true);
     const timestamp = Date.now();
+    setItemState((current) =>
+      current.map((item) => ({ ...item, status: 'picked', updated_at: timestamp })),
+    );
     await Promise.all(
-      items.map((item) =>
+      itemState.map((item) =>
         db.pickItems.update(item.id, { status: 'picked', updated_at: timestamp }),
       ),
     );
@@ -255,25 +282,38 @@ export const ActivePickListScreen = () => {
   const addOrUpdateItem = async (product: Product) => {
     if (!id) return;
 
-    const existing = items.find(
+    const timestamp = Date.now();
+    const existing = itemState.find(
       (item) => item.product_id === product.id && item.is_carton === false,
     );
 
     if (existing) {
+      setItemState((current) =>
+        current.map((item) =>
+          item.id === existing.id
+            ? { ...item, quantity: item.quantity + 1, updated_at: timestamp }
+            : item,
+        ),
+      );
       await db.pickItems.update(existing.id, {
         quantity: existing.quantity + 1,
-        updated_at: Date.now(),
+        updated_at: timestamp,
       });
     } else {
-      await db.pickItems.add({
+      const newItem: PickItem = {
         id: uuidv4(),
         pick_list_id: id,
         product_id: product.id,
         quantity: 1,
         is_carton: false,
         status: 'pending',
-        created_at: Date.now(),
-        updated_at: Date.now(),
+        created_at: timestamp,
+        updated_at: timestamp,
+      };
+
+      setItemState((current) => [...current, newItem]);
+      await db.pickItems.add({
+        ...newItem,
       });
     }
 

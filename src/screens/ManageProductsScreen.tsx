@@ -261,12 +261,24 @@ export const ManageProductsScreen = () => {
     await assertUniqueName(updates.name, productId);
     await assertUniqueBarcode(updates.barcode, productId);
 
-    await db.products.update(productId, {
+    const existing = await db.products.get(productId);
+    if (!existing) return;
+
+    const normalizedName = updates.name.trim();
+    const oldNameKey = existing.name.trim().toLowerCase();
+    const updatedProduct: Product = {
+      ...existing,
       ...updates,
+      name: normalizedName,
       unit_type: DEFAULT_UNIT_TYPE,
       bulk_name: DEFAULT_BULK_NAME,
       updated_at: Date.now(),
-    });
+    };
+
+    await db.products.put(updatedProduct);
+    await db.products
+      .filter((product) => product.id !== productId && product.name.trim().toLowerCase() === oldNameKey)
+      .delete();
     setFeedback({ text: 'Product updated.', severity: 'success' });
   };
 

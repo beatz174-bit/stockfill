@@ -130,7 +130,6 @@ export const PickItemRow = ({
             color="error"
             variant="contained"
             onClick={handleConfirmDelete}
-            aria-label="Confirm delete"
           >
             Delete
           </Button>

@@ -48,6 +48,31 @@ export const ActivePickListScreen = () => {
     [areas, pickList?.area_id],
   );
 
+  const sortedItems = useMemo(() => {
+    return items
+      .map((item, index) => ({ item, index }))
+      .sort((a, b) => {
+        const timeA = a.item.updated_at ?? a.item.created_at;
+        const timeB = b.item.updated_at ?? b.item.created_at;
+
+        if (timeA !== timeB) {
+          return timeB - timeA;
+        }
+
+        return a.index - b.index;
+      })
+      .map(({ item }) => item);
+  }, [items]);
+
+  const productMap = useMemo(() => {
+    const map = new Map<string, Product>();
+    products.forEach((product) => {
+      map.set(product.id, product);
+    });
+
+    return map;
+  }, [products]);
+
   const sortedProducts = useMemo(() => {
     const uniqueProducts = new Map<string, Product>();
 
@@ -102,7 +127,7 @@ export const ActivePickListScreen = () => {
     }
 
     return filteredItems;
-  }, [itemFilter, items, showPicked]);
+  }, [itemFilter, showPicked, sortedItems]);
 
   const handleIncrementQuantity = async (itemId: string) => {
     const existing = await db.pickItems.get(itemId);

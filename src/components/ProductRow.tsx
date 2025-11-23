@@ -1,6 +1,7 @@
 import {
+  Box,
+  Button,
   Card,
-  CardActions,
   CardContent,
   Dialog,
   DialogContent,
@@ -10,7 +11,6 @@ import {
   Stack,
   TextField,
   Typography,
-  Button,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -89,7 +89,7 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
 
   return (
     <Card variant="outlined" sx={{ mb: 1 }}>
-      <CardContent>
+      <CardContent sx={{ p: 1.25, '&:last-child': { pb: 1.25 } }}>
         {isEditing ? (
           <Stack spacing={1}>
             <TextField label="Name" value={formState.name} onChange={handleChange('name')} size="small" />
@@ -133,44 +133,43 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
                 Scan Barcode
               </Button>
             )}
+            <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+              <IconButton aria-label="Save product" onClick={handleSave} disabled={!formState.name} color="primary">
+                <CheckIcon />
+              </IconButton>
+              <IconButton aria-label="Cancel edit" onClick={handleCancel}>
+                <CloseIcon />
+              </IconButton>
+            </Stack>
           </Stack>
         ) : (
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <div>
-              <Typography variant="subtitle1">{product.name}</Typography>
-              <Typography variant="caption" color="text.secondary">
-                {product.category}
-              </Typography>
-            </div>
-            {product.barcode ? (
-              <Typography variant="caption" color="text.secondary">
-                Barcode: {product.barcode}
-              </Typography>
-            ) : null}
+          <Stack direction="row" alignItems="center" spacing={1} justifyContent="space-between">
+            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+              <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+                <Typography variant="subtitle1" noWrap>
+                  {product.name}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  {product.category} • {product.unit_type || DEFAULT_UNIT_TYPE}
+                </Typography>
+              </Stack>
+              {product.barcode ? (
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  Barcode: {product.barcode}
+                </Typography>
+              ) : null}
+            </Stack>
+            <Box display="flex" alignItems="center" gap={0.5} sx={{ ml: 1 }}>
+              <IconButton aria-label={`Edit ${product.name}`} onClick={() => setIsEditing(true)} size="small">
+                <EditIcon fontSize="small" />
+              </IconButton>
+              <IconButton aria-label={`Delete ${product.name}`} onClick={() => onDelete(product.id)} size="small">
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Box>
           </Stack>
         )}
       </CardContent>
-      <CardActions sx={{ justifyContent: 'flex-end', pt: 0 }}>
-        {isEditing ? (
-          <>
-            <IconButton aria-label="Save product" onClick={handleSave} disabled={!formState.name} color="primary">
-              <CheckIcon />
-            </IconButton>
-            <IconButton aria-label="Cancel edit" onClick={handleCancel}>
-              <CloseIcon />
-            </IconButton>
-          </>
-        ) : (
-          <>
-            <IconButton aria-label={`Edit ${product.name}`} onClick={() => setIsEditing(true)}>
-              <EditIcon />
-            </IconButton>
-            <IconButton aria-label={`Delete ${product.name}`} onClick={() => onDelete(product.id)}>
-              <DeleteIcon />
-            </IconButton>
-          </>
-        )}
-      </CardActions>
       <Dialog open={isScannerOpen} onClose={() => setIsScannerOpen(false)} fullWidth>
         <DialogTitle>Scan Barcode</DialogTitle>
         <DialogContent>

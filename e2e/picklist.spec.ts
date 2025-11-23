@@ -53,4 +53,32 @@ test.describe('Active pick list', () => {
 
     await expect(page.getByText('Playwright Cola Zero')).toBeVisible();
   });
+
+  test('toggles a product to picked and updates status indicators', async ({ page }) => {
+    await page.goto('/');
+
+    await page.getByRole('link', { name: 'Create Pick List' }).click();
+    await page.getByLabel('Area').click();
+    await page.getByRole('option', { name: areaName }).first().click();
+    await page.getByRole('button', { name: 'Save Pick List' }).click();
+
+    await expect(page.getByRole('heading', { name: `${areaName} List` })).toBeVisible();
+
+    const searchInput = page.getByPlaceholder('Search products');
+    await searchInput.click();
+    await searchInput.fill(additionalProduct);
+    await page
+      .getByRole('option', { name: new RegExp(`${additionalProduct} \\(${areaName}\\)`, 'i') })
+      .first()
+      .click();
+
+    const pickedToggle = page.getByLabel('Toggle picked status');
+    await expect(pickedToggle).not.toBeChecked();
+    await pickedToggle.click();
+    await expect(pickedToggle).toBeChecked();
+
+    const showPickedToggle = page.getByLabel('Show picked');
+    await expect(showPickedToggle).toBeChecked();
+    await expect(showPickedToggle).toBeDisabled();
+  });
 });

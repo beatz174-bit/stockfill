@@ -1,4 +1,4 @@
-import { Add, Delete, Remove, SwapHoriz } from '@mui/icons-material';
+import { Add, Delete, Inventory2, Remove, SwapHoriz } from '@mui/icons-material';
 import {
   Button,
   Checkbox,
@@ -79,7 +79,7 @@ export const PickItemRow = ({
           color={item.is_carton ? 'primary' : 'default'}
           onClick={onToggleCarton}
         >
-          <SwapHoriz />
+          {item.is_carton ? <Inventory2 /> : <SwapHoriz />}
         </IconButton>
         <IconButton
           aria-label="Decrease quantity"

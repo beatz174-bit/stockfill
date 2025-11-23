@@ -115,6 +115,16 @@ export const ActivePickListScreen = () => {
     await db.pickItems.delete(itemId);
   };
 
+  const handleMarkAllPicked = async () => {
+    setShowPicked(true);
+    const timestamp = Date.now();
+    await Promise.all(
+      items.map((item) =>
+        db.pickItems.update(item.id, { status: 'picked', updated_at: timestamp }),
+      ),
+    );
+  };
+
   const addOrUpdateItem = async (product: Product) => {
     if (!id) return;
 
@@ -241,16 +251,20 @@ export const ActivePickListScreen = () => {
                 <FormControlLabel value="cartons" control={<Radio />} label="Cartons" />
                 <FormControlLabel value="units" control={<Radio />} label="Units" />
               </RadioGroup>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={showPicked}
-                    onChange={(event) => setShowPicked(event.target.checked)}
-                  />
-                }
-                label="Show picked"
-                sx={{ ml: { xs: 0, sm: 2 } }}
-              />
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: { xs: 0, sm: 2 } }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={showPicked}
+                      onChange={(event) => setShowPicked(event.target.checked)}
+                    />
+                  }
+                  label="Show picked"
+                />
+                <Button variant="contained" size="small" onClick={handleMarkAllPicked}>
+                  Pick Complete
+                </Button>
+              </Stack>
             </Stack>
           </FormControl>
         </Stack>

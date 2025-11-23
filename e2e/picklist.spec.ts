@@ -108,6 +108,9 @@ test.describe('Active pick list', () => {
     await expect(page.getByText('Playwright Cola Zero')).toBeVisible();
   });
 
+  test('toggles a product to picked and updates status indicators', async ({ page }) => {
+    await page.goto('/');
+
   test('marks every item as picked when completing the pick list', async ({ page }) => {
     await page.goto('/');
 
@@ -166,6 +169,14 @@ test.describe('Active pick list', () => {
       .first()
       .click();
 
+    const pickedToggle = page.getByLabel('Toggle picked status');
+    await expect(pickedToggle).not.toBeChecked();
+    await pickedToggle.click();
+    await expect(pickedToggle).toBeChecked();
+
+    const showPickedToggle = page.getByLabel('Show picked');
+    await expect(showPickedToggle).toBeChecked();
+    await expect(showPickedToggle).toBeDisabled();
     const increaseButton = page.getByLabel('Increase quantity');
     await increaseButton.click();
     await expect(page.getByText('Qty: 2 unit')).toBeVisible();

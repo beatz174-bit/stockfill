@@ -180,4 +180,31 @@ describe('ActivePickListScreen product search', () => {
     await user.click(togglePicked);
     expect(screen.getByText('Cola')).toBeVisible();
   });
+
+  it('disables show picked toggle when all items are picked', async () => {
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-1',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        is_carton: false,
+        status: 'picked',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const togglePicked = screen.getByLabelText(/show picked/i);
+    expect(togglePicked).toBeDisabled();
+    expect(togglePicked).toBeChecked();
+  });
 });

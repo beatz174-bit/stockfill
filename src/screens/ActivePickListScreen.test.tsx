@@ -355,8 +355,9 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
+    expect(screen.getByRole('radio', { name: /all/i })).toBeChecked();
     expect(screen.getByRole('radio', { name: /cartons/i })).toBeDisabled();
-    expect(screen.getByRole('radio', { name: /units/i })).toBeEnabled();
+    expect(screen.getByRole('radio', { name: /units/i })).toBeDisabled();
   });
 
   it('resets the filter when the selected packaging type is unavailable', async () => {
@@ -418,7 +419,8 @@ describe('ActivePickListScreen product search', () => {
     );
 
     await waitFor(() => expect(screen.getByRole('radio', { name: /cartons/i })).toBeDisabled());
-    expect(screen.getByRole('radio', { name: /units/i })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /all/i })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /units/i })).toBeDisabled();
   });
 
   it('hides picked items when show picked is unchecked', async () => {

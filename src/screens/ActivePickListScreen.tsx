@@ -100,6 +100,8 @@ export const ActivePickListScreen = () => {
 
   const hasCartonItems = useMemo(() => items.some((item) => item.is_carton), [items]);
   const hasUnitItems = useMemo(() => items.some((item) => !item.is_carton), [items]);
+  const packagingTypeCount = Number(hasCartonItems) + Number(hasUnitItems);
+  const singlePackagingType = packagingTypeCount === 1;
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -125,12 +127,20 @@ export const ActivePickListScreen = () => {
   }, [allItemsPicked, showPicked]);
 
   useEffect(() => {
-    if (itemFilter === 'cartons' && !hasCartonItems) {
-      setItemFilter(hasUnitItems ? 'units' : 'all');
-    } else if (itemFilter === 'units' && !hasUnitItems) {
-      setItemFilter(hasCartonItems ? 'cartons' : 'all');
+    if (packagingTypeCount <= 1) {
+      if (itemFilter !== 'all') {
+        setItemFilter('all');
+      }
+
+      return;
     }
-  }, [itemFilter, hasCartonItems, hasUnitItems]);
+
+    if (itemFilter === 'cartons' && !hasCartonItems) {
+      setItemFilter('units');
+    } else if (itemFilter === 'units' && !hasUnitItems) {
+      setItemFilter('cartons');
+    }
+  }, [itemFilter, hasCartonItems, hasUnitItems, packagingTypeCount]);
 
   const visibleItems = useMemo(() => {
     let filteredItems = showPicked
@@ -326,13 +336,13 @@ export const ActivePickListScreen = () => {
                   value="cartons"
                   control={<Radio />}
                   label="Cartons"
-                  disabled={!hasCartonItems}
+                  disabled={singlePackagingType || !hasCartonItems}
                 />
                 <FormControlLabel
                   value="units"
                   control={<Radio />}
                   label="Units"
-                  disabled={!hasUnitItems}
+                  disabled={singlePackagingType || !hasUnitItems}
                 />
               </RadioGroup>
               <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: { xs: 0, sm: 2 } }}>

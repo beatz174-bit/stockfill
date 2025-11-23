@@ -113,11 +113,16 @@ Dexie tables must be implemented exactly as follows:
     id: string
     pick_list_id: string
     product_id: string
-    quantity_units: number
-    quantity_bulk: number
+    quantity: number
+    is_carton: boolean
     status: "pending" | "picked" | "skipped"
     created_at: number
     updated_at: number
+
+Pick items record a single packaging type per row: set `is_carton` to `true` when counting
+cartons (using the product's `bulk_name`) or `false` for single units (using `unit_type`). If
+both units and cartons are needed for the same product, store them as two PickItem records so
+quantities remain distinct.
 
 ------------------------------------------------------------------------
 
@@ -152,8 +157,8 @@ Dexie tables must be implemented exactly as follows:
 ### ActivePickListScreen
 
 -   List of PickItems\
--   Tap = +1 unit\
--   Long-press = +1 bulk\
+-   Tap = +1 of the item's unit type\
+-   Long-press = +1 of the item's unit type\
 -   Swipe left = mark picked\
 -   Swipe right = delete\
 -   Add Item button\
@@ -164,7 +169,7 @@ Dexie tables must be implemented exactly as follows:
 -   Search\
 -   Category filter\
 -   Scan barcode\
--   Increment units & bulk\
+-   Increment units & cartons separately (saved as distinct PickItems)\
 -   Add to pick list
 
 ### ManageProductsScreen
@@ -192,11 +197,11 @@ Dexie tables must be implemented exactly as follows:
 
 ### Tap
 
-Increase `quantity_units` by **1**.
+Increase `quantity` by **1** for the tapped item's unit type.
 
 ### Long Press
 
-Increase `quantity_bulk` by **1** using a shared `useLongPress()` hook.
+Increase `quantity` by **1** using a shared `useLongPress()` hook.
 
 ### Swipe Left
 

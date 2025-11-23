@@ -1,6 +1,7 @@
 import {
   Autocomplete,
   Button,
+  Checkbox,
   Container,
   FormControl,
   FormControlLabel,
@@ -32,6 +33,7 @@ export const ActivePickListScreen = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [query, setQuery] = useState('');
   const [itemFilter, setItemFilter] = useState<'all' | 'cartons' | 'units'>('all');
+  const [showPicked, setShowPicked] = useState(true);
 
   const areaName = useMemo(
     () => areas.find((area) => area.id === pickList?.area_id)?.name ?? 'Area',
@@ -56,16 +58,18 @@ export const ActivePickListScreen = () => {
   }, [filteredProducts, selectedProduct]);
 
   const visibleItems = useMemo(() => {
+    let filteredItems = showPicked ? items : items.filter((item) => item.status !== 'picked');
+
     if (itemFilter === 'cartons') {
-      return items.filter((item) => item.is_carton);
+      return filteredItems.filter((item) => item.is_carton);
     }
 
     if (itemFilter === 'units') {
-      return items.filter((item) => !item.is_carton);
+      return filteredItems.filter((item) => !item.is_carton);
     }
 
-    return items;
-  }, [itemFilter, items]);
+    return filteredItems;
+  }, [itemFilter, items, showPicked]);
 
   const handleIncrementQuantity = async (itemId: string) => {
     const existing = await db.pickItems.get(itemId);
@@ -194,6 +198,15 @@ export const ActivePickListScreen = () => {
           <Typography variant="caption" color="text.secondary">
             Selecting a product immediately adds it to the pick list.
           </Typography>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={showPicked}
+                onChange={(event) => setShowPicked(event.target.checked)}
+              />
+            }
+            label="Show picked"
+          />
           <FormControl>
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
               Filter list by packaging

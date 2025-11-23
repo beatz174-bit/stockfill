@@ -17,7 +17,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { ChangeEvent, useEffect, useState } from 'react';
-import { DEFAULT_UNIT_TYPE, Product } from '../models/Product';
+import { Product } from '../models/Product';
 import { BarcodeScannerView } from './BarcodeScannerView';
 
 interface ProductRowProps {

@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 
 const areaName = 'Drinks';
 const additionalProduct = 'Pump 750';
+const listProductName = 'List Flow Soda';
+const updatedListProductName = 'List Flow Soda Zero';
 const searchTerm = 'E2E Search';
 const matchingProducts = [`${searchTerm} Alpha`, `${searchTerm} Beta`];
 const nonMatchingProduct = 'E2E Other Gamma';
@@ -112,11 +114,40 @@ test.describe('Active pick list', () => {
     await expect(page.getByText('Playwright Cola Zero')).toBeVisible();
   });
 
+  test('adds, edits, and deletes a product directly from the list', async ({ page }) => {
   test('filters the manage products list using the search bar', async ({ page }) => {
     await page.goto('/');
 
     await page.getByRole('link', { name: 'Manage Products' }).click();
 
+    await page.getByLabel('Name').click();
+    await page.getByLabel('Name').fill(listProductName);
+    await page.getByLabel('Add product category').click();
+    await page.getByRole('option', { name: areaName }).click();
+    await page.getByRole('button', { name: 'Save Product' }).click();
+
+    await expect(page.getByText('Product added.')).toBeVisible();
+    await expect(page.getByRole('button', { name: `Edit ${listProductName}` })).toBeVisible();
+
+    await page.getByRole('button', { name: `Edit ${listProductName}` }).click();
+
+    const editListNameField = page.getByLabel('Name').last();
+    await expect(editListNameField).toBeVisible();
+    await editListNameField.fill(updatedListProductName);
+
+    const listSaveButton = page.getByLabel('Save product');
+    await expect(listSaveButton).toBeEnabled();
+    await listSaveButton.click();
+
+    await expect(page.getByText('Product updated.')).toBeVisible();
+    await expect(page.getByRole('button', { name: `Edit ${updatedListProductName}` })).toBeVisible();
+    await expect(page.getByRole('button', { name: `Edit ${listProductName}` })).toHaveCount(0);
+
+    await page.getByRole('button', { name: `Delete ${updatedListProductName}` }).click();
+
+    await expect(page.getByText('Product deleted.')).toBeVisible();
+    await expect(page.getByRole('button', { name: `Edit ${updatedListProductName}` })).toHaveCount(0);
+    await expect(page.getByText(updatedListProductName)).toHaveCount(0);
     const addProduct = async (name: string) => {
       await page.getByLabel('Name').fill(name);
       await page.getByLabel('Add product category').click();

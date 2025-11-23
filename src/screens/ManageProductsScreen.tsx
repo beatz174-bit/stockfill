@@ -352,15 +352,21 @@ export const ManageProductsScreen = () => {
             Save Product
           </Button>
         </Stack>
-        {sortedFiltered.map((product) => (
-          <ProductRow
-            key={product.id}
-            product={product}
-            categories={categoryOptions}
-            onSave={updateProduct}
-            onDelete={deleteProduct}
-          />
-        ))}
+        {sortedFiltered.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            No products match your search and category filter.
+          </Typography>
+        ) : (
+          sortedFiltered.map((product) => (
+            <ProductRow
+              key={product.id}
+              product={product}
+              categories={categoryOptions}
+              onSave={updateProduct}
+              onDelete={deleteProduct}
+            />
+          ))
+        )}
       </Stack>
       <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} fullWidth>
         <DialogTitle>Scan Barcode</DialogTitle>

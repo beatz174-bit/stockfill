@@ -12,7 +12,10 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        executablePath: process.env.CHROME_PATH,
+      },
     },
   ],
   webServer: {

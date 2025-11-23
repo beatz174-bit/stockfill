@@ -20,7 +20,10 @@
       "type": "node-terminal",
       "request": "launch",
       "command": "npm run test:e2e",
-      "cwd": "${workspaceFolder}"
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "CHROME_PATH": "<path to flatpak chrome wrapper>"
+      }
     }
   ]
 }

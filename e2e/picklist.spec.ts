@@ -53,4 +53,37 @@ test.describe('Active pick list', () => {
 
     await expect(page.getByText('Playwright Cola Zero')).toBeVisible();
   });
+
+  test('lets a user mark an item as picked then revert it back to pending', async ({ page }) => {
+    await page.goto('/');
+
+    await page.getByRole('link', { name: 'Create Pick List' }).click();
+    await page.getByLabel('Area').click();
+    await page.getByRole('option', { name: areaName }).first().click();
+    await page.getByRole('button', { name: 'Save Pick List' }).click();
+
+    const searchInput = page.getByPlaceholder('Search products');
+    await searchInput.click();
+    await searchInput.fill(additionalProduct);
+    await page
+      .getByRole('option', { name: new RegExp(`${additionalProduct} \\(${areaName}\\)`, 'i') })
+      .first()
+      .click();
+
+    const itemStatusToggle = page.getByLabel('Toggle picked status').first();
+    const showPickedToggle = page.getByLabel('Show picked');
+
+    await expect(itemStatusToggle).not.toBeChecked();
+    await expect(showPickedToggle).toBeEnabled();
+
+    await itemStatusToggle.check();
+
+    await expect(itemStatusToggle).toBeChecked();
+    await expect(showPickedToggle).toBeDisabled();
+
+    await itemStatusToggle.uncheck();
+
+    await expect(itemStatusToggle).not.toBeChecked();
+    await expect(showPickedToggle).toBeEnabled();
+  });
 });

@@ -90,6 +90,64 @@ export class StockFillDB extends Dexie {
       pickItems: 'id, pick_list_id, product_id, status, created_at, updated_at',
       categories: 'id, name, created_at, updated_at',
     });
+
+    this.version(5)
+      .stores({
+        products: 'id, name, category, &barcode, archived, created_at, updated_at',
+        areas: 'id, name, created_at, updated_at',
+        pickLists: 'id, area_id, created_at, completed_at',
+        pickItems:
+          'id, pick_list_id, product_id, status, is_carton, quantity, created_at, updated_at',
+        categories: 'id, name, created_at, updated_at',
+      })
+      .upgrade(async (tx) => {
+        const items = await tx.table('pickItems').toArray();
+        const now = Date.now();
+
+        await Promise.all(
+          items.map(async (item) => {
+            const hasNewFields =
+              typeof (item as PickItem).quantity === 'number' &&
+              typeof (item as PickItem).is_carton === 'boolean';
+
+            if (hasNewFields) return undefined;
+
+            const legacyUnits = Number((item as PickItem).quantity_units ?? 0);
+            const legacyBulk = Number((item as PickItem).quantity_bulk ?? 0);
+
+            if (legacyUnits > 0 && legacyBulk > 0) {
+              await tx.table('pickItems').update(item.id, {
+                quantity: legacyUnits,
+                is_carton: false,
+                updated_at: now,
+              });
+
+              return tx.table('pickItems').add({
+                ...item,
+                id: uuidv4(),
+                quantity: legacyBulk,
+                is_carton: true,
+                created_at: (item as PickItem).created_at ?? now,
+                updated_at: now,
+              });
+            }
+
+            if (legacyBulk > 0) {
+              return tx.table('pickItems').update(item.id, {
+                quantity: legacyBulk,
+                is_carton: true,
+                updated_at: now,
+              });
+            }
+
+            return tx.table('pickItems').update(item.id, {
+              quantity: legacyUnits,
+              is_carton: false,
+              updated_at: now,
+            });
+          }),
+        );
+      });
   }
 }
 

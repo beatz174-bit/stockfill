@@ -1,8 +1,7 @@
-import { Chip, Stack, Typography } from '@mui/material';
-import { PickItem, PickItemStatus } from '../models/PickItem';
+import { Add, Delete } from '@mui/icons-material';
+import { Button, Checkbox, Stack, Typography } from '@mui/material';
+import { PickItem } from '../models/PickItem';
 import { Product } from '../models/Product';
-import { useLongPress } from '../hooks/useLongPress';
-import { useSwipe } from '../hooks/useSwipe';
 
 interface PickItemRowProps {
   item: PickItem;
@@ -12,12 +11,6 @@ interface PickItemRowProps {
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
 }
-
-const statusColor: Record<PickItemStatus, 'default' | 'success' | 'warning'> = {
-  pending: 'default',
-  picked: 'success',
-  skipped: 'warning',
-};
 
 export const PickItemRow = ({
   item,
@@ -39,8 +32,6 @@ export const PickItemRow = ({
       justifyContent="space-between"
       spacing={1}
       sx={{ p: 1, borderRadius: 1, bgcolor: 'background.paper', boxShadow: 1 }}
-      {...longPressHandlers}
-      {...swipeHandlers}
     >
       <div>
         <Typography variant="subtitle1">{product?.name ?? 'Unknown product'}</Typography>

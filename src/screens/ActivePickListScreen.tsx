@@ -23,7 +23,7 @@ export const ActivePickListScreen = () => {
     const existing = await db.pickItems.get(itemId);
     if (!existing) return;
     await db.pickItems.update(itemId, {
-      quantity_units: existing.quantity_units + 1,
+      quantity: existing.quantity + 1,
       updated_at: Date.now(),
     });
   };
@@ -41,7 +41,7 @@ export const ActivePickListScreen = () => {
     await db.pickItems.update(itemId, { status: 'picked', updated_at: Date.now() });
   };
 
-  const handleSwipeRight = async (itemId: string) => {
+  const handleDeleteItem = async (itemId: string) => {
     await db.pickItems.delete(itemId);
   };
 

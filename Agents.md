@@ -113,11 +113,16 @@ Dexie tables must be implemented exactly as follows:
     id: string
     pick_list_id: string
     product_id: string
-    quantity_units: number
-    quantity_bulk: number
+    quantity: number
+    is_carton: boolean
     status: "pending" | "picked" | "skipped"
     created_at: number
     updated_at: number
+
+Pick items record a single packaging type per row: set `is_carton` to `true` when counting
+cartons (using the product's `bulk_name`) or `false` for single units (using `unit_type`). If
+both units and cartons are needed for the same product, store them as two PickItem records so
+quantities remain distinct.
 
 ------------------------------------------------------------------------
 
@@ -152,10 +157,8 @@ Dexie tables must be implemented exactly as follows:
 ### ActivePickListScreen
 
 -   List of PickItems\
--   Tap = +1 unit\
--   Long-press = +1 bulk\
--   Swipe left = mark picked\
--   Swipe right = delete\
+-   Use the checkbox in each row to toggle between pending and picked without removing the item\
+-   Row controls provide explicit +1 unit and +1 bulk actions (no long-press or swipe)\
 -   Add Item button\
 -   Complete List button
 
@@ -164,7 +167,7 @@ Dexie tables must be implemented exactly as follows:
 -   Search\
 -   Category filter\
 -   Scan barcode\
--   Increment units & bulk\
+-   Increment units & cartons separately (saved as distinct PickItems)\
 -   Add to pick list
 
 ### ManageProductsScreen
@@ -188,23 +191,15 @@ Dexie tables must be implemented exactly as follows:
 
 ------------------------------------------------------------------------
 
-## 6. Gestures & Interaction Rules
+## 6. Interaction Rules
 
-### Tap
+### Checkbox Toggle
 
-Increase `quantity_units` by **1**.
+Use a checkbox in each pick item row to switch between `"pending"` and `"picked"` without removing the item from the list. Picked rows must remain visible with clear status cues (e.g., checkmarks/strikethrough).
 
-### Long Press
+### Increment Controls
 
-Increase `quantity_bulk` by **1** using a shared `useLongPress()` hook.
-
-### Swipe Left
-
-Mark item as `"picked"`.
-
-### Swipe Right
-
-Delete item.
+Provide explicit controls to increase `quantity_units` and `quantity_bulk` (no long-press). Avoid swipe gestures for status changes or deletion on pick item rows.
 
 ### Barcode Scanning
 
@@ -318,6 +313,7 @@ Expose port 8080:
 -   Product creation must be minimal friction\
 -   Auto-save pick lists\
 -   Smooth animations on long press
+-   Pick list rows use checkboxes to toggle items between pending and picked; no swipe or long-press gestures should be required to update status, and picked rows stay visible with clear status cues
 
 ------------------------------------------------------------------------
 

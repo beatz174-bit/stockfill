@@ -4,9 +4,12 @@ export interface PickItem {
   id: string;
   pick_list_id: string;
   product_id: string;
-  quantity_units: number;
-  quantity_bulk: number;
+  quantity: number;
+  is_carton: boolean;
   status: PickItemStatus;
   created_at: number;
   updated_at: number;
+  // Legacy fields retained for backward compatibility with pre-v5 data.
+  quantity_units?: number;
+  quantity_bulk?: number;
 }

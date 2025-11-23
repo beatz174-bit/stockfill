@@ -5,15 +5,18 @@ import {
   Container,
   FormControl,
   FormControlLabel,
+  IconButton,
   InputAdornment,
   Radio,
   RadioGroup,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import SearchIcon from '@mui/icons-material/Search';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useAreas, usePickItems, usePickList, useProducts } from '../hooks/dataHooks';
@@ -189,6 +192,23 @@ export const ActivePickListScreen = () => {
                         <SearchIcon />
                       </InputAdornment>
                       {params.InputProps.startAdornment}
+                    </>
+                  ),
+                  endAdornment: (
+                    <>
+                      {params.InputProps.endAdornment}
+                      <InputAdornment position="end">
+                        <Tooltip title="Add a new product">
+                          <IconButton
+                            aria-label="Add product"
+                            component={RouterLink}
+                            to="/products"
+                            size="small"
+                          >
+                            <AddCircleOutlineIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </InputAdornment>
                     </>
                   ),
                 }}

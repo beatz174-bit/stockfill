@@ -4,6 +4,28 @@ const areaName = 'Drinks';
 const additionalProduct = 'Pump 750';
 
 test.describe('Active pick list', () => {
+  test('adds a product via search and renders it with quantity and packaging', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.getByRole('heading', { name: 'StockFill' })).toBeVisible();
+    await page.getByRole('link', { name: 'Create Pick List' }).click();
+    await page.getByLabel('Area').click();
+    await page.getByRole('option', { name: areaName }).first().click();
+    await page.getByRole('button', { name: 'Save Pick List' }).click();
+
+    await expect(page.getByRole('heading', { name: `${areaName} List` })).toBeVisible();
+
+    const searchInput = page.getByPlaceholder('Search products');
+    await searchInput.fill('Mount Franklin 600ml');
+    await page
+      .getByRole('option', { name: /Mount Franklin 600ml \(Drinks\)/i })
+      .first()
+      .click();
+
+    await expect(page.getByText('Mount Franklin 600ml', { exact: true })).toBeVisible();
+    await expect(page.getByText('Qty: 1 unit')).toBeVisible();
+  });
+
   test('creates a pick list and adds products from the search bar', async ({ page }) => {
     await page.goto('/');
 

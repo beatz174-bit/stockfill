@@ -76,5 +76,28 @@ describe('fetchProductFromOFF', () => {
 
     expect(result).toBeNull();
   });
+
+  it('returns null immediately when the barcode is empty', async () => {
+    const result = await fetchProductFromOFF('');
+
+    expect(result).toBeNull();
+  });
+
+  it('returns null when the browser is offline', async () => {
+    const originalNavigator = navigator;
+    Object.defineProperty(globalThis, 'navigator', {
+      value: { onLine: false },
+      configurable: true,
+    });
+
+    const result = await fetchProductFromOFF('123456');
+
+    expect(result).toBeNull();
+
+    Object.defineProperty(globalThis, 'navigator', {
+      value: originalNavigator,
+      configurable: true,
+    });
+  });
 });
 

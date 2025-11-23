@@ -32,4 +32,25 @@ test.describe('Active pick list', () => {
     await expect(page.getByText(additionalProduct).first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save and Return' })).toBeEnabled();
   });
+
+  test('allows adding and editing products from the manage products screen', async ({ page }) => {
+    await page.goto('/');
+
+    await page.getByRole('link', { name: 'Manage Products' }).click();
+
+    await page.getByLabel('Name').click();
+    await page.getByLabel('Name').fill('Playwright Cola');
+    await page.getByLabel('Category').click();
+    await page.getByRole('option', { name: 'Drinks' }).click();
+    await page.getByRole('button', { name: 'Save Product' }).click();
+
+    await expect(page.getByText('Product added.')).toBeVisible();
+    await expect(page.getByText('Playwright Cola')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Edit Playwright Cola' }).click();
+    await page.getByLabel('Name').nth(1).fill('Playwright Cola Zero');
+    await page.getByRole('button', { name: 'Save product' }).click();
+
+    await expect(page.getByText('Playwright Cola Zero')).toBeVisible();
+  });
 });

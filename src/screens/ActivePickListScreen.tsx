@@ -87,21 +87,44 @@ export const ActivePickListScreen = () => {
   }, [visibleItemsByStatus, productMap]);
 
   const sortedProducts = useMemo(() => {
-    const uniqueProducts = new Map<string, Product>();
+    const dedupedById = new Map<string, Product>();
 
     products.forEach((product) => {
-      const normalizedName = product.name.trim().toLowerCase();
-      const existing = uniqueProducts.get(normalizedName);
-
+      const existing = dedupedById.get(product.id);
       if (!existing || product.updated_at > existing.updated_at) {
-        uniqueProducts.set(normalizedName, product);
+        dedupedById.set(product.id, product);
       }
     });
 
-    return Array.from(uniqueProducts.values()).sort((a, b) =>
+    const dedupedByName = new Map<string, Product>();
+
+    dedupedById.forEach((product) => {
+      const normalizedName = product.name.trim().toLowerCase();
+      const existing = dedupedByName.get(normalizedName);
+
+      if (!existing || product.updated_at > existing.updated_at) {
+        dedupedByName.set(normalizedName, product);
+      }
+    });
+
+    return Array.from(dedupedByName.values()).sort((a, b) =>
       a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
     );
   }, [products]);
+
+  const categoryFilteredProducts = useMemo(() => {
+    if (!pickList?.categories || pickList.categories.length === 0) {
+      return sortedProducts;
+    }
+
+    const allowedCategories = new Set(
+      pickList.categories.map((category) => category.trim().toLowerCase()),
+    );
+
+    return sortedProducts.filter((product) =>
+      allowedCategories.has(product.category.trim().toLowerCase()),
+    );
+  }, [pickList?.categories, sortedProducts]);
 
   const hasCartonItems = useMemo(
     () => visibleItemsByStatus.some((item) => item.is_carton),

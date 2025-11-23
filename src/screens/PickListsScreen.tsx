@@ -125,6 +125,7 @@ export const PickListsScreen = () => {
                     </Typography>
                   </Stack>
                 }
+                secondaryTypographyProps={{ component: 'div' }}
               />
             </ListItemButton>
           </ListItem>

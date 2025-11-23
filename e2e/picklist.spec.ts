@@ -53,4 +53,43 @@ test.describe('Active pick list', () => {
 
     await expect(page.getByText('Playwright Cola Zero')).toBeVisible();
   });
+
+  test('adjusts item quantities with increment and decrement controls', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.getByRole('heading', { name: 'StockFill' })).toBeVisible();
+    await page.getByRole('link', { name: 'Create Pick List' }).click();
+    await page.getByLabel('Area').click();
+    await page.getByRole('option', { name: areaName }).first().click();
+    await page.getByRole('button', { name: 'Save Pick List' }).click();
+
+    await expect(page.getByRole('heading', { name: `${areaName} List` })).toBeVisible();
+
+    const searchInput = page.getByPlaceholder('Search products');
+    await searchInput.click();
+    await searchInput.fill(additionalProduct);
+    await page
+      .getByRole('option', { name: new RegExp(`${additionalProduct} \\(${areaName}\\)`, 'i') })
+      .first()
+      .click();
+
+    const quantityLabel = page.getByText('Qty: 1 Unit');
+    await expect(quantityLabel).toBeVisible();
+
+    await page.getByRole('button', { name: 'Increase quantity' }).click();
+    await expect(page.getByText('Qty: 2 Unit')).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByText('Qty: 2 Unit')).toBeVisible();
+
+    const decrementButton = page.getByRole('button', { name: 'Decrease quantity' });
+    await decrementButton.click();
+    await decrementButton.click();
+    await decrementButton.click();
+
+    await expect(page.getByText('Qty: 1 Unit')).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByText('Qty: 1 Unit')).toBeVisible();
+  });
 });

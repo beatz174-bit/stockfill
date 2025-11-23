@@ -19,8 +19,8 @@
     "path": "/mnt/server/github-repos/stockfill/android.keystore",
     "alias": "android"
   },
-  "appVersionName": "1",
-  "appVersionCode": 1,
+  "appVersionName": "3",
+  "appVersionCode": 3,
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://stockfill.lan.ddnsgeek.com/manifest.json",
@@ -42,5 +42,5 @@
   "fileHandlers": [],
   "launchHandlerClientMode": "",
   "displayOverride": [],
-  "appVersion": "1"
+  "appVersion": "3"
 }

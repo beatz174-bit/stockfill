@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.ddnsgeek.lan.stockfill.twa",
+      "sha256_cert_fingerprints": [
+        "E9:9D:1B:C9:75:3E:CF:5B:8B:CF:3D:92:26:82:C5:CE:06:7E:8B:FC:DC:9D:61:C0:04:B4:C4:9D:76:08:ED:AF"
+      ]
+    }
+  }
+]

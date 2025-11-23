@@ -303,10 +303,11 @@ export const ManageProductsScreen = () => {
           />
           <TextField
             select
-            label="Category"
+            label="Filter by category"
             value={selectedCategory}
             onChange={(event) => setSelectedCategory(event.target.value)}
             sx={{ minWidth: { sm: 180 } }}
+            inputProps={{ 'aria-label': 'Category filter' }}
           >
             <MenuItem value="all">All categories</MenuItem>
             {categoryOptions.map((cat) => (
@@ -347,7 +348,7 @@ export const ManageProductsScreen = () => {
           />
           <TextField
             select
-            label="Category"
+            label="Add product category"
             value={category}
             onChange={(event) => setCategory(event.target.value)}
             disabled={categoryOptions.length === 0}

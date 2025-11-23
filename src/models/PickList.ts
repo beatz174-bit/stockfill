@@ -4,4 +4,6 @@ export interface PickList {
   created_at: number;
   completed_at?: number;
   notes?: string;
+  categories: string[];
+  auto_add_new_products: boolean;
 }

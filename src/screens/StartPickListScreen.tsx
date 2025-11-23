@@ -66,12 +66,23 @@ export const StartPickListScreen = () => {
         (product) => selectedCategoryNames.includes(product.category) && !product.archived,
       );
 
+      const uniqueProducts: typeof productsInCategories = [];
+      const seenNames = new Set<string>();
+
+      productsInCategories.forEach((product) => {
+        const nameKey = product.name.toLowerCase();
+        if (!seenNames.has(nameKey)) {
+          seenNames.add(nameKey);
+          uniqueProducts.push(product);
+        }
+      });
+
       if (productsInCategories.length === 0) {
         return;
       }
 
       await db.pickItems.bulkAdd(
-        productsInCategories.map((product) => ({
+        uniqueProducts.map((product) => ({
           id: uuidv4(),
           pick_list_id: pickListId,
           product_id: product.id,

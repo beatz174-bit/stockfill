@@ -133,4 +133,36 @@ describe('StartPickListScreen', () => {
       expect(item.status).toBe('pending');
     });
   });
+
+  it('deduplicates products when selected categories include overlaps', async () => {
+    const user = userEvent.setup();
+    productsToArrayMock.mockResolvedValue([
+      ...productsMock,
+      { ...productsMock[0] },
+      { ...productsMock[1], id: 'prod-2-duplicate' },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <StartPickListScreen />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByLabelText(/area/i));
+    await user.click(screen.getByRole('option', { name: /front counter/i }));
+
+    await user.click(screen.getByRole('checkbox', { name: /drinks/i }));
+    await user.click(screen.getByRole('checkbox', { name: /snacks/i }));
+
+    await user.click(screen.getByRole('button', { name: /save pick list/i }));
+
+    await waitFor(() => expect(pickItemsBulkAddMock).toHaveBeenCalled());
+
+    const pickItems = pickItemsBulkAddMock.mock.calls[0][0];
+    const uniqueProductIds = new Set(pickItems.map((item: any) => item.product_id));
+
+    expect(pickItems).toHaveLength(2);
+    expect(uniqueProductIds.size).toBe(2);
+    expect(uniqueProductIds).toEqual(new Set(['prod-1', 'prod-2']));
+  });
 });

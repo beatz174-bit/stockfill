@@ -199,7 +199,7 @@ Use a checkbox in each pick item row to switch between `"pending"` and `"picked"
 
 ### Increment Controls
 
-Provide explicit controls to increase `quantity_units` and `quantity_bulk` (no long-press). Avoid swipe gestures for status changes or deletion on pick item rows.
+Provide explicit controls to adjust the pick item's `quantity` and to toggle between unit and carton counts (no long-press). Avoid swipe gestures for status changes or deletion on pick item rows.
 
 ### Barcode Scanning
 

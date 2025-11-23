@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useAreas, usePickItems, usePickList, useProducts } from '../hooks/dataHooks';
 import { useDatabase } from '../context/DBProvider';
 import { PickItemRow } from '../components/PickItemRow';
+import { PickItem } from '../models/PickItem';
 
 export const ActivePickListScreen = () => {
   const { id } = useParams();
@@ -31,14 +32,17 @@ export const ActivePickListScreen = () => {
   const handleToggleCarton = async (itemId: string) => {
     const existing = await db.pickItems.get(itemId);
     if (!existing) return;
+
     await db.pickItems.update(itemId, {
-      quantity_bulk: existing.quantity_bulk > 0 ? 0 : 1,
+      is_carton: !existing.is_carton,
+      quantity: existing.quantity || 1,
       updated_at: Date.now(),
     });
   };
 
-  const handleSwipeLeft = async (itemId: string) => {
-    await db.pickItems.update(itemId, { status: 'picked', updated_at: Date.now() });
+  const handleStatusChange = async (itemId: string, status: PickItem['status']) => {
+    const nextStatus = status === 'picked' ? 'picked' : 'pending';
+    await db.pickItems.update(itemId, { status: nextStatus, updated_at: Date.now() });
   };
 
   const handleDeleteItem = async (itemId: string) => {
@@ -70,8 +74,8 @@ export const ActivePickListScreen = () => {
             product={products.find((p) => p.id === item.product_id)}
             onIncrementQuantity={() => handleIncrementQuantity(item.id)}
             onToggleCarton={() => handleToggleCarton(item.id)}
-            onSwipeLeft={() => handleSwipeLeft(item.id)}
-            onSwipeRight={() => handleSwipeRight(item.id)}
+            onStatusChange={(status) => handleStatusChange(item.id, status)}
+            onDelete={() => handleDeleteItem(item.id)}
           />
         ))}
       </Stack>

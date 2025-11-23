@@ -53,4 +53,44 @@ test.describe('Active pick list', () => {
 
     await expect(page.getByText('Playwright Cola Zero')).toBeVisible();
   });
+
+  test('marks every item as picked when completing the pick list', async ({ page }) => {
+    await page.goto('/');
+
+    await page.getByRole('link', { name: 'Create Pick List' }).click();
+    await page.getByLabel('Area').click();
+    await page.getByRole('option', { name: areaName }).first().click();
+    await page.getByRole('button', { name: 'Save Pick List' }).click();
+
+    const productsToAdd = ['Pump 750', 'Nutrient Water Focus', 'Mount Franklin 600ml'];
+    const searchInput = page.getByPlaceholder('Search products');
+
+    for (const productName of productsToAdd) {
+      await searchInput.click();
+      await searchInput.fill(productName);
+      await page
+        .getByRole('option', { name: new RegExp(`${productName} \\(${areaName}\\)`, 'i') })
+        .first()
+        .click();
+
+      await expect(page.getByText(productName).first()).toBeVisible();
+    }
+
+    const pickStatusToggles = page.getByLabel('Toggle picked status');
+    await expect(pickStatusToggles).toHaveCount(productsToAdd.length);
+
+    for (let index = 0; index < productsToAdd.length; index += 1) {
+      await expect(pickStatusToggles.nth(index)).not.toBeChecked();
+    }
+
+    await page.getByRole('button', { name: 'Pick Complete' }).click();
+
+    for (let index = 0; index < productsToAdd.length; index += 1) {
+      await expect(pickStatusToggles.nth(index)).toBeChecked();
+    }
+
+    const showPickedToggle = page.getByRole('checkbox', { name: 'Show picked' });
+    await expect(showPickedToggle).toBeChecked();
+    await expect(showPickedToggle).toBeDisabled();
+  });
 });

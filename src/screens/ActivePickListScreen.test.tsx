@@ -4,37 +4,52 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ActivePickListScreen } from './ActivePickListScreen';
 import { PickItem } from '../models/PickItem';
+import { Product } from '../models/Product';
 
 const addMock = vi.fn();
 const updateMock = vi.fn();
 const pickItemsMock = vi.fn<PickItem[], []>();
+const productsMock = vi.fn<Product[], []>();
+
+const defaultProducts: Product[] = [
+  {
+    id: 'prod-1',
+    name: 'Cola',
+    category: 'Drinks',
+    unit_type: 'unit',
+    bulk_name: 'box',
+    barcode: '111',
+    archived: false,
+    created_at: 0,
+    updated_at: 0,
+  },
+  {
+    id: 'prod-2',
+    name: 'Chips',
+    category: 'Snacks',
+    unit_type: 'unit',
+    bulk_name: 'box',
+    barcode: '222',
+    archived: false,
+    created_at: 0,
+    updated_at: 0,
+  },
+  {
+    id: 'prod-3',
+    name: 'Apple Juice',
+    category: 'Drinks',
+    unit_type: 'unit',
+    bulk_name: 'box',
+    barcode: '333',
+    archived: false,
+    created_at: 0,
+    updated_at: 0,
+  },
+];
 
 vi.mock('../hooks/dataHooks', () => ({
   usePickItems: () => pickItemsMock(),
-  useProducts: () => [
-    {
-      id: 'prod-1',
-      name: 'Cola',
-      category: 'Drinks',
-      unit_type: 'unit',
-      bulk_name: 'box',
-      barcode: '111',
-      archived: false,
-      created_at: 0,
-      updated_at: 0,
-    },
-    {
-      id: 'prod-2',
-      name: 'Chips',
-      category: 'Snacks',
-      unit_type: 'unit',
-      bulk_name: 'box',
-      barcode: '222',
-      archived: false,
-      created_at: 0,
-      updated_at: 0,
-    },
-  ],
+  useProducts: () => productsMock(),
   usePickList: () => ({ id: 'list-1', area_id: 'area-1', created_at: 0 }),
   useAreas: () => [{ id: 'area-1', name: 'Front Counter', created_at: 0, updated_at: 0 }],
 }));
@@ -55,6 +70,7 @@ describe('ActivePickListScreen product search', () => {
     addMock.mockReset();
     updateMock.mockReset();
     pickItemsMock.mockReturnValue([]);
+    productsMock.mockReturnValue(defaultProducts);
   });
 
   it('filters the product list based on the search query', async () => {
@@ -98,6 +114,58 @@ describe('ActivePickListScreen product search', () => {
       quantity: 1,
       is_carton: false,
     });
+  });
+
+  it('sorts the product options alphabetically', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const combobox = screen.getByRole('combobox');
+    await user.click(combobox);
+
+    const listbox = await screen.findByRole('listbox');
+    const options = within(listbox).getAllByRole('option');
+
+    expect(options.map((option) => option.textContent)).toEqual([
+      'Apple Juice (Drinks)',
+      'Chips (Snacks)',
+      'Cola (Drinks)',
+    ]);
+  });
+
+  it('deduplicates product options with the same id', async () => {
+    const duplicateProducts = [...defaultProducts, { ...defaultProducts[0] }];
+    productsMock.mockReturnValue(duplicateProducts);
+
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const combobox = screen.getByRole('combobox');
+    await user.click(combobox);
+
+    const listbox = await screen.findByRole('listbox');
+    const options = within(listbox).getAllByRole('option');
+
+    expect(options).toHaveLength(3);
+    expect(options.map((option) => option.textContent)).toEqual([
+      'Apple Juice (Drinks)',
+      'Chips (Snacks)',
+      'Cola (Drinks)',
+    ]);
   });
 
   it('updates an existing pick item when the same packaging is selected', async () => {

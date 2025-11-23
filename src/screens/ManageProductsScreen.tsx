@@ -29,6 +29,7 @@ export const ManageProductsScreen = () => {
   const categories = useCategories();
   const location = useLocation();
   const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [barcode, setBarcode] = useState('');
@@ -139,12 +140,22 @@ export const ManageProductsScreen = () => {
     }
   }, [category, categoryOptions]);
 
+  useEffect(() => {
+    if (selectedCategory !== 'all' && !categoryOptions.includes(selectedCategory)) {
+      setSelectedCategory('all');
+    }
+  }, [categoryOptions, selectedCategory]);
+
   const filtered = useMemo(
     () =>
-      products.filter((p) =>
-        `${p.name} ${p.category}`.toLowerCase().includes(search.toLowerCase()),
-      ),
-    [products, search],
+      products.filter((p) => {
+        const matchesSearch = `${p.name} ${p.category}`
+          .toLowerCase()
+          .includes(search.toLowerCase());
+        const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+      }),
+    [products, search, selectedCategory],
   );
 
   const sortedFiltered = useMemo(
@@ -245,12 +256,29 @@ export const ManageProductsScreen = () => {
         <Button component={RouterLink} to="/categories" variant="outlined" sx={{ alignSelf: 'flex-start' }}>
           Edit Categories
         </Button>
-        <TextField
-          placeholder="Search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          InputProps={{ startAdornment: <InputAdornment position="start">{<SearchIcon />}</InputAdornment> }}
-        />
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+          <TextField
+            placeholder="Search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            InputProps={{ startAdornment: <InputAdornment position="start">{<SearchIcon />}</InputAdornment> }}
+            fullWidth
+          />
+          <TextField
+            select
+            label="Category"
+            value={selectedCategory}
+            onChange={(event) => setSelectedCategory(event.target.value)}
+            sx={{ minWidth: { sm: 180 } }}
+          >
+            <MenuItem value="all">All categories</MenuItem>
+            {categoryOptions.map((cat) => (
+              <MenuItem key={cat} value={cat}>
+                {cat}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Stack>
         <Stack spacing={1}>
           <Typography variant="subtitle1">Add Product</Typography>
           <TextField

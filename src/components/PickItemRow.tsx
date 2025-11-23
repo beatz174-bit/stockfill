@@ -1,4 +1,4 @@
-import { Add, Close, Delete, Inventory2, Remove } from '@mui/icons-material';
+import { Add, Close, Delete, Inventory2, MoreHoriz, Remove } from '@mui/icons-material';
 import {
   Button,
   Checkbox,
@@ -11,10 +11,11 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { useState } from 'react';
 import { PickItem } from '../models/PickItem';
-import { Product } from '../models/Product';
+import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE, Product } from '../models/Product';
 
 interface PickItemRowProps {
   item: PickItem;
@@ -37,9 +38,11 @@ export const PickItemRow = ({
 }: PickItemRowProps) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('sm'));
   const packagingLabel = item.is_carton
-    ? product?.bulk_name ?? 'Carton'
-    : product?.unit_type ?? 'Unit';
+    ? product?.bulk_name ?? DEFAULT_BULK_NAME
+    : product?.unit_type ?? DEFAULT_UNIT_TYPE;
 
   const toggleStatus = (checked: boolean) => {
     onStatusChange(checked ? 'picked' : 'pending');
@@ -50,6 +53,8 @@ export const PickItemRow = ({
     setIsConfirmOpen(false);
   };
 
+  const openControls = () => setIsControlsOpen(true);
+
   return (
     <Stack
       direction="row"
@@ -57,21 +62,25 @@ export const PickItemRow = ({
       justifyContent="space-between"
       spacing={1.5}
       sx={{
-        p: 1,
+        p: 1.5,
         borderRadius: 1,
         bgcolor: 'background.paper',
         boxShadow: 1,
-        cursor: 'pointer',
+        cursor: isDesktop ? 'default' : 'pointer',
       }}
-      onClick={() => setIsControlsOpen(true)}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          setIsControlsOpen(true);
-        }
-      }}
+      {...(!isDesktop
+        ? {
+            role: 'button',
+            tabIndex: 0,
+            onClick: openControls,
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openControls();
+              }
+            },
+          }
+        : undefined)}
     >
       <Stack direction="row" spacing={1} alignItems="center" flex={1} minWidth={0}>
         <Checkbox
@@ -79,97 +88,99 @@ export const PickItemRow = ({
           checked={item.status === 'picked'}
           onChange={(event) => toggleStatus(event.target.checked)}
           inputProps={{ 'aria-label': 'Toggle picked status' }}
-          onClick={(event) => event.stopPropagation()}
         />
-        <Stack spacing={0.5} minWidth={0} flex={1}>
-          <Typography
-            variant="subtitle1"
-            noWrap
-            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-          >
-            <Typography
-              component="span"
-              variant="subtitle1"
-              noWrap
-              sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}
-            >
-              {product?.name ?? 'Unknown product'}
-            </Typography>
-            <Typography
-              component="span"
-              variant="subtitle1"
-              sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}
-            >
-              {item.quantity} {packagingLabel}
-            </Typography>
+        <Stack spacing={0.25} minWidth={0} flex={1}>
+          <Typography variant="subtitle1" noWrap sx={{ minWidth: 0 }}>
+            {product?.name ?? 'Unknown product'}
           </Typography>
-          <Typography variant="caption" color="text.secondary" noWrap>
-            Tap to adjust quantity and packaging
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+            {`Qty: ${item.quantity} ${packagingLabel}`}
           </Typography>
         </Stack>
       </Stack>
-
-      <Dialog
-        open={isControlsOpen}
-        onClose={() => setIsControlsOpen(false)}
-        fullWidth
-        maxWidth="xs"
-        aria-labelledby="item-controls-title"
-      >
-        <DialogTitle
-          id="item-controls-title"
-          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <Typography variant="h6" noWrap sx={{ minWidth: 0, flex: 1 }}>
-            {product?.name ?? 'Unknown product'}
-          </Typography>
-          <IconButton aria-label="Close controls" onClick={() => setIsControlsOpen(false)}>
-            <Close />
+      {isDesktop ? (
+        <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" justifyContent="flex-end">
+          <IconButton
+            aria-label={`Switch to ${item.is_carton ? 'unit' : 'carton'} packaging`}
+            color={item.is_carton ? 'primary' : 'default'}
+            onClick={onToggleCarton}
+            sx={{
+              boxShadow: item.is_carton
+                ? (theme) => `0 0 0 8px ${alpha(theme.palette.primary.main, 0.15)}`
+                : 'none',
+            }}
+          >
+            <Inventory2 />
           </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <Stack spacing={2} alignItems="stretch">
-            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-              Quantity: {item.quantity} {packagingLabel}
+          <IconButton aria-label="Decrease quantity" color="primary" onClick={onDecrementQuantity}>
+            <Remove />
+          </IconButton>
+          <IconButton aria-label="Increase quantity" color="primary" onClick={onIncrementQuantity}>
+            <Add />
+          </IconButton>
+          <IconButton
+            color="error"
+            onClick={() => setIsConfirmOpen(true)}
+            aria-label="Delete item"
+            sx={{ ml: { xs: 0, sm: 1 } }}
+          >
+            <Delete />
+          </IconButton>
+        </Stack>
+      ) : (
+        <IconButton aria-label="Open item controls" onClick={openControls}>
+          <MoreHoriz />
+        </IconButton>
+      )}
+
+      {!isDesktop && (
+        <Dialog
+          open={isControlsOpen}
+          onClose={() => setIsControlsOpen(false)}
+          fullWidth
+          maxWidth="xs"
+          aria-labelledby="item-controls-title"
+        >
+          <DialogTitle id="item-controls-title" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6" noWrap sx={{ minWidth: 0, flex: 1 }}>
+              {product?.name ?? 'Unknown product'}
             </Typography>
-            <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap">
-              <IconButton
-                aria-label={`Switch to ${item.is_carton ? 'unit' : 'carton'} packaging`}
-                color={item.is_carton ? 'primary' : 'default'}
-                onClick={onToggleCarton}
-                sx={{
-                  boxShadow: item.is_carton
-                    ? (theme) => `0 0 0 8px ${alpha(theme.palette.primary.main, 0.15)}`
-                    : 'none',
-                }}
-              >
-                <Inventory2 />
-              </IconButton>
-              <IconButton
-                aria-label="Decrease quantity"
-                color="primary"
-                onClick={onDecrementQuantity}
-              >
-                <Remove />
-              </IconButton>
-              <IconButton
-                aria-label="Increase quantity"
-                color="primary"
-                onClick={onIncrementQuantity}
-              >
-                <Add />
-              </IconButton>
-              <IconButton
-                color="error"
-                onClick={() => setIsConfirmOpen(true)}
-                aria-label="Delete item"
-              >
-                <Delete />
-              </IconButton>
+            <IconButton aria-label="Close controls" onClick={() => setIsControlsOpen(false)}>
+              <Close />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} alignItems="stretch">
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                {`Quantity: ${item.quantity} ${packagingLabel}`}
+              </Typography>
+              <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap">
+                <IconButton
+                  aria-label={`Switch to ${item.is_carton ? 'unit' : 'carton'} packaging`}
+                  color={item.is_carton ? 'primary' : 'default'}
+                  onClick={onToggleCarton}
+                  sx={{
+                    boxShadow: item.is_carton
+                      ? (dialogTheme) => `0 0 0 8px ${alpha(dialogTheme.palette.primary.main, 0.15)}`
+                      : 'none',
+                  }}
+                >
+                  <Inventory2 />
+                </IconButton>
+                <IconButton aria-label="Decrease quantity" color="primary" onClick={onDecrementQuantity}>
+                  <Remove />
+                </IconButton>
+                <IconButton aria-label="Increase quantity" color="primary" onClick={onIncrementQuantity}>
+                  <Add />
+                </IconButton>
+                <IconButton color="error" onClick={() => setIsConfirmOpen(true)} aria-label="Delete item">
+                  <Delete />
+                </IconButton>
+              </Stack>
             </Stack>
-          </Stack>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <Dialog
         open={isConfirmOpen}
@@ -187,11 +198,7 @@ export const PickItemRow = ({
           <Button onClick={() => setIsConfirmOpen(false)} aria-label="Cancel delete" autoFocus>
             Cancel
           </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={handleConfirmDelete}
-          >
+          <Button color="error" variant="contained" onClick={handleConfirmDelete}>
             Delete
           </Button>
         </DialogActions>

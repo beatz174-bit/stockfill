@@ -53,4 +53,50 @@ test.describe('Active pick list', () => {
 
     await expect(page.getByText('Playwright Cola Zero')).toBeVisible();
   });
+
+  test('toggles packaging type and persists the selection', async ({ page }) => {
+    await page.goto('/');
+
+    await page.getByRole('link', { name: 'Create Pick List' }).click();
+    await page.getByLabel('Area').click();
+    await page.getByRole('option', { name: areaName }).first().click();
+    await page.getByRole('button', { name: 'Save Pick List' }).click();
+
+    await expect(page.getByRole('heading', { name: `${areaName} List` })).toBeVisible();
+
+    const searchInput = page.getByPlaceholder('Search products');
+    await searchInput.click();
+    await searchInput.fill(additionalProduct);
+    await page
+      .getByRole('option', { name: new RegExp(`${additionalProduct} \\(${areaName}\\)`, 'i') })
+      .first()
+      .click();
+
+    const increaseButton = page.getByLabel('Increase quantity');
+    await increaseButton.click();
+    await expect(page.getByText('Qty: 2 unit')).toBeVisible();
+
+    await page.getByLabel('Switch to carton packaging').click();
+    await expect(page.getByText('Qty: 2 carton')).toBeVisible();
+
+    await page.getByLabel('Decrease quantity').click();
+    await expect(page.getByText('Qty: 1 carton')).toBeVisible();
+
+    await page.getByLabel('Switch to unit packaging').click();
+    await expect(page.getByText('Qty: 1 unit')).toBeVisible();
+
+    await increaseButton.click();
+    await increaseButton.click();
+    await page.getByLabel('Switch to carton packaging').click();
+    await expect(page.getByText('Qty: 3 carton')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Save and Return' }).click();
+    await expect(page.getByRole('heading', { name: 'Pick Lists' })).toBeVisible();
+
+    await page.reload();
+    await page.getByRole('link', { name: areaName }).first().click();
+    await expect(page.getByRole('heading', { name: `${areaName} List` })).toBeVisible();
+    await expect(page.getByText('Qty: 3 carton')).toBeVisible();
+    await expect(page.getByLabel('Switch to unit packaging')).toBeVisible();
+  });
 });

@@ -10,9 +10,10 @@ import {
   IconButton,
   Stack,
   Typography,
+  useMediaQuery,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
+import type React from 'react';
 import { useState } from 'react';
 import { PickItem } from '../models/PickItem';
 import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE, Product } from '../models/Product';
@@ -36,10 +37,10 @@ export const PickItemRow = ({
   onStatusChange,
   onDelete,
 }: PickItemRowProps) => {
+  const theme = useTheme();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
-  const theme = useTheme();
-  const isDesktop = useMediaQuery(theme.breakpoints.up('sm'));
+  const isNarrowScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const packagingLabel = item.is_carton
     ? product?.bulk_name ?? DEFAULT_BULK_NAME
     : product?.unit_type ?? DEFAULT_UNIT_TYPE;
@@ -53,7 +54,24 @@ export const PickItemRow = ({
     setIsConfirmOpen(false);
   };
 
-  const openControls = () => setIsControlsOpen(true);
+  const handleRowClick = () => {
+    if (isNarrowScreen) {
+      setIsControlsOpen(true);
+    }
+  };
+
+  const handleRowKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!isNarrowScreen) return;
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      setIsControlsOpen(true);
+    }
+  };
+
+  const stopPropagation = (event: React.SyntheticEvent) => {
+    event.stopPropagation();
+  };
 
   return (
     <Stack
@@ -66,21 +84,12 @@ export const PickItemRow = ({
         borderRadius: 1,
         bgcolor: 'background.paper',
         boxShadow: 1,
-        cursor: isDesktop ? 'default' : 'pointer',
+        cursor: isNarrowScreen ? 'pointer' : 'default',
       }}
-      {...(!isDesktop
-        ? {
-            role: 'button',
-            tabIndex: 0,
-            onClick: openControls,
-            onKeyDown: (event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                openControls();
-              }
-            },
-          }
-        : undefined)}
+      onClick={handleRowClick}
+      role={isNarrowScreen ? 'button' : undefined}
+      tabIndex={isNarrowScreen ? 0 : undefined}
+      onKeyDown={handleRowKeyDown}
     >
       <Stack direction="row" spacing={1} alignItems="center" flex={1} minWidth={0}>
         <Checkbox
@@ -93,9 +102,11 @@ export const PickItemRow = ({
           <Typography variant="subtitle1" noWrap sx={{ minWidth: 0 }}>
             {product?.name ?? 'Unknown product'}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
-            {`Qty: ${item.quantity} ${packagingLabel}`}
-          </Typography>
+          {isNarrowScreen && (
+            <Typography variant="caption" color="text.secondary" noWrap>
+              Tap to adjust quantity and packaging
+            </Typography>
+          )}
         </Stack>
       </Stack>
       {isDesktop ? (
@@ -133,7 +144,57 @@ export const PickItemRow = ({
         </IconButton>
       )}
 
-      {!isDesktop && (
+      {!isNarrowScreen && (
+        <Stack direction="row" spacing={1} alignItems="center">
+          <IconButton
+            aria-label={`Switch to ${item.is_carton ? 'unit' : 'carton'} packaging`}
+            color={item.is_carton ? 'primary' : 'default'}
+            onClick={(event) => {
+              stopPropagation(event);
+              onToggleCarton();
+            }}
+            sx={{
+              boxShadow: item.is_carton
+                ? (theme) => `0 0 0 8px ${alpha(theme.palette.primary.main, 0.15)}`
+                : 'none',
+            }}
+          >
+            <Inventory2 />
+          </IconButton>
+          <IconButton
+            aria-label="Decrease quantity"
+            color="primary"
+            onClick={(event) => {
+              stopPropagation(event);
+              onDecrementQuantity();
+            }}
+          >
+            <Remove />
+          </IconButton>
+          <IconButton
+            aria-label="Increase quantity"
+            color="primary"
+            onClick={(event) => {
+              stopPropagation(event);
+              onIncrementQuantity();
+            }}
+          >
+            <Add />
+          </IconButton>
+          <IconButton
+            color="error"
+            onClick={(event) => {
+              stopPropagation(event);
+              setIsConfirmOpen(true);
+            }}
+            aria-label="Delete item"
+          >
+            <Delete />
+          </IconButton>
+        </Stack>
+      )}
+
+      {isNarrowScreen && (
         <Dialog
           open={isControlsOpen}
           onClose={() => setIsControlsOpen(false)}
@@ -141,39 +202,72 @@ export const PickItemRow = ({
           maxWidth="xs"
           aria-labelledby="item-controls-title"
         >
-          <DialogTitle id="item-controls-title" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <DialogTitle
+            id="item-controls-title"
+            sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+          >
             <Typography variant="h6" noWrap sx={{ minWidth: 0, flex: 1 }}>
               {product?.name ?? 'Unknown product'}
             </Typography>
-            <IconButton aria-label="Close controls" onClick={() => setIsControlsOpen(false)}>
+            <IconButton
+              aria-label="Close controls"
+              onClick={(event) => {
+                stopPropagation(event);
+                setIsControlsOpen(false);
+              }}
+            >
               <Close />
             </IconButton>
           </DialogTitle>
           <DialogContent>
             <Stack spacing={2} alignItems="stretch">
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                {`Quantity: ${item.quantity} ${packagingLabel}`}
+                Quantity: {item.quantity} {packagingLabel}
               </Typography>
               <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap">
                 <IconButton
                   aria-label={`Switch to ${item.is_carton ? 'unit' : 'carton'} packaging`}
                   color={item.is_carton ? 'primary' : 'default'}
-                  onClick={onToggleCarton}
+                  onClick={(event) => {
+                    stopPropagation(event);
+                    onToggleCarton();
+                  }}
                   sx={{
                     boxShadow: item.is_carton
-                      ? (dialogTheme) => `0 0 0 8px ${alpha(dialogTheme.palette.primary.main, 0.15)}`
+                      ? (theme) => `0 0 0 8px ${alpha(theme.palette.primary.main, 0.15)}`
                       : 'none',
                   }}
                 >
                   <Inventory2 />
                 </IconButton>
-                <IconButton aria-label="Decrease quantity" color="primary" onClick={onDecrementQuantity}>
+                <IconButton
+                  aria-label="Decrease quantity"
+                  color="primary"
+                  onClick={(event) => {
+                    stopPropagation(event);
+                    onDecrementQuantity();
+                  }}
+                >
                   <Remove />
                 </IconButton>
-                <IconButton aria-label="Increase quantity" color="primary" onClick={onIncrementQuantity}>
+                <IconButton
+                  aria-label="Increase quantity"
+                  color="primary"
+                  onClick={(event) => {
+                    stopPropagation(event);
+                    onIncrementQuantity();
+                  }}
+                >
                   <Add />
                 </IconButton>
-                <IconButton color="error" onClick={() => setIsConfirmOpen(true)} aria-label="Delete item">
+                <IconButton
+                  color="error"
+                  onClick={(event) => {
+                    stopPropagation(event);
+                    setIsConfirmOpen(true);
+                  }}
+                  aria-label="Delete item"
+                >
                   <Delete />
                 </IconButton>
               </Stack>
@@ -198,7 +292,12 @@ export const PickItemRow = ({
           <Button onClick={() => setIsConfirmOpen(false)} aria-label="Cancel delete" autoFocus>
             Cancel
           </Button>
-          <Button color="error" variant="contained" onClick={handleConfirmDelete}>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handleConfirmDelete}
+            aria-label="Confirm delete"
+          >
             Delete
           </Button>
         </DialogActions>

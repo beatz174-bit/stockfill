@@ -83,7 +83,15 @@ export const AddItemScreen = () => {
           value={selectedProduct}
           onChange={(_, value) => setSelectedProduct(value)}
           inputValue={query}
-          onInputChange={(_, value) => setQuery(value)}
+          onInputChange={(_, value, reason) => {
+            if (reason === 'input') {
+              setQuery(value);
+            }
+
+            if (reason === 'clear') {
+              setQuery('');
+            }
+          }}
           filterOptions={(options) => options}
           noOptionsText={query.trim() ? 'No matching products' : 'No products available'}
           fullWidth

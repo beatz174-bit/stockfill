@@ -89,7 +89,9 @@ export const ActivePickListScreen = () => {
   }, [allItemsPicked, showPicked]);
 
   const visibleItems = useMemo(() => {
-    let filteredItems = showPicked ? items : items.filter((item) => item.status !== 'picked');
+    let filteredItems = showPicked
+      ? sortedItems
+      : sortedItems.filter((item) => item.status !== 'picked');
 
     if (itemFilter === 'cartons') {
       return filteredItems.filter((item) => item.is_carton);
@@ -308,7 +310,7 @@ export const ActivePickListScreen = () => {
           <PickItemRow
             key={item.id}
             item={item}
-            product={products.find((p) => p.id === item.product_id)}
+            product={productMap.get(item.product_id)}
             onIncrementQuantity={() => handleIncrementQuantity(item.id)}
             onDecrementQuantity={() => handleDecrementQuantity(item.id)}
             onToggleCarton={() => handleToggleCarton(item.id)}

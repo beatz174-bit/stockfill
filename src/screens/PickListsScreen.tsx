@@ -31,11 +31,24 @@ export const PickListsScreen = () => {
   const [areaId, setAreaId] = useState('');
   const [notes, setNotes] = useState('');
 
-  const sortedLists = useMemo(() => {
-    return [...lists].sort((a, b) => a.created_at - b.created_at);
-  }, [lists]);
+  const areaNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    areas.forEach((area) => map.set(area.id, area.name));
+    return map;
+  }, [areas]);
 
-  const getAreaName = (areaId: string) => areas.find((a) => a.id === areaId)?.name ?? 'Unknown area';
+  const sortedLists = useMemo(() => {
+    const locale = new Intl.Collator(undefined, { sensitivity: 'base' });
+    return [...lists].sort((a, b) => {
+      const nameA = areaNameById.get(a.area_id) ?? 'Unknown area';
+      const nameB = areaNameById.get(b.area_id) ?? 'Unknown area';
+      const nameComparison = locale.compare(nameA, nameB);
+      if (nameComparison !== 0) return nameComparison;
+      return a.created_at - b.created_at;
+    });
+  }, [areaNameById, lists]);
+
+  const getAreaName = (areaId: string) => areaNameById.get(areaId) ?? 'Unknown area';
 
   const openEdit = (list: PickList) => {
     setEditingList(list);

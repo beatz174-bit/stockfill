@@ -49,7 +49,41 @@ const defaultProducts: Product[] = [
 
 vi.mock('../hooks/dataHooks', () => ({
   usePickItems: () => pickItemsMock(),
-  useProducts: () => productsMock(),
+  useProducts: () => [
+    {
+      id: 'prod-1',
+      name: 'Cola',
+      category: 'Drinks',
+      unit_type: 'unit',
+      bulk_name: 'box',
+      barcode: '111',
+      archived: false,
+      created_at: 0,
+      updated_at: 0,
+    },
+    {
+      id: 'prod-2',
+      name: 'Chips',
+      category: 'Snacks',
+      unit_type: 'unit',
+      bulk_name: 'box',
+      barcode: '222',
+      archived: false,
+      created_at: 0,
+      updated_at: 0,
+    },
+    {
+      id: 'prod-3',
+      name: 'Apple Juice',
+      category: 'Drinks',
+      unit_type: 'unit',
+      bulk_name: 'box',
+      barcode: '333',
+      archived: false,
+      created_at: 0,
+      updated_at: 0,
+    },
+  ],
   usePickList: () => ({ id: 'list-1', area_id: 'area-1', created_at: 0 }),
   useAreas: () => [{ id: 'area-1', name: 'Front Counter', created_at: 0, updated_at: 0 }],
 }));
@@ -232,6 +266,65 @@ describe('ActivePickListScreen product search', () => {
 
     expect(updateMock).toHaveBeenCalledWith('item-1', expect.objectContaining({ quantity: 3 }));
     expect(addMock).not.toHaveBeenCalled();
+  });
+
+  it('sorts pick list items by product name and packaging', () => {
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-1',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 2,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-2',
+        pick_list_id: 'list-1',
+        product_id: 'prod-3',
+        quantity: 1,
+        is_carton: true,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-3',
+        pick_list_id: 'list-1',
+        product_id: 'prod-2',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-4',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        is_carton: true,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const itemLabels = screen
+      .getAllByText(/Apple Juice|Chips|Cola/)
+      .map((element) => element.textContent);
+
+    expect(itemLabels).toEqual(['Apple Juice', 'Chips', 'Cola', 'Cola']);
   });
 
   it('hides picked items when show picked is unchecked', async () => {

@@ -98,6 +98,14 @@ export const ActivePickListScreen = () => {
     );
   }, [products]);
 
+  const hasCartonItems = useMemo(() => items.some((item) => item.is_carton), [items]);
+  const hasUnitItems = useMemo(() => items.some((item) => !item.is_carton), [items]);
+  const packagingTypeCount = useMemo(
+    () => Number(hasCartonItems) + Number(hasUnitItems),
+    [hasCartonItems, hasUnitItems],
+  );
+  const disablePackagingSelection = packagingTypeCount === 1;
+
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     if (!normalizedQuery) return sortedProducts;
@@ -120,6 +128,23 @@ export const ActivePickListScreen = () => {
       setShowPicked(true);
     }
   }, [allItemsPicked, showPicked]);
+
+  useEffect(() => {
+    if (packagingTypeCount === 1) {
+      const singlePackagingFilter = hasCartonItems ? 'cartons' : 'units';
+      if (itemFilter !== singlePackagingFilter) {
+        setItemFilter(singlePackagingFilter);
+      }
+
+      return;
+    }
+
+    if (itemFilter === 'cartons' && !hasCartonItems) {
+      setItemFilter(hasUnitItems ? 'units' : 'all');
+    } else if (itemFilter === 'units' && !hasUnitItems) {
+      setItemFilter(hasCartonItems ? 'cartons' : 'all');
+    }
+  }, [itemFilter, hasCartonItems, hasUnitItems, packagingTypeCount]);
 
   const visibleItems = useMemo(() => {
     let filteredItems = showPicked
@@ -310,9 +335,24 @@ export const ActivePickListScreen = () => {
                 }
                 sx={{ flexGrow: 1 }}
               >
-                <FormControlLabel value="all" control={<Radio />} label="All" />
-                <FormControlLabel value="cartons" control={<Radio />} label="Cartons" />
-                <FormControlLabel value="units" control={<Radio />} label="Units" />
+                <FormControlLabel
+                  value="all"
+                  control={<Radio />}
+                  label="All"
+                  disabled={disablePackagingSelection}
+                />
+                <FormControlLabel
+                  value="cartons"
+                  control={<Radio />}
+                  label="Cartons"
+                  disabled={disablePackagingSelection || !hasCartonItems}
+                />
+                <FormControlLabel
+                  value="units"
+                  control={<Radio />}
+                  label="Units"
+                  disabled={disablePackagingSelection || !hasUnitItems}
+                />
               </RadioGroup>
               <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: { xs: 0, sm: 2 } }}>
                 <FormControlLabel

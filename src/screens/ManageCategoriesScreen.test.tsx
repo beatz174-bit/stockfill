@@ -44,7 +44,7 @@ describe('ManageCategoriesScreen deletion safeguards', () => {
   it('shows an error when trying to delete an in-use category', async () => {
     const user = userEvent.setup();
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ManageCategoriesScreen />
       </MemoryRouter>,
     );

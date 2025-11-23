@@ -2,12 +2,14 @@
 # Build stage
 FROM node:20-alpine AS build
 WORKDIR /app
-COPY package.json package-lock.json* tsconfig*.json vite.config.ts ./
+COPY package.json package-lock.json* ./
 RUN --mount=type=cache,target=/root/.npm \
     --mount=type=cache,target=/app/node_modules \
     npm ci --no-audit --no-fund
 
 COPY index.html ./
+COPY tsconfig*.json ./
+COPY vite.config.ts ./
 COPY src ./src
 COPY public ./public
 RUN --mount=type=cache,target=/app/node_modules npm run build

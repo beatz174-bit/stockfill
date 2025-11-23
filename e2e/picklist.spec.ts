@@ -123,7 +123,9 @@ test.describe('Active pick list', () => {
 
     await expect(page.getByText('Product updated.')).toBeVisible();
     await expect(page.getByRole('button', { name: `Edit ${updatedListProductName}` })).toBeVisible();
-    await expect(page.getByRole('button', { name: `Edit ${listProductName}` })).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: `Edit ${listProductName}`, exact: true }),
+    ).toHaveCount(0);
 
     await page.getByRole('button', { name: `Delete ${updatedListProductName}` }).click();
 

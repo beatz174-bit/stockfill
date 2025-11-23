@@ -2,7 +2,11 @@ import {
   Autocomplete,
   Button,
   Container,
+  FormControl,
+  FormControlLabel,
   InputAdornment,
+  Radio,
+  RadioGroup,
   Stack,
   TextField,
   Typography,
@@ -27,6 +31,7 @@ export const ActivePickListScreen = () => {
   const navigate = useNavigate();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [query, setQuery] = useState('');
+  const [itemFilter, setItemFilter] = useState<'all' | 'cartons' | 'units'>('all');
 
   const areaName = useMemo(
     () => areas.find((area) => area.id === pickList?.area_id)?.name ?? 'Area',
@@ -49,6 +54,18 @@ export const ActivePickListScreen = () => {
       setSelectedProduct(null);
     }
   }, [filteredProducts, selectedProduct]);
+
+  const visibleItems = useMemo(() => {
+    if (itemFilter === 'cartons') {
+      return items.filter((item) => item.is_carton);
+    }
+
+    if (itemFilter === 'units') {
+      return items.filter((item) => !item.is_carton);
+    }
+
+    return items;
+  }, [itemFilter, items]);
 
   const handleIncrementQuantity = async (itemId: string) => {
     const existing = await db.pickItems.get(itemId);
@@ -177,6 +194,22 @@ export const ActivePickListScreen = () => {
           <Typography variant="caption" color="text.secondary">
             Selecting a product immediately adds it to the pick list.
           </Typography>
+          <FormControl>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+              Filter list by packaging
+            </Typography>
+            <RadioGroup
+              row
+              value={itemFilter}
+              onChange={(event) =>
+                setItemFilter(event.target.value as 'all' | 'cartons' | 'units')
+              }
+            >
+              <FormControlLabel value="all" control={<Radio />} label="All" />
+              <FormControlLabel value="cartons" control={<Radio />} label="Cartons" />
+              <FormControlLabel value="units" control={<Radio />} label="Units" />
+            </RadioGroup>
+          </FormControl>
         </Stack>
       </Stack>
       {pickList?.notes ? (
@@ -185,7 +218,7 @@ export const ActivePickListScreen = () => {
         </Typography>
       ) : null}
       <Stack spacing={1}>
-        {items.map((item) => (
+        {visibleItems.map((item) => (
           <PickItemRow
             key={item.id}
             item={item}

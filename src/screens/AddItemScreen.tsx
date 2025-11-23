@@ -1,7 +1,7 @@
 import {
+  Autocomplete,
   Button,
   Container,
-  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -20,7 +20,7 @@ export const AddItemScreen = () => {
   const db = useDatabase();
   const items = usePickItems(id);
   const products = useProducts();
-  const [productId, setProductId] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<typeof products[number] | null>(null);
   const [query, setQuery] = useState('');
   const [units, setUnits] = useState(1);
   const [bulk, setBulk] = useState(0);
@@ -47,13 +47,15 @@ export const AddItemScreen = () => {
   }, [availableProducts, query]);
 
   useEffect(() => {
-    if (!productId) return;
-    if (!filteredProducts.some((product) => product.id === productId)) {
-      setProductId('');
+    if (!selectedProduct) return;
+    if (!filteredProducts.some((product) => product.id === selectedProduct.id)) {
+      setSelectedProduct(null);
     }
-  }, [filteredProducts, productId]);
+  }, [filteredProducts, selectedProduct]);
 
   const addItem = async () => {
+    const productId = selectedProduct?.id;
+
     if (!id || !productId || existingProductIds.has(productId)) return;
     await db.pickItems.add({
       id: uuidv4(),
@@ -74,28 +76,46 @@ export const AddItemScreen = () => {
         Add Item
       </Typography>
       <Stack spacing={2}>
-        <TextField
-          placeholder="Search products"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          InputProps={{ startAdornment: <InputAdornment position="start">{<SearchIcon />}</InputAdornment> }}
-        />
-        <TextField
-          select
-          label="Product"
+        <Autocomplete
+          options={filteredProducts}
+          getOptionLabel={(option) => `${option.name} (${option.category})`}
+          isOptionEqualToValue={(option, value) => option.id === value.id}
+          value={selectedProduct}
+          onChange={(_, value) => setSelectedProduct(value)}
+          inputValue={query}
+          onInputChange={(_, value, reason) => {
+            if (reason === 'input') {
+              setQuery(value);
+            }
+
+            if (reason === 'clear') {
+              setQuery('');
+            }
+          }}
+          filterOptions={(options) => options}
+          noOptionsText={query.trim() ? 'No matching products' : 'No products available'}
           fullWidth
-          value={productId}
-          onChange={(event) => setProductId(event.target.value)}
-        >
-          {filteredProducts.map((product) => (
-            <MenuItem key={product.id} value={product.id}>
-              {product.name} ({product.category})
-            </MenuItem>
-          ))}
-        </TextField>
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              placeholder="Search products"
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: (
+                  <>
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                    {params.InputProps.startAdornment}
+                  </>
+                ),
+              }}
+            />
+          )}
+        />
         <NumericStepper label="Units" value={units} onChange={setUnits} />
         <NumericStepper label="Bulk" value={bulk} onChange={setBulk} />
-        <Button variant="contained" disabled={!productId} onClick={addItem}>
+        <Button variant="contained" disabled={!selectedProduct} onClick={addItem}>
           Add to List
         </Button>
       </Stack>

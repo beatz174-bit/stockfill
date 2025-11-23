@@ -50,16 +50,16 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
   const [isEditing, setIsEditing] = useState(false);
   const [formState, setFormState] = useState<ProductFormState>(() => getInitialFormState(product));
   const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [saveError, setSaveError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; barcode?: string }>({});
 
   useEffect(() => {
     setFormState(getInitialFormState(product));
-    setSaveError('');
+    setFieldErrors({});
   }, [product]);
 
   const handleChange = (field: keyof ProductFormState) => (event: ChangeEvent<HTMLInputElement>) => {
     setFormState((prev) => ({ ...prev, [field]: event.target.value }));
-    setSaveError('');
+    setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
   const handleSave = async () => {
@@ -71,10 +71,14 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
         barcode: formState.barcode || undefined,
       });
       setIsEditing(false);
-      setSaveError('');
+      setFieldErrors({});
     } catch (error) {
+      if (error instanceof Error && error.name === 'DuplicateNameError') {
+        setFieldErrors({ name: 'A product with this name already exists.' });
+        return;
+      }
       if (error instanceof Error && error.name === 'DuplicateBarcodeError') {
-        setSaveError('This barcode is already assigned to another product.');
+        setFieldErrors({ barcode: 'This barcode is already assigned to another product.' });
         return;
       }
       throw error;
@@ -84,7 +88,7 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
   const handleCancel = () => {
     setIsEditing(false);
     setFormState(getInitialFormState(product));
-    setSaveError('');
+    setFieldErrors({});
   };
 
   return (
@@ -92,7 +96,14 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
       <CardContent>
         {isEditing ? (
           <Stack spacing={1}>
-            <TextField label="Name" value={formState.name} onChange={handleChange('name')} size="small" />
+            <TextField
+              label="Name"
+              value={formState.name}
+              onChange={handleChange('name')}
+              size="small"
+              error={Boolean(fieldErrors.name)}
+              helperText={fieldErrors.name || undefined}
+            />
             <TextField
               select
               label="Category"
@@ -112,15 +123,15 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
                 value={formState.barcode}
                 onChange={handleChange('barcode')}
                 size="small"
-                error={Boolean(saveError)}
-                helperText={saveError || undefined}
+                error={Boolean(fieldErrors.barcode)}
+                helperText={fieldErrors.barcode || undefined}
                 InputProps={{
                   endAdornment: (
                     <Button
                       size="small"
                       onClick={() => {
                         setFormState((prev) => ({ ...prev, barcode: '' }));
-                        setSaveError('');
+                        setFieldErrors((prev) => ({ ...prev, barcode: undefined }));
                       }}
                     >
                       Clear

@@ -33,6 +33,7 @@ export const ManageProductsScreen = () => {
   const [category, setCategory] = useState('');
   const [barcode, setBarcode] = useState('');
   const [barcodeError, setBarcodeError] = useState('');
+  const [nameError, setNameError] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'loading' | 'found' | 'notfound' | 'offline'>(
     'idle',
@@ -78,6 +79,19 @@ export const ManageProductsScreen = () => {
     [products],
   );
 
+  const findNameConflict = useCallback(
+    (value?: string, productId?: string) => {
+      if (!value) return undefined;
+
+      const normalizedValue = value.trim().toLowerCase();
+
+      return products.find(
+        (product) => product.id !== productId && product.name.trim().toLowerCase() === normalizedValue,
+      );
+    },
+    [products],
+  );
+
   const assertUniqueBarcode = useCallback(
     async (value?: string, productId?: string) => {
       if (!value) return;
@@ -92,6 +106,22 @@ export const ManageProductsScreen = () => {
       }
     },
     [db.products, findBarcodeConflict],
+  );
+
+  const assertUniqueName = useCallback(
+    async (value: string, productId?: string) => {
+      const normalized = value.trim().toLowerCase();
+      if (!normalized) return;
+
+      const conflict = findNameConflict(value, productId);
+
+      if (conflict) {
+        const error = new Error('A product with this name already exists.');
+        error.name = 'DuplicateNameError';
+        throw error;
+      }
+    },
+    [findNameConflict],
   );
 
   const addProductToAutoLists = useCallback(
@@ -167,8 +197,13 @@ export const ManageProductsScreen = () => {
     if (!name || !category) return;
 
     try {
+      await assertUniqueName(name);
       await assertUniqueBarcode(barcode || undefined);
     } catch (error) {
+      if (error instanceof Error && error.name === 'DuplicateNameError') {
+        setNameError(error.message);
+        return;
+      }
       if (error instanceof Error && error.name === 'DuplicateBarcodeError') {
         setBarcodeError(error.message);
         return;
@@ -195,6 +230,7 @@ export const ManageProductsScreen = () => {
     });
     setName('');
     setBarcode('');
+    setNameError('');
     setFeedback({ text: 'Product added.', severity: 'success' });
   };
 
@@ -206,6 +242,7 @@ export const ManageProductsScreen = () => {
       barcode?: string;
     },
   ) => {
+    await assertUniqueName(updates.name, productId);
     await assertUniqueBarcode(updates.barcode, productId);
 
     await db.products.update(productId, {
@@ -251,12 +288,23 @@ export const ManageProductsScreen = () => {
           <TextField
             label="Name"
             value={name}
-            onChange={(event) => setName(event.target.value)}
+            onChange={(event) => {
+              setName(event.target.value);
+              setNameError('');
+            }}
+            error={Boolean(nameError)}
+            helperText={nameError || undefined}
             InputProps={
               name
                 ? {
                     endAdornment: (
-                      <Button onClick={() => setName('')} size="small">
+                      <Button
+                        onClick={() => {
+                          setName('');
+                          setNameError('');
+                        }}
+                        size="small"
+                      >
                         Clear
                       </Button>
                     ),

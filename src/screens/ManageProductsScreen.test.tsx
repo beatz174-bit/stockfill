@@ -165,6 +165,35 @@ describe('ManageProductsScreen barcode lookup', () => {
     expect(mockDb.products.add).not.toHaveBeenCalled();
   });
 
+  it('prevents adding a product with a duplicate name (case-insensitive)', async () => {
+    mockUseProducts.mockReturnValue([
+      {
+        id: 'prod-1',
+        name: 'Existing Product',
+        category: 'Snacks',
+        barcode: undefined,
+        unit_type: 'unit',
+        bulk_name: 'pack',
+        archived: false,
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <ManageProductsScreen />
+      </MemoryRouter>,
+    );
+
+    await user.type(screen.getByLabelText(/name/i), 'existing product');
+    await user.click(screen.getByRole('button', { name: /save product/i }));
+
+    expect(await screen.findByText(/product with this name already exists/i)).toBeVisible();
+    expect(mockDb.products.add).not.toHaveBeenCalled();
+  });
+
   it('informs the user when barcode lookup happens offline', async () => {
     const originalNavigator = navigator;
     Object.defineProperty(globalThis, 'navigator', {
@@ -234,6 +263,55 @@ describe('ManageProductsScreen barcode lookup', () => {
     await waitFor(() => {
       expect(barcodeField).toHaveAccessibleDescription('This barcode is already assigned to another product.');
       expect(barcodeField).toHaveAttribute('aria-invalid', 'true');
+    });
+    expect(mockDb.products.update).not.toHaveBeenCalled();
+  });
+
+  it('prevents updating a product to use an existing name', async () => {
+    mockUseProducts.mockReturnValue([
+      {
+        id: 'prod-1',
+        name: 'Existing Product',
+        category: 'Snacks',
+        barcode: '123456',
+        unit_type: 'unit',
+        bulk_name: 'pack',
+        archived: false,
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'prod-2',
+        name: 'Another Product',
+        category: 'Snacks',
+        barcode: '654321',
+        unit_type: 'unit',
+        bulk_name: 'pack',
+        archived: false,
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <ManageProductsScreen />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByLabelText(/edit another product/i));
+    const nameField = screen
+      .getAllByLabelText(/name/i)
+      .find((input) => (input as HTMLInputElement).value === 'Another Product');
+    expect(nameField).toBeDefined();
+    fireEvent.change(nameField as Element, { target: { value: 'Existing Product' } });
+    expect(nameField).toHaveValue('Existing Product');
+    await user.click(screen.getByLabelText(/save product/i));
+
+    await waitFor(() => {
+      expect(nameField).toHaveAccessibleDescription('A product with this name already exists.');
+      expect(nameField).toHaveAttribute('aria-invalid', 'true');
     });
     expect(mockDb.products.update).not.toHaveBeenCalled();
   });

@@ -48,35 +48,22 @@ export const ActivePickListScreen = () => {
     [areas, pickList?.area_id],
   );
 
-  const productMap = useMemo(
-    () => new Map(products.map((product) => [product.id, product])),
-    [products],
-  );
+  const sortedProducts = useMemo(() => {
+    const uniqueProducts = new Map<string, Product>();
 
-  const sortedProducts = useMemo(
-    () =>
-      [...products].sort((a, b) =>
-        a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
-      ),
-    [products],
-  );
+    products.forEach((product) => {
+      const normalizedName = product.name.trim().toLowerCase();
+      const existing = uniqueProducts.get(normalizedName);
 
-  const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => {
-      const productA = productMap.get(a.product_id);
-      const productB = productMap.get(b.product_id);
-
-      const nameA = productA?.name.toLowerCase() ?? '';
-      const nameB = productB?.name.toLowerCase() ?? '';
-
-      const nameComparison = nameA.localeCompare(nameB);
-      if (nameComparison !== 0) return nameComparison;
-
-      if (a.is_carton !== b.is_carton) return Number(a.is_carton) - Number(b.is_carton);
-
-      return (a.created_at ?? 0) - (b.created_at ?? 0);
+      if (!existing || product.updated_at > existing.updated_at) {
+        uniqueProducts.set(normalizedName, product);
+      }
     });
-  }, [items, productMap]);
+
+    return Array.from(uniqueProducts.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+    );
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();

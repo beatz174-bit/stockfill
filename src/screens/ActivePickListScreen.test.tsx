@@ -174,6 +174,66 @@ describe('ActivePickListScreen product search', () => {
     ]);
   });
 
+  it('deduplicates product options with the same id', async () => {
+    const duplicateProducts = [...defaultProducts, { ...defaultProducts[0] }];
+    productsMock.mockReturnValue(duplicateProducts);
+
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const combobox = screen.getByRole('combobox');
+    await user.click(combobox);
+
+    const listbox = await screen.findByRole('listbox');
+    const options = within(listbox).getAllByRole('option');
+
+    expect(options).toHaveLength(3);
+    expect(options.map((option) => option.textContent)).toEqual([
+      'Apple Juice (Drinks)',
+      'Chips (Snacks)',
+      'Cola (Drinks)',
+    ]);
+  });
+
+  it('deduplicates product options with the same name', async () => {
+    const duplicateNameProducts: Product[] = [
+      ...defaultProducts,
+      { ...defaultProducts[0], id: 'prod-duplicate', barcode: '999', updated_at: 5 },
+    ];
+
+    productsMock.mockReturnValue(duplicateNameProducts);
+
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const combobox = screen.getByRole('combobox');
+    await user.click(combobox);
+
+    const listbox = await screen.findByRole('listbox');
+    const options = within(listbox).getAllByRole('option');
+
+    expect(options).toHaveLength(3);
+    expect(options.map((option) => option.textContent)).toEqual([
+      'Apple Juice (Drinks)',
+      'Chips (Snacks)',
+      'Cola (Drinks)',
+    ]);
+  });
+
   it('updates an existing pick item when the same packaging is selected', async () => {
     pickItemsMock.mockReturnValue([
       {

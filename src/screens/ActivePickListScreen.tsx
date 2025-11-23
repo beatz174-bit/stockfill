@@ -38,6 +38,11 @@ export const ActivePickListScreen = () => {
   const [itemFilter, setItemFilter] = useState<'all' | 'cartons' | 'units'>('all');
   const [showPicked, setShowPicked] = useState(true);
 
+  const allItemsPicked = useMemo(
+    () => items.length > 0 && items.every((item) => item.status === 'picked'),
+    [items],
+  );
+
   const areaName = useMemo(
     () => areas.find((area) => area.id === pickList?.area_id)?.name ?? 'Area',
     [areas, pickList?.area_id],
@@ -59,6 +64,12 @@ export const ActivePickListScreen = () => {
       setSelectedProduct(null);
     }
   }, [filteredProducts, selectedProduct]);
+
+  useEffect(() => {
+    if (allItemsPicked && !showPicked) {
+      setShowPicked(true);
+    }
+  }, [allItemsPicked, showPicked]);
 
   const visibleItems = useMemo(() => {
     let filteredItems = showPicked ? items : items.filter((item) => item.status !== 'picked');
@@ -257,6 +268,7 @@ export const ActivePickListScreen = () => {
                     <Checkbox
                       checked={showPicked}
                       onChange={(event) => setShowPicked(event.target.checked)}
+                      disabled={allItemsPicked}
                     />
                   }
                   label="Show picked"

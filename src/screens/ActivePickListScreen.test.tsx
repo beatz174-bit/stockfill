@@ -128,10 +128,91 @@ describe('ActivePickListScreen product search', () => {
     );
 
     const combobox = screen.getByRole('combobox');
+    await user.click(combobox);
     await user.type(combobox, 'cola');
 
     expect(await screen.findByRole('option', { name: /cola \(drinks\)/i })).toBeVisible();
     expect(screen.queryByRole('option', { name: /chips \(snacks\)/i })).not.toBeInTheDocument();
+  });
+
+  it('omits products already on the pick list from search options', async () => {
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-1',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const combobox = screen.getByRole('combobox');
+    await user.click(combobox);
+
+    const listbox = await screen.findByRole('listbox');
+
+    expect(
+      within(listbox).queryByRole('option', { name: /cola \(drinks\)/i }),
+    ).not.toBeInTheDocument();
+    expect(within(listbox).getByRole('option', { name: /chips \(snacks\)/i })).toBeVisible();
+  });
+
+  it('shows a placeholder when no products are available after filtering', () => {
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-1',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-2',
+        pick_list_id: 'list-1',
+        product_id: 'prod-2',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-3',
+        pick_list_id: 'list-1',
+        product_id: 'prod-3',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText(/no available products/i)).toBeVisible();
   });
 
   it('adds a pick item when a product is selected', async () => {
@@ -275,7 +356,7 @@ describe('ActivePickListScreen product search', () => {
     expect(screen.queryByRole('option', { name: /chips \(snacks\)/i })).not.toBeInTheDocument();
   });
 
-  it('updates an existing pick item when the same packaging is selected', async () => {
+  it('prevents selecting products that are already on the pick list', async () => {
     pickItemsMock.mockReturnValue([
       {
         id: 'item-1',
@@ -301,11 +382,11 @@ describe('ActivePickListScreen product search', () => {
 
     const combobox = screen.getByRole('combobox');
     await user.click(combobox);
+    await user.type(combobox, 'cola');
 
-    const listbox = await screen.findByRole('listbox');
-    await user.click(within(listbox).getByRole('option', { name: /cola \(drinks\)/i }));
-
-    expect(updateMock).toHaveBeenCalledWith('item-1', expect.objectContaining({ quantity: 3 }));
+    expect(screen.queryByRole('option', { name: /cola \(drinks\)/i })).not.toBeInTheDocument();
+    expect(screen.getAllByText(/no available products/i)).not.toHaveLength(0);
+    expect(updateMock).not.toHaveBeenCalled();
     expect(addMock).not.toHaveBeenCalled();
   });
 

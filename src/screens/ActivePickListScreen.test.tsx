@@ -8,8 +8,8 @@ import { Product } from '../models/Product';
 
 const addMock = vi.fn();
 const updateMock = vi.fn();
-const pickItemsMock = vi.fn<PickItem[], []>();
-const productsMock = vi.fn<Product[], []>();
+const pickItemsMock = vi.fn<() => PickItem[]>();
+const productsMock = vi.fn<() => Product[]>();
 const pickListMock = vi.fn();
 
 const defaultProducts: Product[] = [
@@ -50,41 +50,7 @@ const defaultProducts: Product[] = [
 
 vi.mock('../hooks/dataHooks', () => ({
   usePickItems: () => pickItemsMock(),
-  useProducts: () => [
-    {
-      id: 'prod-1',
-      name: 'Cola',
-      category: 'Drinks',
-      unit_type: 'unit',
-      bulk_name: 'box',
-      barcode: '111',
-      archived: false,
-      created_at: 0,
-      updated_at: 0,
-    },
-    {
-      id: 'prod-2',
-      name: 'Chips',
-      category: 'Snacks',
-      unit_type: 'unit',
-      bulk_name: 'box',
-      barcode: '222',
-      archived: false,
-      created_at: 0,
-      updated_at: 0,
-    },
-    {
-      id: 'prod-3',
-      name: 'Apple Juice',
-      category: 'Drinks',
-      unit_type: 'unit',
-      bulk_name: 'box',
-      barcode: '333',
-      archived: false,
-      created_at: 0,
-      updated_at: 0,
-    },
-  ],
+  useProducts: () => productsMock(),
   usePickList: () => pickListMock(),
   useAreas: () => [{ id: 'area-1', name: 'Front Counter', created_at: 0, updated_at: 0 }],
 }));

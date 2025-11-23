@@ -1,9 +1,7 @@
 import {
   Autocomplete,
   Button,
-  Checkbox,
   Container,
-  FormControlLabel,
   InputAdornment,
   Stack,
   TextField,
@@ -29,8 +27,6 @@ export const ActivePickListScreen = () => {
   const navigate = useNavigate();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [query, setQuery] = useState('');
-  const [quantity, setQuantity] = useState(1);
-  const [isCarton, setIsCarton] = useState(false);
 
   const areaName = useMemo(
     () => areas.find((area) => area.id === pickList?.area_id)?.name ?? 'Area',
@@ -53,11 +49,6 @@ export const ActivePickListScreen = () => {
       setSelectedProduct(null);
     }
   }, [filteredProducts, selectedProduct]);
-
-  useEffect(() => {
-    setQuantity(1);
-    setIsCarton(false);
-  }, [selectedProduct]);
 
   const handleIncrementQuantity = async (itemId: string) => {
     const existing = await db.pickItems.get(itemId);
@@ -101,15 +92,15 @@ export const ActivePickListScreen = () => {
   };
 
   const addOrUpdateItem = async (product: Product) => {
-    if (!id || quantity <= 0) return;
+    if (!id) return;
 
     const existing = items.find(
-      (item) => item.product_id === product.id && item.is_carton === isCarton,
+      (item) => item.product_id === product.id && item.is_carton === false,
     );
 
     if (existing) {
       await db.pickItems.update(existing.id, {
-        quantity: existing.quantity + quantity,
+        quantity: existing.quantity + 1,
         updated_at: Date.now(),
       });
     } else {
@@ -117,8 +108,8 @@ export const ActivePickListScreen = () => {
         id: uuidv4(),
         pick_list_id: id,
         product_id: product.id,
-        quantity,
-        is_carton: isCarton,
+        quantity: 1,
+        is_carton: false,
         status: 'pending',
         created_at: Date.now(),
         updated_at: Date.now(),
@@ -127,23 +118,11 @@ export const ActivePickListScreen = () => {
 
     setSelectedProduct(null);
     setQuery('');
-    setQuantity(1);
-    setIsCarton(false);
   };
 
   const returnToLists = () => {
     navigate('/pick-lists');
   };
-
-  const packagingLabel = isCarton
-    ? selectedProduct?.bulk_name ?? 'Cartons'
-    : selectedProduct?.unit_type ?? 'Units';
-  const quantityHelperText = selectedProduct
-    ? `Enter ${packagingLabel.toLowerCase()} to pick`
-    : 'Select a product to add it to the list';
-  const cartonCheckboxLabel = selectedProduct?.bulk_name
-    ? `Carton (${selectedProduct.bulk_name})`
-    : 'Carton pick';
 
   return (
     <Container sx={{ py: 4 }}>
@@ -195,22 +174,6 @@ export const ActivePickListScreen = () => {
               />
             )}
           />
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems="center">
-            <TextField
-              type="number"
-              label={`Quantity (${packagingLabel})`}
-              value={quantity}
-              onChange={(event) => setQuantity(Math.max(1, Number(event.target.value)))}
-              inputProps={{ min: 1 }}
-              helperText={quantityHelperText}
-              fullWidth
-            />
-            <FormControlLabel
-              control={<Checkbox checked={isCarton} onChange={(event) => setIsCarton(event.target.checked)} />}
-              label={cartonCheckboxLabel}
-              disabled={!selectedProduct}
-            />
-          </Stack>
           <Typography variant="caption" color="text.secondary">
             Selecting a product immediately adds it to the pick list.
           </Typography>

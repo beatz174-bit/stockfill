@@ -53,4 +53,36 @@ test.describe('Active pick list', () => {
 
     await expect(page.getByText('Playwright Cola Zero')).toBeVisible();
   });
+
+  test('removes a product from the pick list when deleted', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.getByRole('heading', { name: 'StockFill' })).toBeVisible();
+    await page.getByRole('link', { name: 'Create Pick List' }).click();
+    await page.getByLabel('Area').click();
+    await page.getByRole('option', { name: areaName }).first().click();
+    await page.getByRole('button', { name: 'Save Pick List' }).click();
+
+    await expect(page.getByRole('heading', { name: `${areaName} List` })).toBeVisible();
+
+    const searchInput = page.getByPlaceholder('Search products');
+    await searchInput.click();
+    await searchInput.fill(additionalProduct);
+    await page
+      .getByRole('option', { name: new RegExp(`${additionalProduct} \\(${areaName}\\)`, 'i') })
+      .first()
+      .click();
+
+    const productRow = page.getByText(additionalProduct).locator(
+      'xpath=ancestor::div[contains(@class, "MuiStack-root")]//button[@aria-label="Delete item"]',
+    );
+
+    await expect(page.getByText(additionalProduct).first()).toBeVisible();
+    await productRow.first().click();
+
+    await expect(page.getByRole('dialog', { name: 'Delete item' })).toBeVisible();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+
+    await expect(page.getByText(additionalProduct).first()).not.toBeVisible();
+  });
 });

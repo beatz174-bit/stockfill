@@ -165,6 +165,33 @@ describe('ManageProductsScreen barcode lookup', () => {
     expect(mockDb.products.add).not.toHaveBeenCalled();
   });
 
+  it('informs the user when barcode lookup happens offline', async () => {
+    const originalNavigator = navigator;
+    Object.defineProperty(globalThis, 'navigator', {
+      value: { onLine: false },
+      configurable: true,
+    });
+
+    try {
+      const user = userEvent.setup();
+      render(
+        <MemoryRouter>
+          <ManageProductsScreen />
+        </MemoryRouter>,
+      );
+
+      await user.click(screen.getByRole('button', { name: /scan barcode/i }));
+      await user.click(screen.getByRole('button', { name: /mock scan/i }));
+
+      expect(await screen.findByText(/you are offline\. enter details manually\./i)).toBeVisible();
+    } finally {
+      Object.defineProperty(globalThis, 'navigator', {
+        value: originalNavigator,
+        configurable: true,
+      });
+    }
+  });
+
   it('prevents updating a product to use an existing barcode', async () => {
     mockUseProducts.mockReturnValue([
       {

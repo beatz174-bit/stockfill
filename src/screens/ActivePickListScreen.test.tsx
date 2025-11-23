@@ -10,6 +10,7 @@ const addMock = vi.fn();
 const updateMock = vi.fn();
 const pickItemsMock = vi.fn<PickItem[], []>();
 const productsMock = vi.fn<Product[], []>();
+const pickListMock = vi.fn();
 
 const defaultProducts: Product[] = [
   {
@@ -84,13 +85,7 @@ vi.mock('../hooks/dataHooks', () => ({
       updated_at: 0,
     },
   ],
-  usePickList: () => ({
-    id: 'list-1',
-    area_id: 'area-1',
-    created_at: 0,
-    categories: [],
-    auto_add_new_products: false,
-  }),
+  usePickList: () => pickListMock(),
   useAreas: () => [{ id: 'area-1', name: 'Front Counter', created_at: 0, updated_at: 0 }],
 }));
 
@@ -111,6 +106,14 @@ describe('ActivePickListScreen product search', () => {
     updateMock.mockReset();
     pickItemsMock.mockReturnValue([]);
     productsMock.mockReturnValue(defaultProducts);
+    pickListMock.mockReset();
+    pickListMock.mockReturnValue({
+      id: 'list-1',
+      area_id: 'area-1',
+      created_at: 0,
+      categories: ['Drinks', 'Snacks'],
+      auto_add_new_products: false,
+    });
   });
 
   it('filters the product list based on the search query', async () => {
@@ -238,6 +241,38 @@ describe('ActivePickListScreen product search', () => {
       'Chips (Snacks)',
       'Cola (Drinks)',
     ]);
+  });
+
+  it('limits product options to the pick list categories', async () => {
+    pickListMock.mockReturnValue({
+      id: 'list-1',
+      area_id: 'area-1',
+      created_at: 0,
+      categories: ['Drinks'],
+      auto_add_new_products: false,
+    });
+
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const combobox = screen.getByRole('combobox');
+    await user.click(combobox);
+
+    const listbox = await screen.findByRole('listbox');
+    const options = within(listbox).getAllByRole('option');
+
+    expect(options.map((option) => option.textContent)).toEqual([
+      'Apple Juice (Drinks)',
+      'Cola (Drinks)',
+    ]);
+    expect(screen.queryByRole('option', { name: /chips \(snacks\)/i })).not.toBeInTheDocument();
   });
 
   it('updates an existing pick item when the same packaging is selected', async () => {

@@ -133,4 +133,51 @@ describe('ActivePickListScreen product search', () => {
     expect(updateMock).toHaveBeenCalledWith('item-1', expect.objectContaining({ quantity: 3 }));
     expect(addMock).not.toHaveBeenCalled();
   });
+
+  it('hides picked items when show picked is unchecked', async () => {
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-1',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        is_carton: false,
+        status: 'picked',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-2',
+        pick_list_id: 'list-1',
+        product_id: 'prod-2',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Cola')).toBeVisible();
+    expect(screen.getByText('Chips')).toBeVisible();
+
+    const togglePicked = screen.getByLabelText(/show picked/i);
+    await user.click(togglePicked);
+
+    expect(screen.queryByText('Cola')).not.toBeInTheDocument();
+    expect(screen.getByText('Chips')).toBeVisible();
+
+    await user.click(togglePicked);
+    expect(screen.getByText('Cola')).toBeVisible();
+  });
 });

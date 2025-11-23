@@ -202,6 +202,38 @@ export class StockFillDB extends Dexie {
           }),
         );
       });
+
+    this.version(7)
+      .stores({
+        products: 'id, name, category, &barcode, archived, created_at, updated_at',
+        areas: 'id, name, created_at, updated_at',
+        pickLists:
+          'id, area_id, created_at, completed_at, auto_add_new_products, categories',
+        pickItems:
+          'id, pick_list_id, product_id, status, is_carton, quantity, created_at, updated_at',
+        categories: 'id, name, created_at, updated_at',
+      })
+      .upgrade(async (tx) => {
+        const pickLists = await tx.table('pickLists').toArray();
+
+        await Promise.all(
+          pickLists.map((pickList) => {
+            const updates: Partial<PickList> = {};
+
+            if (!Array.isArray((pickList as PickList).categories)) {
+              updates.categories = [];
+            }
+
+            if (typeof (pickList as PickList).auto_add_new_products !== 'boolean') {
+              updates.auto_add_new_products = false;
+            }
+
+            if (Object.keys(updates).length === 0) return undefined;
+
+            return tx.table('pickLists').update(pickList.id, updates);
+          }),
+        );
+      });
   }
 }
 

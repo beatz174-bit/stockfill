@@ -11,6 +11,7 @@ const mockUseProducts = vi.fn();
 const mockUseCategories = vi.fn();
 const productDeleteMock = vi.fn();
 const pickItemCountMock = vi.fn();
+const pickItemsStore: any[] = [];
 
 const mockDb = {
   products: {
@@ -21,7 +22,12 @@ const mockDb = {
   },
   pickItems: {
     where: vi.fn(),
+    add: vi.fn(),
   },
+  pickLists: {
+    toArray: vi.fn(),
+  },
+  transaction: vi.fn(),
 };
 
 vi.mock('../hooks/dataHooks', () => ({
@@ -31,6 +37,10 @@ vi.mock('../hooks/dataHooks', () => ({
 
 vi.mock('../context/DBProvider', () => ({
   useDatabase: () => mockDb,
+}));
+
+vi.mock('uuid', () => ({
+  v4: () => 'new-product-id',
 }));
 
 vi.mock('../components/BarcodeScannerView', () => ({
@@ -47,6 +57,7 @@ beforeEach(() => {
   mockUseProducts.mockReset();
   mockUseCategories.mockReset();
   mockScannedBarcode = '123456';
+  pickItemsStore.length = 0;
   Object.values(mockDb.products).forEach((fn) => fn.mockReset());
   mockDb.products.where.mockImplementation(() => ({
     equals: (value: string) => ({
@@ -54,10 +65,35 @@ beforeEach(() => {
     }),
   }));
   pickItemCountMock.mockReset();
+  pickItemCountMock.mockImplementation((value?: string, field?: string) =>
+    Promise.resolve(pickItemsStore.filter((item) => item[field ?? 'product_id'] === value).length),
+  );
+  mockDb.pickItems.add.mockReset();
+  mockDb.pickItems.add.mockImplementation(async (item) => {
+    pickItemsStore.push(item);
+    return item.id;
+  });
   mockDb.pickItems.where.mockReset();
-  mockDb.pickItems.where.mockImplementation(() => ({
-    equals: () => ({ count: pickItemCountMock }),
+  mockDb.pickItems.where.mockImplementation((field: string) => ({
+    equals: (value: string) => ({
+      count: () => pickItemCountMock(value, field),
+      filter: (predicate: (item: any) => boolean) => ({
+        first: () =>
+          Promise.resolve(
+            pickItemsStore.find((item) => item[field] === value && predicate(item)) ?? undefined,
+          ),
+      }),
+      first: () =>
+        Promise.resolve(pickItemsStore.find((item) => item[field] === value) ?? undefined),
+    }),
   }));
+  mockDb.pickLists.toArray.mockReset();
+  mockDb.pickLists.toArray.mockResolvedValue([]);
+  mockDb.transaction.mockReset();
+  mockDb.transaction.mockImplementation(async (_mode: string, ...args: unknown[]) => {
+    const callback = args[args.length - 1] as () => Promise<unknown>;
+    return callback();
+  });
 });
 
 describe('ManageProductsScreen barcode lookup', () => {
@@ -176,6 +212,41 @@ describe('ManageProductsScreen barcode lookup', () => {
   });
 });
 
+describe('ManageProductsScreen auto-adding products to pick lists', () => {
+  it('adds a new product to matching pick lists when auto-add is enabled', async () => {
+    mockUseProducts.mockReturnValue([]);
+    mockUseCategories.mockReturnValue([{ id: 'cat-1', name: 'Snacks', created_at: 0, updated_at: 0 }]);
+    mockDb.pickLists.toArray.mockResolvedValue([
+      {
+        id: 'list-1',
+        area_id: 'area-1',
+        created_at: 0,
+        categories: ['Snacks'],
+        auto_add_new_products: true,
+      },
+    ]);
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <ManageProductsScreen />
+      </MemoryRouter>,
+    );
+
+    await user.type(screen.getByLabelText(/name/i), 'Granola Bar');
+    await user.click(screen.getByRole('button', { name: /save product/i }));
+
+    await waitFor(() => {
+      expect(mockDb.pickItems.add).toHaveBeenCalledTimes(1);
+    });
+
+    const addedItem = mockDb.pickItems.add.mock.calls[0][0];
+    expect(addedItem.pick_list_id).toBe('list-1');
+    expect(addedItem.product_id).toBe('new-product-id');
+    expect(addedItem.status).toBe('pending');
+  });
+});
+
 describe('ManageProductsScreen deletion safeguards', () => {
   it('blocks deletion when pick items reference the product', async () => {
     mockUseProducts.mockReturnValue([
@@ -191,7 +262,10 @@ describe('ManageProductsScreen deletion safeguards', () => {
       },
     ]);
     mockUseCategories.mockReturnValue([{ id: 'cat-1', name: 'Snacks', created_at: 0, updated_at: 0 }]);
-    pickItemCountMock.mockResolvedValueOnce(2);
+    pickItemsStore.push(
+      { id: 'item-1', product_id: 'prod-chips', pick_list_id: 'list-1' },
+      { id: 'item-2', product_id: 'prod-chips', pick_list_id: 'list-2' },
+    );
 
     const user = userEvent.setup();
     render(

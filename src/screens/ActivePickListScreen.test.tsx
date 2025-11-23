@@ -84,7 +84,13 @@ vi.mock('../hooks/dataHooks', () => ({
       updated_at: 0,
     },
   ],
-  usePickList: () => ({ id: 'list-1', area_id: 'area-1', created_at: 0 }),
+  usePickList: () => ({
+    id: 'list-1',
+    area_id: 'area-1',
+    created_at: 0,
+    categories: [],
+    auto_add_new_products: false,
+  }),
   useAreas: () => [{ id: 'area-1', name: 'Front Counter', created_at: 0, updated_at: 0 }],
 }));
 

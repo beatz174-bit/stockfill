@@ -95,7 +95,11 @@ export const PickItemRow = ({
         >
           <Add />
         </IconButton>
-        <IconButton color="error" onClick={onDelete} aria-label="Delete item">
+        <IconButton
+          color="error"
+          onClick={() => setIsConfirmOpen(true)}
+          aria-label="Delete item"
+        >
           <Delete />
         </IconButton>
       </Stack>

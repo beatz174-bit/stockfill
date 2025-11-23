@@ -23,6 +23,7 @@ export const StartPickListScreen = () => {
   const [areaId, setAreaId] = useState('');
   const [notes, setNotes] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [autoAddNewProducts, setAutoAddNewProducts] = useState(true);
 
   const sortedCategories = useMemo(
     () =>
@@ -55,6 +56,8 @@ export const StartPickListScreen = () => {
         area_id: areaId,
         created_at: timestamp,
         notes: notes.trim() || undefined,
+        categories: selectedCategoryNames,
+        auto_add_new_products: autoAddNewProducts,
       });
 
       if (selectedCategoryNames.length === 0) {
@@ -143,6 +146,15 @@ export const StartPickListScreen = () => {
               />
             ))}
           </FormGroup>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={autoAddNewProducts}
+                onChange={(event) => setAutoAddNewProducts(event.target.checked)}
+              />
+            }
+            label="Add new products"
+          />
         </Stack>
         <Button variant="contained" disabled={!areaId} onClick={start}>
           Save Pick List

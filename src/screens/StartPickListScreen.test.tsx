@@ -100,6 +100,8 @@ describe('StartPickListScreen', () => {
     categoriesMock.forEach((category) => {
       expect(screen.getByRole('checkbox', { name: category.name })).toBeInTheDocument();
     });
+
+    expect(screen.getByRole('checkbox', { name: /add new products/i })).toBeChecked();
   });
 
   it('prefills a new pick list with products from selected categories', async () => {
@@ -132,6 +134,10 @@ describe('StartPickListScreen', () => {
       expect(item.quantity).toBe(1);
       expect(item.status).toBe('pending');
     });
+
+    const pickListRecord = pickListAddMock.mock.calls[0][0];
+    expect(pickListRecord.categories).toEqual(['Drinks', 'Snacks']);
+    expect(pickListRecord.auto_add_new_products).toBe(true);
   });
 
   it('deduplicates products when selected categories include overlaps', async () => {

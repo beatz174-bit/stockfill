@@ -10,9 +10,9 @@ const areasMock = [
 ];
 
 const pickListsMock = [
-  { id: 'list-2', area_id: 'area-2', created_at: 3 },
-  { id: 'list-3', area_id: 'area-3', created_at: 4 },
-  { id: 'list-1', area_id: 'area-1', created_at: 5 },
+  { id: 'list-2', area_id: 'area-2', created_at: 3, categories: [], auto_add_new_products: false },
+  { id: 'list-3', area_id: 'area-3', created_at: 4, categories: [], auto_add_new_products: false },
+  { id: 'list-1', area_id: 'area-1', created_at: 5, categories: [], auto_add_new_products: false },
 ];
 
 vi.mock('../hooks/dataHooks', () => ({

@@ -19,9 +19,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { ProductRow } from '../components/ProductRow';
 import { useCategories, useProducts } from '../hooks/dataHooks';
 import { useDatabase } from '../context/DBProvider';
-import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE } from '../models/Product';
 import { BarcodeScannerView } from '../components/BarcodeScannerView';
 import { ExternalProductInfo, fetchProductFromOFF } from '../modules/openFoodFacts';
+import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE, Product } from '../models/Product';
 
 export const ManageProductsScreen = () => {
   const db = useDatabase();
@@ -94,6 +94,44 @@ export const ManageProductsScreen = () => {
     [db.products, findBarcodeConflict],
   );
 
+  const addProductToAutoLists = useCallback(
+    async (product: Product, timestamp: number) => {
+      const pickLists = await db.pickLists.toArray();
+      const eligibleLists = pickLists.filter(
+        (pickList) =>
+          pickList.auto_add_new_products && Array.isArray(pickList.categories)
+            ? pickList.categories.includes(product.category)
+            : false,
+      );
+
+      if (eligibleLists.length === 0) return;
+
+      await Promise.all(
+        eligibleLists.map(async (pickList) => {
+          const existing = await db.pickItems
+            .where('pick_list_id')
+            .equals(pickList.id)
+            .filter((item) => item.product_id === product.id)
+            .first();
+
+          if (existing) return undefined;
+
+          return db.pickItems.add({
+            id: uuidv4(),
+            pick_list_id: pickList.id,
+            product_id: product.id,
+            quantity: 1,
+            is_carton: false,
+            status: 'pending',
+            created_at: timestamp,
+            updated_at: timestamp,
+          });
+        }),
+      );
+    },
+    [db.pickItems, db.pickLists],
+  );
+
   useEffect(() => {
     if (categoryOptions.length === 0) return;
     if (!categoryOptions.includes(category)) {
@@ -137,17 +175,23 @@ export const ManageProductsScreen = () => {
       }
       throw error;
     }
-
-    await db.products.add({
-      id: uuidv4(),
+    const timestamp = Date.now();
+    const productId = uuidv4();
+    const newProduct: Product = {
+      id: productId,
       name,
       category,
       unit_type: DEFAULT_UNIT_TYPE,
       bulk_name: DEFAULT_BULK_NAME,
       barcode: barcode || undefined,
       archived: false,
-      created_at: Date.now(),
-      updated_at: Date.now(),
+      created_at: timestamp,
+      updated_at: timestamp,
+    };
+
+    await db.transaction('rw', db.products, db.pickLists, db.pickItems, async () => {
+      await db.products.add(newProduct);
+      await addProductToAutoLists(newProduct, timestamp);
     });
     setName('');
     setBarcode('');

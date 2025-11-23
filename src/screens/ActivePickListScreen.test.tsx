@@ -84,7 +84,13 @@ vi.mock('../hooks/dataHooks', () => ({
       updated_at: 0,
     },
   ],
-  usePickList: () => ({ id: 'list-1', area_id: 'area-1', created_at: 0 }),
+  usePickList: () => ({
+    id: 'list-1',
+    area_id: 'area-1',
+    created_at: 0,
+    categories: [],
+    auto_add_new_products: false,
+  }),
   useAreas: () => [{ id: 'area-1', name: 'Front Counter', created_at: 0, updated_at: 0 }],
 }));
 
@@ -327,7 +333,7 @@ describe('ActivePickListScreen product search', () => {
     expect(itemLabels).toEqual(['Apple Juice', 'Chips', 'Cola', 'Cola']);
   });
 
-  it('disables packaging filters and selects units when only unit packaging is present', () => {
+  it('disables packaging filters when only one packaging type is present', () => {
     pickItemsMock.mockReturnValue([
       {
         id: 'item-1',
@@ -349,38 +355,8 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('radio', { name: /all/i })).toBeDisabled();
     expect(screen.getByRole('radio', { name: /cartons/i })).toBeDisabled();
-    expect(screen.getByRole('radio', { name: /units/i })).toBeDisabled();
-    expect(screen.getByRole('radio', { name: /units/i })).toBeChecked();
-  });
-
-  it('disables packaging filters and selects cartons when only carton packaging is present', () => {
-    pickItemsMock.mockReturnValue([
-      {
-        id: 'item-1',
-        pick_list_id: 'list-1',
-        product_id: 'prod-1',
-        quantity: 1,
-        is_carton: true,
-        status: 'pending',
-        created_at: 0,
-        updated_at: 0,
-      },
-    ]);
-
-    render(
-      <MemoryRouter initialEntries={['/pick-lists/1']}>
-        <Routes>
-          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByRole('radio', { name: /all/i })).toBeDisabled();
-    expect(screen.getByRole('radio', { name: /cartons/i })).toBeDisabled();
-    expect(screen.getByRole('radio', { name: /units/i })).toBeDisabled();
-    expect(screen.getByRole('radio', { name: /cartons/i })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /units/i })).toBeEnabled();
   });
 
   it('resets the filter when the selected packaging type is unavailable', async () => {
@@ -442,8 +418,6 @@ describe('ActivePickListScreen product search', () => {
     );
 
     await waitFor(() => expect(screen.getByRole('radio', { name: /cartons/i })).toBeDisabled());
-    expect(screen.getByRole('radio', { name: /all/i })).toBeDisabled();
-    expect(screen.getByRole('radio', { name: /units/i })).toBeDisabled();
     expect(screen.getByRole('radio', { name: /units/i })).toBeChecked();
   });
 

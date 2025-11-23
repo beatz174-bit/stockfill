@@ -19,7 +19,7 @@ export const ActivePickListScreen = () => {
     [areas, pickList?.area_id],
   );
 
-  const handleIncrement = async (itemId: string) => {
+  const handleIncrementQuantity = async (itemId: string) => {
     const existing = await db.pickItems.get(itemId);
     if (!existing) return;
     await db.pickItems.update(itemId, {
@@ -28,11 +28,17 @@ export const ActivePickListScreen = () => {
     });
   };
 
-  const handleToggleStatus = async (itemId: string) => {
+  const handleToggleCarton = async (itemId: string) => {
     const existing = await db.pickItems.get(itemId);
     if (!existing) return;
-    const nextStatus = existing.status === 'picked' ? 'pending' : 'picked';
-    await db.pickItems.update(itemId, { status: nextStatus, updated_at: Date.now() });
+    await db.pickItems.update(itemId, {
+      quantity_bulk: existing.quantity_bulk > 0 ? 0 : 1,
+      updated_at: Date.now(),
+    });
+  };
+
+  const handleSwipeLeft = async (itemId: string) => {
+    await db.pickItems.update(itemId, { status: 'picked', updated_at: Date.now() });
   };
 
   const handleDeleteItem = async (itemId: string) => {
@@ -62,10 +68,10 @@ export const ActivePickListScreen = () => {
             key={item.id}
             item={item}
             product={products.find((p) => p.id === item.product_id)}
-            onIncrementUnit={() => handleIncrementUnit(item.id)}
-            onIncrementBulk={() => handleIncrementBulk(item.id)}
-            onToggleStatus={() => handleToggleStatus(item.id)}
-            onDelete={() => handleDeleteItem(item.id)}
+            onIncrementQuantity={() => handleIncrementQuantity(item.id)}
+            onToggleCarton={() => handleToggleCarton(item.id)}
+            onSwipeLeft={() => handleSwipeLeft(item.id)}
+            onSwipeRight={() => handleSwipeRight(item.id)}
           />
         ))}
       </Stack>

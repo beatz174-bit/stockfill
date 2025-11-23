@@ -6,21 +6,24 @@ import { Product } from '../models/Product';
 interface PickItemRowProps {
   item: PickItem;
   product?: Product | null;
-  onIncrementUnit: () => void;
-  onIncrementBulk: () => void;
-  onToggleStatus: () => void;
-  onDelete: () => void;
+  onIncrementQuantity: () => void;
+  onToggleCarton: () => void;
+  onSwipeLeft: () => void;
+  onSwipeRight: () => void;
 }
 
 export const PickItemRow = ({
   item,
   product,
-  onIncrementUnit,
-  onIncrementBulk,
-  onToggleStatus,
-  onDelete,
+  onIncrementQuantity,
+  onToggleCarton,
+  onSwipeLeft,
+  onSwipeRight,
 }: PickItemRowProps) => {
-  const isPicked = item.status === 'picked';
+  const longPressHandlers = useLongPress({ onLongPress: onToggleCarton, onClick: onIncrementQuantity });
+  const swipeHandlers = useSwipe({ onSwipeLeft, onSwipeRight });
+
+  const isCarton = item.quantity_bulk > 0;
 
   return (
     <Stack
@@ -30,30 +33,15 @@ export const PickItemRow = ({
       spacing={1}
       sx={{ p: 1, borderRadius: 1, bgcolor: 'background.paper', boxShadow: 1 }}
     >
-      <Stack direction="row" alignItems="center" spacing={1} flex={1}>
-        <Checkbox color="success" checked={isPicked} onChange={onToggleStatus} />
-        <Stack spacing={0.5} flex={1}>
-          <Typography
-            variant="subtitle1"
-            sx={{ textDecoration: isPicked ? 'line-through' : 'none', display: 'flex', gap: 0.5, alignItems: 'center' }}
-          >
-            {isPicked ? '✔️' : null} {product?.name ?? 'Unknown product'}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {item.quantity_units} units / {item.quantity_bulk} bulk
-          </Typography>
-        </Stack>
-      </Stack>
+      <div>
+        <Typography variant="subtitle1">{product?.name ?? 'Unknown product'}</Typography>
+        <Typography variant="caption" color="text.secondary">
+          Qty: {item.quantity_units}
+        </Typography>
+      </div>
       <Stack direction="row" spacing={1} alignItems="center">
-        <Button variant="outlined" size="small" startIcon={<Add />} onClick={onIncrementUnit}>
-          Unit
-        </Button>
-        <Button variant="outlined" size="small" startIcon={<Add />} onClick={onIncrementBulk}>
-          Bulk
-        </Button>
-        <Button variant="text" color="error" size="small" startIcon={<Delete />} onClick={onDelete}>
-          Delete
-        </Button>
+        {isCarton ? <Chip label="Carton" color="primary" size="small" /> : null}
+        <Chip label={item.status} color={statusColor[item.status]} size="small" />
       </Stack>
     </Stack>
   );

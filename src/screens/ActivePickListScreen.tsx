@@ -44,6 +44,10 @@ export const ActivePickListScreen = () => {
     await db.pickItems.update(itemId, { status: nextStatus, updated_at: Date.now() });
   };
 
+  const handleDeleteItem = async (itemId: string) => {
+    await db.pickItems.delete(itemId);
+  };
+
   const returnToLists = () => {
     navigate('/pick-lists');
   };
@@ -70,6 +74,7 @@ export const ActivePickListScreen = () => {
             onIncrementUnit={() => handleIncrementUnit(item.id)}
             onIncrementBulk={() => handleIncrementBulk(item.id)}
             onToggleStatus={() => handleToggleStatus(item.id)}
+            onDelete={() => handleDeleteItem(item.id)}
           />
         ))}
       </Stack>

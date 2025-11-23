@@ -1,4 +1,4 @@
-import { Add } from '@mui/icons-material';
+import { Add, Delete } from '@mui/icons-material';
 import { Button, Checkbox, Stack, Typography } from '@mui/material';
 import { PickItem } from '../models/PickItem';
 import { Product } from '../models/Product';
@@ -9,6 +9,7 @@ interface PickItemRowProps {
   onIncrementUnit: () => void;
   onIncrementBulk: () => void;
   onToggleStatus: () => void;
+  onDelete: () => void;
 }
 
 export const PickItemRow = ({
@@ -17,6 +18,7 @@ export const PickItemRow = ({
   onIncrementUnit,
   onIncrementBulk,
   onToggleStatus,
+  onDelete,
 }: PickItemRowProps) => {
   const isPicked = item.status === 'picked';
 
@@ -42,12 +44,15 @@ export const PickItemRow = ({
           </Typography>
         </Stack>
       </Stack>
-      <Stack direction="row" spacing={1}>
+      <Stack direction="row" spacing={1} alignItems="center">
         <Button variant="outlined" size="small" startIcon={<Add />} onClick={onIncrementUnit}>
           Unit
         </Button>
         <Button variant="outlined" size="small" startIcon={<Add />} onClick={onIncrementBulk}>
           Bulk
+        </Button>
+        <Button variant="text" color="error" size="small" startIcon={<Delete />} onClick={onDelete}>
+          Delete
         </Button>
       </Stack>
     </Stack>

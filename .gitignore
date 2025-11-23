@@ -3,4 +3,5 @@ dist
 .vite
 app/build/
 .gradle
-test-results/.last-run.json
+test-results/
+playwright-report/

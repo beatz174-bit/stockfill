@@ -43,27 +43,6 @@ export const ActivePickListScreen = () => {
     [items],
   );
 
-  const areaName = useMemo(
-    () => areas.find((area) => area.id === pickList?.area_id)?.name ?? 'Area',
-    [areas, pickList?.area_id],
-  );
-
-  const sortedItems = useMemo(() => {
-    return items
-      .map((item, index) => ({ item, index }))
-      .sort((a, b) => {
-        const timeA = a.item.updated_at ?? a.item.created_at;
-        const timeB = b.item.updated_at ?? b.item.created_at;
-
-        if (timeA !== timeB) {
-          return timeB - timeA;
-        }
-
-        return a.index - b.index;
-      })
-      .map(({ item }) => item);
-  }, [items]);
-
   const productMap = useMemo(() => {
     const map = new Map<string, Product>();
     products.forEach((product) => {
@@ -72,6 +51,35 @@ export const ActivePickListScreen = () => {
 
     return map;
   }, [products]);
+
+  const areaName = useMemo(
+    () => areas.find((area) => area.id === pickList?.area_id)?.name ?? 'Area',
+    [areas, pickList?.area_id],
+  );
+
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => {
+      const productA = productMap.get(a.product_id);
+      const productB = productMap.get(b.product_id);
+
+      const nameA = productA?.name.trim().toLowerCase() ?? '';
+      const nameB = productB?.name.trim().toLowerCase() ?? '';
+
+      const nameComparison = nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+      if (nameComparison !== 0) {
+        return nameComparison;
+      }
+
+      if (a.is_carton !== b.is_carton) {
+        return a.is_carton ? 1 : -1;
+      }
+
+      const timeA = a.updated_at ?? a.created_at;
+      const timeB = b.updated_at ?? b.created_at;
+
+      return timeA - timeB;
+    });
+  }, [items, productMap]);
 
   const sortedProducts = useMemo(() => {
     const uniqueProducts = new Map<string, Product>();

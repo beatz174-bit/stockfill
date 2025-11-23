@@ -19,7 +19,7 @@ export const ActivePickListScreen = () => {
     [areas, pickList?.area_id],
   );
 
-  const handleIncrementUnit = async (itemId: string) => {
+  const handleIncrementQuantity = async (itemId: string) => {
     const existing = await db.pickItems.get(itemId);
     if (!existing) return;
     await db.pickItems.update(itemId, {
@@ -28,11 +28,11 @@ export const ActivePickListScreen = () => {
     });
   };
 
-  const handleIncrementBulk = async (itemId: string) => {
+  const handleToggleCarton = async (itemId: string) => {
     const existing = await db.pickItems.get(itemId);
     if (!existing) return;
     await db.pickItems.update(itemId, {
-      quantity_bulk: existing.quantity_bulk + 1,
+      quantity_bulk: existing.quantity_bulk > 0 ? 0 : 1,
       updated_at: Date.now(),
     });
   };
@@ -68,8 +68,8 @@ export const ActivePickListScreen = () => {
             key={item.id}
             item={item}
             product={products.find((p) => p.id === item.product_id)}
-            onIncrementUnit={() => handleIncrementUnit(item.id)}
-            onIncrementBulk={() => handleIncrementBulk(item.id)}
+            onIncrementQuantity={() => handleIncrementQuantity(item.id)}
+            onToggleCarton={() => handleToggleCarton(item.id)}
             onSwipeLeft={() => handleSwipeLeft(item.id)}
             onSwipeRight={() => handleSwipeRight(item.id)}
           />

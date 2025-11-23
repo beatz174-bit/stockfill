@@ -7,8 +7,8 @@ import { useSwipe } from '../hooks/useSwipe';
 interface PickItemRowProps {
   item: PickItem;
   product?: Product | null;
-  onIncrementUnit: () => void;
-  onIncrementBulk: () => void;
+  onIncrementQuantity: () => void;
+  onToggleCarton: () => void;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
 }
@@ -22,13 +22,15 @@ const statusColor: Record<PickItemStatus, 'default' | 'success' | 'warning'> = {
 export const PickItemRow = ({
   item,
   product,
-  onIncrementUnit,
-  onIncrementBulk,
+  onIncrementQuantity,
+  onToggleCarton,
   onSwipeLeft,
   onSwipeRight,
 }: PickItemRowProps) => {
-  const longPressHandlers = useLongPress({ onLongPress: onIncrementBulk, onClick: onIncrementUnit });
+  const longPressHandlers = useLongPress({ onLongPress: onToggleCarton, onClick: onIncrementQuantity });
   const swipeHandlers = useSwipe({ onSwipeLeft, onSwipeRight });
+
+  const isCarton = item.quantity_bulk > 0;
 
   return (
     <Stack
@@ -43,10 +45,13 @@ export const PickItemRow = ({
       <div>
         <Typography variant="subtitle1">{product?.name ?? 'Unknown product'}</Typography>
         <Typography variant="caption" color="text.secondary">
-          {item.quantity_units} units / {item.quantity_bulk} bulk
+          Qty: {item.quantity_units}
         </Typography>
       </div>
-      <Chip label={item.status} color={statusColor[item.status]} size="small" />
+      <Stack direction="row" spacing={1} alignItems="center">
+        {isCarton ? <Chip label="Carton" color="primary" size="small" /> : null}
+        <Chip label={item.status} color={statusColor[item.status]} size="small" />
+      </Stack>
     </Stack>
   );
 };

@@ -1,17 +1,18 @@
 import {
   Autocomplete,
   Button,
+  Checkbox,
   Container,
+  FormControlLabel,
+  InputAdornment,
   Stack,
   TextField,
   Typography,
-  InputAdornment,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
-import { NumericStepper } from '../components/NumericStepper';
 import { usePickItems, useProducts } from '../hooks/dataHooks';
 import { useDatabase } from '../context/DBProvider';
 
@@ -22,8 +23,8 @@ export const AddItemScreen = () => {
   const products = useProducts();
   const [selectedProduct, setSelectedProduct] = useState<typeof products[number] | null>(null);
   const [query, setQuery] = useState('');
-  const [units, setUnits] = useState(1);
-  const [bulk, setBulk] = useState(0);
+  const [quantity, setQuantity] = useState(1);
+  const [isCarton, setIsCarton] = useState(false);
   const navigate = useNavigate();
 
   const existingProductIds = useMemo(
@@ -53,6 +54,16 @@ export const AddItemScreen = () => {
     }
   }, [filteredProducts, selectedProduct]);
 
+  useEffect(() => {
+    setQuantity(1);
+    setIsCarton(false);
+  }, [selectedProduct]);
+
+  const quantityHelperText = selectedProduct?.unit_type
+    ? `Enter ${selectedProduct.unit_type} to pick`
+    : 'Enter the quantity to pick';
+  const cartonLabel = selectedProduct?.bulk_name ? `Carton (${selectedProduct.bulk_name})` : 'Carton';
+
   const addItem = async () => {
     const productId = selectedProduct?.id;
 
@@ -61,8 +72,8 @@ export const AddItemScreen = () => {
       id: uuidv4(),
       pick_list_id: id,
       product_id: productId,
-      quantity_units: units,
-      quantity_bulk: bulk,
+      quantity_units: quantity,
+      quantity_bulk: isCarton ? 1 : 0,
       status: 'pending',
       created_at: Date.now(),
       updated_at: Date.now(),
@@ -113,8 +124,22 @@ export const AddItemScreen = () => {
             />
           )}
         />
-        <NumericStepper label="Units" value={units} onChange={setUnits} />
-        <NumericStepper label="Bulk" value={bulk} onChange={setBulk} />
+        <TextField
+          label="Quantity"
+          type="number"
+          inputProps={{ min: 1 }}
+          value={quantity}
+          onChange={(event) => {
+            const value = Number(event.target.value);
+            setQuantity(Number.isNaN(value) || value < 1 ? 1 : value);
+          }}
+          helperText={quantityHelperText}
+          fullWidth
+        />
+        <FormControlLabel
+          control={<Checkbox checked={isCarton} onChange={(event) => setIsCarton(event.target.checked)} />}
+          label={cartonLabel}
+        />
         <Button variant="contained" disabled={!selectedProduct} onClick={addItem}>
           Add to List
         </Button>

@@ -48,15 +48,32 @@ export const ActivePickListScreen = () => {
     [areas, pickList?.area_id],
   );
 
+  const sortedProducts = useMemo(() => {
+    const uniqueProducts = new Map<string, Product>();
+
+    products.forEach((product) => {
+      const normalizedName = product.name.trim().toLowerCase();
+      const existing = uniqueProducts.get(normalizedName);
+
+      if (!existing || product.updated_at > existing.updated_at) {
+        uniqueProducts.set(normalizedName, product);
+      }
+    });
+
+    return Array.from(uniqueProducts.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
+    );
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return products;
+    if (!normalizedQuery) return sortedProducts;
 
-    return products.filter((product) => {
+    return sortedProducts.filter((product) => {
       const searchableText = `${product.name} ${product.category} ${product.barcode ?? ''}`.toLowerCase();
       return searchableText.includes(normalizedQuery);
     });
-  }, [products, query]);
+  }, [sortedProducts, query]);
 
   useEffect(() => {
     if (!selectedProduct) return;

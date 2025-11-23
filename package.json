@@ -8,7 +8,8 @@
     "build": "tsc && cp src/pwa/manifest.json public/manifest.json && cp src/pwa/service-worker.js public/service-worker.js && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test": "vitest"
+    "test": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@emotion/react": "^11.13.0",
@@ -28,6 +29,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
+    "@playwright/test": "^1.50.1",
     "@types/node": "^22.0.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",

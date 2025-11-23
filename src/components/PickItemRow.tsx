@@ -1,4 +1,4 @@
-import { Add, Delete } from '@mui/icons-material';
+import { Add, Delete, Remove, SwapHoriz } from '@mui/icons-material';
 import {
   Button,
   Checkbox,

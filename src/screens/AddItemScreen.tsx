@@ -51,43 +51,40 @@ export const AddItemScreen = () => {
     setIsCarton(false);
   }, [selectedProduct]);
 
-  const quantityHelperText = selectedProduct?.unit_type
-    ? `Enter ${selectedProduct.unit_type} to pick`
+  const packagingLabel = isCarton ? cartonLabel : unitLabel;
+  const quantityHelperText = selectedProduct
+    ? `Enter ${packagingLabel.toLowerCase()} to pick`
     : 'Enter the quantity to pick';
-  const cartonLabel = selectedProduct?.bulk_name ? `Carton (${selectedProduct.bulk_name})` : 'Carton';
+  const cartonCheckboxLabel = selectedProduct?.bulk_name
+    ? `Carton (${selectedProduct.bulk_name})`
+    : 'Carton pick';
 
   const addItem = async () => {
     const productId = selectedProduct?.id;
 
-    if (!id || !productId) return;
+    if (!id || !productId || quantity <= 0) return;
 
-    const addOrUpdateItem = async (is_carton: boolean, quantity: number) => {
-      if (quantity <= 0) return;
-      const existing = items.find(
-        (item) => item.product_id === productId && item.is_carton === is_carton,
-      );
+    const existing = items.find((item) => item.product_id === productId && item.is_carton === isCarton);
 
-      if (existing) {
-        await db.pickItems.update(existing.id, {
-          quantity: existing.quantity + quantity,
-          updated_at: Date.now(),
-        });
-        return;
-      }
-
-      await db.pickItems.add({
-        id: uuidv4(),
-        pick_list_id: id,
-        product_id: productId,
-        quantity,
-        is_carton,
-        status: 'pending',
-        created_at: Date.now(),
+    if (existing) {
+      await db.pickItems.update(existing.id, {
+        quantity: existing.quantity + quantity,
         updated_at: Date.now(),
       });
-    };
+      navigate(`/pick-lists/${id}`);
+      return;
+    }
 
-    await Promise.all([addOrUpdateItem(false, units), addOrUpdateItem(true, bulk)]);
+    await db.pickItems.add({
+      id: uuidv4(),
+      pick_list_id: id,
+      product_id: productId,
+      quantity,
+      is_carton: isCarton,
+      status: 'pending',
+      created_at: Date.now(),
+      updated_at: Date.now(),
+    });
     navigate(`/pick-lists/${id}`);
   };
 
@@ -134,8 +131,19 @@ export const AddItemScreen = () => {
             />
           )}
         />
-        <NumericStepper label={unitLabel} value={units} onChange={setUnits} />
-        <NumericStepper label={cartonLabel} value={bulk} onChange={setBulk} />
+        <TextField
+          type="number"
+          label={`Quantity (${packagingLabel})`}
+          value={quantity}
+          onChange={(event) => setQuantity(Math.max(1, Number(event.target.value)))}
+          inputProps={{ min: 1 }}
+          helperText={quantityHelperText}
+        />
+        <FormControlLabel
+          control={<Checkbox checked={isCarton} onChange={(event) => setIsCarton(event.target.checked)} />}
+          label={cartonCheckboxLabel}
+          disabled={!selectedProduct}
+        />
         <Button variant="contained" disabled={!selectedProduct} onClick={addItem}>
           Add to List
         </Button>

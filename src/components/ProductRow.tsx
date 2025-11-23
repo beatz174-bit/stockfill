@@ -17,7 +17,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { ChangeEvent, useEffect, useState } from 'react';
-import { DEFAULT_UNIT_TYPE, Product } from '../models/Product';
+import { Product } from '../models/Product';
 import { BarcodeScannerView } from './BarcodeScannerView';
 
 interface ProductRowProps {
@@ -139,7 +139,7 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
             <div>
               <Typography variant="subtitle1">{product.name}</Typography>
               <Typography variant="caption" color="text.secondary">
-                {product.category} • {product.unit_type || DEFAULT_UNIT_TYPE}
+                {product.category}
               </Typography>
             </div>
             {product.barcode ? (

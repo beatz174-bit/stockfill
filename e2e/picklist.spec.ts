@@ -109,6 +109,7 @@ test.describe('Active pick list', () => {
     await expect(page.getByText('Playwright Cola Zero')).toBeVisible();
   });
 
+  test('adjusts item quantities with increment and decrement controls', async ({ page }) => {
   test('toggles picked visibility and disables the filter when all items are picked', async ({ page }) => {
     await page.goto('/');
 
@@ -179,6 +180,24 @@ test.describe('Active pick list', () => {
       .first()
       .click();
 
+    const quantityLabel = page.getByText('Qty: 1 Unit');
+    await expect(quantityLabel).toBeVisible();
+
+    await page.getByRole('button', { name: 'Increase quantity' }).click();
+    await expect(page.getByText('Qty: 2 Unit')).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByText('Qty: 2 Unit')).toBeVisible();
+
+    const decrementButton = page.getByRole('button', { name: 'Decrease quantity' });
+    await decrementButton.click();
+    await decrementButton.click();
+    await decrementButton.click();
+
+    await expect(page.getByText('Qty: 1 Unit')).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByText('Qty: 1 Unit')).toBeVisible();
     const showPickedToggle = page.getByLabel('Show picked');
     const itemToggles = page.getByRole('checkbox', { name: 'Toggle picked status' });
 

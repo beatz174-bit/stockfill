@@ -48,6 +48,11 @@ export const ActivePickListScreen = () => {
     [areas, pickList?.area_id],
   );
 
+  const productMap = useMemo(
+    () => new Map(products.map((product) => [product.id, product])),
+    [products],
+  );
+
   const sortedProducts = useMemo(
     () =>
       [...products].sort((a, b) =>
@@ -55,6 +60,23 @@ export const ActivePickListScreen = () => {
       ),
     [products],
   );
+
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => {
+      const productA = productMap.get(a.product_id);
+      const productB = productMap.get(b.product_id);
+
+      const nameA = productA?.name.toLowerCase() ?? '';
+      const nameB = productB?.name.toLowerCase() ?? '';
+
+      const nameComparison = nameA.localeCompare(nameB);
+      if (nameComparison !== 0) return nameComparison;
+
+      if (a.is_carton !== b.is_carton) return Number(a.is_carton) - Number(b.is_carton);
+
+      return (a.created_at ?? 0) - (b.created_at ?? 0);
+    });
+  }, [items, productMap]);
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -80,7 +102,9 @@ export const ActivePickListScreen = () => {
   }, [allItemsPicked, showPicked]);
 
   const visibleItems = useMemo(() => {
-    let filteredItems = showPicked ? items : items.filter((item) => item.status !== 'picked');
+    let filteredItems = showPicked
+      ? sortedItems
+      : sortedItems.filter((item) => item.status !== 'picked');
 
     if (itemFilter === 'cartons') {
       return filteredItems.filter((item) => item.is_carton);
@@ -299,7 +323,7 @@ export const ActivePickListScreen = () => {
           <PickItemRow
             key={item.id}
             item={item}
-            product={products.find((p) => p.id === item.product_id)}
+            product={productMap.get(item.product_id)}
             onIncrementQuantity={() => handleIncrementQuantity(item.id)}
             onDecrementQuantity={() => handleDecrementQuantity(item.id)}
             onToggleCarton={() => handleToggleCarton(item.id)}

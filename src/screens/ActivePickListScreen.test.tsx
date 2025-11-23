@@ -208,6 +208,65 @@ describe('ActivePickListScreen product search', () => {
     expect(addMock).not.toHaveBeenCalled();
   });
 
+  it('sorts pick list items by product name and packaging', () => {
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-1',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 2,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-2',
+        pick_list_id: 'list-1',
+        product_id: 'prod-3',
+        quantity: 1,
+        is_carton: true,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-3',
+        pick_list_id: 'list-1',
+        product_id: 'prod-2',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-4',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        is_carton: true,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const itemLabels = screen
+      .getAllByText(/Apple Juice|Chips|Cola/)
+      .map((element) => element.textContent);
+
+    expect(itemLabels).toEqual(['Apple Juice', 'Chips', 'Cola', 'Cola']);
+  });
+
   it('hides picked items when show picked is unchecked', async () => {
     pickItemsMock.mockReturnValue([
       {

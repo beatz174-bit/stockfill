@@ -25,26 +25,18 @@ export const AddItemScreen = () => {
   const [units, setUnits] = useState(1);
   const [bulk, setBulk] = useState(0);
   const navigate = useNavigate();
-
-  const existingProductIds = useMemo(
-    () => new Set(items.map((item) => item.product_id)),
-    [items],
-  );
-
-  const availableProducts = useMemo(
-    () => products.filter((product) => !existingProductIds.has(product.id)),
-    [existingProductIds, products],
-  );
+  const unitLabel = selectedProduct?.unit_type ?? 'Units';
+  const cartonLabel = selectedProduct?.bulk_name ?? 'Cartons';
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return availableProducts;
+    if (!normalizedQuery) return products;
 
-    return availableProducts.filter((product) => {
+    return products.filter((product) => {
       const searchableText = `${product.name} ${product.category} ${product.barcode ?? ''}`.toLowerCase();
       return searchableText.includes(normalizedQuery);
     });
-  }, [availableProducts, query]);
+  }, [products, query]);
 
   useEffect(() => {
     if (!selectedProduct) return;
@@ -56,17 +48,35 @@ export const AddItemScreen = () => {
   const addItem = async () => {
     const productId = selectedProduct?.id;
 
-    if (!id || !productId || existingProductIds.has(productId)) return;
-    await db.pickItems.add({
-      id: uuidv4(),
-      pick_list_id: id,
-      product_id: productId,
-      quantity_units: units,
-      quantity_bulk: bulk,
-      status: 'pending',
-      created_at: Date.now(),
-      updated_at: Date.now(),
-    });
+    if (!id || !productId) return;
+
+    const addOrUpdateItem = async (is_carton: boolean, quantity: number) => {
+      if (quantity <= 0) return;
+      const existing = items.find(
+        (item) => item.product_id === productId && item.is_carton === is_carton,
+      );
+
+      if (existing) {
+        await db.pickItems.update(existing.id, {
+          quantity: existing.quantity + quantity,
+          updated_at: Date.now(),
+        });
+        return;
+      }
+
+      await db.pickItems.add({
+        id: uuidv4(),
+        pick_list_id: id,
+        product_id: productId,
+        quantity,
+        is_carton,
+        status: 'pending',
+        created_at: Date.now(),
+        updated_at: Date.now(),
+      });
+    };
+
+    await Promise.all([addOrUpdateItem(false, units), addOrUpdateItem(true, bulk)]);
     navigate(`/pick-lists/${id}`);
   };
 
@@ -113,8 +123,8 @@ export const AddItemScreen = () => {
             />
           )}
         />
-        <NumericStepper label="Units" value={units} onChange={setUnits} />
-        <NumericStepper label="Bulk" value={bulk} onChange={setBulk} />
+        <NumericStepper label={unitLabel} value={units} onChange={setUnits} />
+        <NumericStepper label={cartonLabel} value={bulk} onChange={setBulk} />
         <Button variant="contained" disabled={!selectedProduct} onClick={addItem}>
           Add to List
         </Button>

@@ -4,10 +4,48 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ActivePickListScreen } from './ActivePickListScreen';
 import { PickItem } from '../models/PickItem';
+import { Product } from '../models/Product';
 
 const addMock = vi.fn();
 const updateMock = vi.fn();
 const pickItemsMock = vi.fn<PickItem[], []>();
+const productsMock = vi.fn<Product[], []>();
+
+const defaultProducts: Product[] = [
+  {
+    id: 'prod-1',
+    name: 'Cola',
+    category: 'Drinks',
+    unit_type: 'unit',
+    bulk_name: 'box',
+    barcode: '111',
+    archived: false,
+    created_at: 0,
+    updated_at: 0,
+  },
+  {
+    id: 'prod-2',
+    name: 'Chips',
+    category: 'Snacks',
+    unit_type: 'unit',
+    bulk_name: 'box',
+    barcode: '222',
+    archived: false,
+    created_at: 0,
+    updated_at: 0,
+  },
+  {
+    id: 'prod-3',
+    name: 'Apple Juice',
+    category: 'Drinks',
+    unit_type: 'unit',
+    bulk_name: 'box',
+    barcode: '333',
+    archived: false,
+    created_at: 0,
+    updated_at: 0,
+  },
+];
 
 vi.mock('../hooks/dataHooks', () => ({
   usePickItems: () => pickItemsMock(),
@@ -66,6 +104,7 @@ describe('ActivePickListScreen product search', () => {
     addMock.mockReset();
     updateMock.mockReset();
     pickItemsMock.mockReturnValue([]);
+    productsMock.mockReturnValue(defaultProducts);
   });
 
   it('filters the product list based on the search query', async () => {

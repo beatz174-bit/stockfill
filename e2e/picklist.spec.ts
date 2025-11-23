@@ -27,6 +27,38 @@ test.describe('Active pick list', () => {
     await expect(page.getByRole('button', { name: 'Save and Return' })).toBeEnabled();
   });
 
+  test('adds a product to an existing pick list from the search input', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.getByRole('heading', { name: 'StockFill' })).toBeVisible();
+    await page.getByRole('link', { name: 'Create Pick List' }).click();
+    await page.getByLabel('Area').click();
+    await page.getByRole('option', { name: areaName }).first().click();
+    await page.getByRole('button', { name: 'Save Pick List' }).click();
+
+    await expect(page.getByRole('heading', { name: `${areaName} List` })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Save and Return' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Pick Lists' })).toBeVisible();
+    await page.getByRole('link', { name: new RegExp(areaName, 'i') }).click();
+
+    await expect(page.getByRole('heading', { name: `${areaName} List` })).toBeVisible();
+
+    const searchInput = page.getByPlaceholder('Search products');
+    await searchInput.click();
+    await searchInput.fill(additionalProduct);
+
+    const productOption = page.getByRole('option', {
+      name: new RegExp(`${additionalProduct} \\(${areaName}\\)`, 'i'),
+    });
+    await expect(productOption).toBeVisible();
+    await productOption.click();
+
+    await expect(page.getByText(additionalProduct).first()).toBeVisible();
+    await expect(page.getByText(/Qty:\s*1\s+unit/i)).toBeVisible();
+  });
+
   test('allows adding and editing products from the manage products screen', async ({ page }) => {
     await page.goto('/');
 
@@ -57,6 +89,13 @@ test.describe('Active pick list', () => {
   test('toggles packaging type and persists the selection', async ({ page }) => {
     await page.goto('/');
 
+  test('lets a user mark an item as picked then revert it back to pending', async ({ page }) => {
+    await page.goto('/');
+
+  test('removes a product from the pick list when deleted', async ({ page }) => {
+    await page.goto('/');
+
+    await expect(page.getByRole('heading', { name: 'StockFill' })).toBeVisible();
     await page.getByRole('link', { name: 'Create Pick List' }).click();
     await page.getByLabel('Area').click();
     await page.getByRole('option', { name: areaName }).first().click();
@@ -98,5 +137,31 @@ test.describe('Active pick list', () => {
     await expect(page.getByRole('heading', { name: `${areaName} List` })).toBeVisible();
     await expect(page.getByText('Qty: 3 carton')).toBeVisible();
     await expect(page.getByLabel('Switch to unit packaging')).toBeVisible();
+    const itemStatusToggle = page.getByLabel('Toggle picked status').first();
+    const showPickedToggle = page.getByLabel('Show picked');
+
+    await expect(itemStatusToggle).not.toBeChecked();
+    await expect(showPickedToggle).toBeEnabled();
+
+    await itemStatusToggle.check();
+
+    await expect(itemStatusToggle).toBeChecked();
+    await expect(showPickedToggle).toBeDisabled();
+
+    await itemStatusToggle.uncheck();
+
+    await expect(itemStatusToggle).not.toBeChecked();
+    await expect(showPickedToggle).toBeEnabled();
+    const productRow = page.getByText(additionalProduct).locator(
+      'xpath=ancestor::div[contains(@class, "MuiStack-root")]//button[@aria-label="Delete item"]',
+    );
+
+    await expect(page.getByText(additionalProduct).first()).toBeVisible();
+    await productRow.first().click();
+
+    await expect(page.getByRole('dialog', { name: 'Delete item' })).toBeVisible();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+
+    await expect(page.getByText(additionalProduct).first()).not.toBeVisible();
   });
 });

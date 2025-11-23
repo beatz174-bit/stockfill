@@ -1,5 +1,17 @@
 import { Add, Delete } from '@mui/icons-material';
-import { Button, Checkbox, IconButton, Stack, Typography } from '@mui/material';
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  Stack,
+  Typography,
+} from '@mui/material';
+import { useState } from 'react';
 import { PickItem } from '../models/PickItem';
 import { Product } from '../models/Product';
 
@@ -20,12 +32,18 @@ export const PickItemRow = ({
   onStatusChange,
   onDelete,
 }: PickItemRowProps) => {
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const packagingLabel = item.is_carton
     ? product?.bulk_name ?? 'Carton'
     : product?.unit_type ?? 'Unit';
 
   const toggleStatus = (checked: boolean) => {
     onStatusChange(checked ? 'picked' : 'pending');
+  };
+
+  const handleConfirmDelete = () => {
+    onDelete();
+    setIsConfirmOpen(false);
   };
 
   return (
@@ -64,10 +82,41 @@ export const PickItemRow = ({
         <Button variant="contained" size="small" startIcon={<Add />} onClick={onIncrementQuantity}>
           Add 1
         </Button>
-        <IconButton color="error" onClick={onDelete} aria-label="Delete item">
+        <IconButton
+          color="error"
+          onClick={() => setIsConfirmOpen(true)}
+          aria-label={`Delete ${product?.name ?? 'item'}`}
+        >
           <Delete />
         </IconButton>
       </Stack>
+
+      <Dialog
+        open={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        aria-labelledby="confirm-delete-title"
+        aria-describedby="confirm-delete-description"
+      >
+        <DialogTitle id="confirm-delete-title">Delete item</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="confirm-delete-description">
+            {`Are you sure you want to delete ${product?.name ?? 'this product'} from the pick list?`}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsConfirmOpen(false)} aria-label="Cancel delete" autoFocus>
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handleConfirmDelete}
+            aria-label="Confirm delete"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 };

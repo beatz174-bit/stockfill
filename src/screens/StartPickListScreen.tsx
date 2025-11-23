@@ -25,12 +25,22 @@ export const StartPickListScreen = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [autoAddNewProducts, setAutoAddNewProducts] = useState(true);
 
+  const uniqueCategories = useMemo(() => {
+    const seen = new Set<string>();
+    return categories.filter((category) => {
+      const key = category.name.trim().toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [categories]);
+
   const sortedCategories = useMemo(
     () =>
-      [...categories].sort((a, b) =>
+      [...uniqueCategories].sort((a, b) =>
         a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
       ),
-    [categories],
+    [uniqueCategories],
   );
 
   const handleToggleCategory = (categoryId: string) => {

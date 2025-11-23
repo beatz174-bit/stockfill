@@ -114,6 +114,8 @@ export const ActivePickListScreen = () => {
   const packagingTypeCount = Number(hasCartonItems) + Number(hasUnitItems);
   const singlePackagingType = packagingTypeCount === 1;
 
+  const categoryFilteredProducts = useMemo(() => sortedProducts, [sortedProducts]);
+
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     if (!normalizedQuery) return categoryFilteredProducts;

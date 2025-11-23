@@ -198,30 +198,40 @@ export const ActivePickListScreen = () => {
           <Typography variant="caption" color="text.secondary">
             Selecting a product immediately adds it to the pick list.
           </Typography>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={showPicked}
-                onChange={(event) => setShowPicked(event.target.checked)}
-              />
-            }
-            label="Show picked"
-          />
           <FormControl>
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
               Filter list by packaging
             </Typography>
-            <RadioGroup
-              row
-              value={itemFilter}
-              onChange={(event) =>
-                setItemFilter(event.target.value as 'all' | 'cartons' | 'units')
-              }
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              flexWrap="wrap"
+              rowGap={1}
             >
-              <FormControlLabel value="all" control={<Radio />} label="All" />
-              <FormControlLabel value="cartons" control={<Radio />} label="Cartons" />
-              <FormControlLabel value="units" control={<Radio />} label="Units" />
-            </RadioGroup>
+              <RadioGroup
+                row
+                value={itemFilter}
+                onChange={(event) =>
+                  setItemFilter(event.target.value as 'all' | 'cartons' | 'units')
+                }
+                sx={{ flexGrow: 1 }}
+              >
+                <FormControlLabel value="all" control={<Radio />} label="All" />
+                <FormControlLabel value="cartons" control={<Radio />} label="Cartons" />
+                <FormControlLabel value="units" control={<Radio />} label="Units" />
+              </RadioGroup>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={showPicked}
+                    onChange={(event) => setShowPicked(event.target.checked)}
+                  />
+                }
+                label="Show picked"
+                sx={{ ml: { xs: 0, sm: 2 } }}
+              />
+            </Stack>
           </FormControl>
         </Stack>
       </Stack>

@@ -86,6 +86,9 @@ test.describe('Active pick list', () => {
     await expect(page.getByText('Playwright Cola Zero')).toBeVisible();
   });
 
+  test('lets a user mark an item as picked then revert it back to pending', async ({ page }) => {
+    await page.goto('/');
+
   test('removes a product from the pick list when deleted', async ({ page }) => {
     await page.goto('/');
 
@@ -105,6 +108,21 @@ test.describe('Active pick list', () => {
       .first()
       .click();
 
+    const itemStatusToggle = page.getByLabel('Toggle picked status').first();
+    const showPickedToggle = page.getByLabel('Show picked');
+
+    await expect(itemStatusToggle).not.toBeChecked();
+    await expect(showPickedToggle).toBeEnabled();
+
+    await itemStatusToggle.check();
+
+    await expect(itemStatusToggle).toBeChecked();
+    await expect(showPickedToggle).toBeDisabled();
+
+    await itemStatusToggle.uncheck();
+
+    await expect(itemStatusToggle).not.toBeChecked();
+    await expect(showPickedToggle).toBeEnabled();
     const productRow = page.getByText(additionalProduct).locator(
       'xpath=ancestor::div[contains(@class, "MuiStack-root")]//button[@aria-label="Delete item"]',
     );

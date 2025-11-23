@@ -131,6 +131,19 @@ export const AddItemScreen = () => {
             />
           )}
         />
+        {selectedProduct && (
+          <Stack spacing={0.25} sx={{ p: 1.5, borderRadius: 1, bgcolor: 'grey.100' }}>
+            <Typography variant="subtitle2" color="text.secondary">
+              Selected product
+            </Typography>
+            <Typography variant="body1" fontWeight={600}>
+              {selectedProduct.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {selectedProduct.category}
+            </Typography>
+          </Stack>
+        )}
         <TextField
           type="number"
           label={`Quantity (${packagingLabel})`}

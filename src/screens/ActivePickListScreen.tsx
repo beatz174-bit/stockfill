@@ -116,13 +116,13 @@ export const ActivePickListScreen = () => {
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return sortedProducts;
+    if (!normalizedQuery) return categoryFilteredProducts;
 
-    return sortedProducts.filter((product) => {
+    return categoryFilteredProducts.filter((product) => {
       const searchableText = `${product.name} ${product.category} ${product.barcode ?? ''}`.toLowerCase();
       return searchableText.includes(normalizedQuery);
     });
-  }, [sortedProducts, query]);
+  }, [categoryFilteredProducts, query]);
 
   useEffect(() => {
     if (!selectedProduct) return;

@@ -152,10 +152,8 @@ Dexie tables must be implemented exactly as follows:
 ### ActivePickListScreen
 
 -   List of PickItems\
--   Tap = +1 unit\
--   Long-press = +1 bulk\
--   Swipe left = mark picked\
--   Swipe right = delete\
+-   Use the checkbox in each row to toggle between pending and picked without removing the item\
+-   Row controls provide explicit +1 unit and +1 bulk actions (no long-press or swipe)\
 -   Add Item button\
 -   Complete List button
 
@@ -188,23 +186,15 @@ Dexie tables must be implemented exactly as follows:
 
 ------------------------------------------------------------------------
 
-## 6. Gestures & Interaction Rules
+## 6. Interaction Rules
 
-### Tap
+### Checkbox Toggle
 
-Increase `quantity_units` by **1**.
+Use a checkbox in each pick item row to switch between `"pending"` and `"picked"` without removing the item from the list. Picked rows must remain visible with clear status cues (e.g., checkmarks/strikethrough).
 
-### Long Press
+### Increment Controls
 
-Increase `quantity_bulk` by **1** using a shared `useLongPress()` hook.
-
-### Swipe Left
-
-Mark item as `"picked"`.
-
-### Swipe Right
-
-Delete item.
+Provide explicit controls to increase `quantity_units` and `quantity_bulk` (no long-press). Avoid swipe gestures for status changes or deletion on pick item rows.
 
 ### Barcode Scanning
 
@@ -318,6 +308,7 @@ Expose port 8080:
 -   Product creation must be minimal friction\
 -   Auto-save pick lists\
 -   Smooth animations on long press
+-   Pick list rows use checkboxes to toggle items between pending and picked; no swipe or long-press gestures should be required to update status, and picked rows stay visible with clear status cues
 
 ------------------------------------------------------------------------
 

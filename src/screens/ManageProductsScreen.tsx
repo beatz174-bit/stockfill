@@ -147,6 +147,11 @@ export const ManageProductsScreen = () => {
     [products, search],
   );
 
+  const sortedFiltered = useMemo(
+    () => filtered.slice().sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())),
+    [filtered],
+  );
+
   useEffect(() => {
     const state = location.state as { newBarcode?: string } | null;
     if (state?.newBarcode) {
@@ -319,7 +324,7 @@ export const ManageProductsScreen = () => {
             Save Product
           </Button>
         </Stack>
-        {filtered.map((product) => (
+        {sortedFiltered.map((product) => (
           <ProductRow
             key={product.id}
             product={product}

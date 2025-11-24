@@ -39,10 +39,14 @@ export const PickListsScreen = () => {
 
   const sortedLists = useMemo(() => {
     const locale = new Intl.Collator(undefined, { sensitivity: 'base' });
+    const normalizeAreaName = (areaId: string) =>
+      (areaNameById.get(areaId) ?? 'Unknown area').trim();
+
     return [...lists].sort((a, b) => {
-      const nameA = areaNameById.get(a.area_id) ?? 'Unknown area';
-      const nameB = areaNameById.get(b.area_id) ?? 'Unknown area';
-      const nameComparison = locale.compare(nameA, nameB);
+      const nameComparison = locale.compare(
+        normalizeAreaName(a.area_id),
+        normalizeAreaName(b.area_id),
+      );
       if (nameComparison !== 0) return nameComparison;
       return a.created_at - b.created_at;
     });

@@ -49,6 +49,11 @@ export const PickItemRow = ({
     onStatusChange(checked ? 'picked' : 'pending');
   };
 
+  const handleStatusChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    event.stopPropagation();
+    toggleStatus(event.target.checked);
+  };
+
   const closeDialogs = (event?: { stopPropagation?: () => void }) => {
     event?.stopPropagation?.();
     setIsConfirmOpen(false);
@@ -112,7 +117,9 @@ export const PickItemRow = ({
         <Checkbox
           edge="start"
           checked={item.status === 'picked'}
-          onChange={(event) => toggleStatus(event.target.checked)}
+          onChange={handleStatusChange}
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
           inputProps={{ 'aria-label': 'Toggle picked status' }}
         />
         <Stack spacing={0.5} minWidth={0} flex={1}>

@@ -56,7 +56,7 @@ describe('PickItemRow', () => {
     );
 
     const productName = screen.getByText(baseProduct.name);
-    const quantityLabel = screen.getByText('1 unit');
+    const quantityLabel = screen.getByText('Qty: 1 unit');
     const titleRow = screen.getByTestId('pick-item-title-row');
 
     const rowStyle = getComputedStyle(titleRow);

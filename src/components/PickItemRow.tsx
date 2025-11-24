@@ -134,7 +134,7 @@ export const PickItemRow = ({
               noWrap
               sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}
             >
-              {item.quantity} {packagingLabel}
+              Qty: {item.quantity} {packagingLabel}
             </Typography>
           </Stack>
           {isNarrowScreen && (

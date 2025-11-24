@@ -36,9 +36,25 @@ export const ActivePickListScreen = () => {
   const [query, setQuery] = useState('');
   const [showPicked, setShowPicked] = useState(true);
   const [itemState, setItemState] = useState(items);
+  const [isBatchUpdating, setIsBatchUpdating] = useState(false);
 
   useEffect(() => {
-    setItemState(items);
+    setItemState((current) => {
+      const currentById = new Map(current.map((item) => [item.id, item]));
+      return items.map((incoming) => {
+        const local = currentById.get(incoming.id);
+        if (!local) return incoming;
+
+        const localUpdatedAt = local.updated_at ?? 0;
+        const incomingUpdatedAt = incoming.updated_at ?? 0;
+
+        if (localUpdatedAt > incomingUpdatedAt) {
+          return local;
+        }
+
+        return incoming;
+      });
+    });
   }, [items]);
 
   // Reworked visible logic:
@@ -153,12 +169,13 @@ export const ActivePickListScreen = () => {
   const visibleItems = useMemo(() => {
     const arr = [...itemsAfterShowPicked];
     arr.sort((a, b) => {
-      const timeA = a.created_at ?? a.updated_at ?? 0;
-      const timeB = b.created_at ?? b.updated_at ?? 0;
-      if (timeA !== timeB) return timeA - timeB;
       const nameA = normalizeName(productMap.get(a.product_id)?.name ?? '');
       const nameB = normalizeName(productMap.get(b.product_id)?.name ?? '');
-      return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+      const nameComparison = nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+      if (nameComparison !== 0) return nameComparison;
+      const timeA = a.created_at ?? a.updated_at ?? 0;
+      const timeB = b.created_at ?? b.updated_at ?? 0;
+      return timeA - timeB;
     });
     return arr;
   }, [itemsAfterShowPicked, productMap]);
@@ -224,16 +241,28 @@ export const ActivePickListScreen = () => {
   };
 
   const handleMarkAllPicked = async () => {
+    if (!id) return;
+
     setShowPicked(true);
     const timestamp = Date.now();
     setItemState((current) =>
       current.map((item) => ({ ...item, status: 'picked', updated_at: timestamp })),
     );
-    await Promise.all(
-      itemState.map((item) =>
-        db.pickItems.update(item.id, { status: 'picked', updated_at: timestamp }),
-      ),
-    );
+    setIsBatchUpdating(true);
+
+    const itemsToUpdate = itemState.length > 0 ? itemState : items;
+
+    try {
+      await Promise.all(
+        itemsToUpdate.map((item) =>
+          db.pickItems.update(item.id, { status: 'picked', updated_at: timestamp }),
+        ),
+      );
+      const refreshedItems = await db.pickItems.where('pick_list_id').equals(id).toArray();
+      setItemState(refreshedItems);
+    } finally {
+      setIsBatchUpdating(false);
+    }
   };
 
   const addOrUpdateItem = async (product: Product) => {
@@ -375,8 +404,13 @@ export const ActivePickListScreen = () => {
                 }
                 label="Show picked"
               />
-              <Button variant="contained" size="small" onClick={handleMarkAllPicked}>
-                Pick Complete
+              <Button
+                variant="contained"
+                size="small"
+                onClick={handleMarkAllPicked}
+                disabled={isBatchUpdating}
+              >
+                {isBatchUpdating ? 'Picking...' : 'Pick Complete'}
               </Button>
             </Stack>
           </Stack>

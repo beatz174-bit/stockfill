@@ -7,7 +7,6 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -106,15 +105,16 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
             />
             <TextField
               select
+              SelectProps={{ native: true }}
               label="Category"
               value={formState.category}
               onChange={handleChange('category')}
               size="small"
             >
               {categories.map((cat) => (
-                <MenuItem key={cat} value={cat}>
+                <option key={cat} value={cat}>
                   {cat}
-                </MenuItem>
+                </option>
               ))}
             </TextField>
             {formState.barcode ? (

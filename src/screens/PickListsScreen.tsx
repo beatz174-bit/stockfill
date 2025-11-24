@@ -10,7 +10,6 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
-  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -68,11 +67,13 @@ export const PickListsScreen = () => {
 
   const saveEdit = async () => {
     if (!editingList || !areaId) return;
-    await db.pickLists.update(editingList.id, {
-      area_id: areaId,
-      notes: notes.trim() || undefined,
-    });
+    const listId = editingList.id;
+    const trimmedNotes = notes.trim() || undefined;
     closeEdit();
+    await db.pickLists.update(listId, {
+      area_id: areaId,
+      notes: trimmedNotes,
+    });
   };
 
   const deleteList = async (list: PickList) => {
@@ -136,39 +137,42 @@ export const PickListsScreen = () => {
         ))}
       </List>
 
-      <Dialog open={Boolean(editingList)} onClose={closeEdit} fullWidth>
-        <DialogTitle>Edit Pick List</DialogTitle>
-        <DialogContent sx={{ pt: 1 }}>
-          <Stack spacing={2} mt={1}>
-            <TextField
-              select
-              fullWidth
-              label="Area"
-              value={areaId}
-              onChange={(event) => setAreaId(event.target.value)}
-            >
-              {areas.map((area) => (
-                <MenuItem key={area.id} value={area.id}>
-                  {area.name}
-                </MenuItem>
-              ))}
-            </TextField>
-            <TextField
-              label="Notes"
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              multiline
-              minRows={2}
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeEdit}>Cancel</Button>
-          <Button variant="contained" onClick={saveEdit} disabled={!areaId}>
-            Save Changes
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {editingList ? (
+        <Dialog open onClose={closeEdit} fullWidth>
+          <DialogTitle>Edit Pick List</DialogTitle>
+          <DialogContent sx={{ pt: 1 }}>
+            <Stack spacing={2} mt={1}>
+              <TextField
+                select
+                SelectProps={{ native: true }}
+                fullWidth
+                label="Area"
+                value={areaId}
+                onChange={(event) => setAreaId(event.target.value)}
+              >
+                {areas.map((area) => (
+                  <option key={area.id} value={area.id}>
+                    {area.name}
+                  </option>
+                ))}
+              </TextField>
+              <TextField
+                label="Notes"
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                multiline
+                minRows={2}
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeEdit}>Cancel</Button>
+            <Button variant="contained" onClick={saveEdit} disabled={!areaId}>
+              Save Changes
+            </Button>
+          </DialogActions>
+        </Dialog>
+      ) : null}
     </Container>
   );
 };

@@ -42,6 +42,10 @@ const baseProduct: Product = {
 };
 
 describe('PickItemRow', () => {
+  beforeEach(() => {
+    mockMatchMedia(false);
+  });
+
   it('keeps quantity inline with matching typography to the product name', () => {
     render(
       <PickItemRow
@@ -96,5 +100,49 @@ describe('PickItemRow', () => {
     await user.click(screen.getByRole('button', { name: /^delete$/i }));
 
     expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not open the controls dialog when toggling status on narrow screens', async () => {
+    mockMatchMedia(true);
+    const onStatusChange = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <PickItemRow
+        item={baseItem}
+        product={baseProduct}
+        onIncrementQuantity={vi.fn()}
+        onDecrementQuantity={vi.fn()}
+        onToggleCarton={vi.fn()}
+        onStatusChange={onStatusChange}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('checkbox', { name: /toggle picked status/i }));
+
+    expect(onStatusChange).toHaveBeenCalledWith('picked');
+    expect(screen.queryByRole('dialog', { name: baseProduct.name })).not.toBeInTheDocument();
+  });
+
+  it('opens the controls dialog from the overflow button on narrow screens', async () => {
+    mockMatchMedia(true);
+    const user = userEvent.setup();
+
+    render(
+      <PickItemRow
+        item={baseItem}
+        product={baseProduct}
+        onIncrementQuantity={vi.fn()}
+        onDecrementQuantity={vi.fn()}
+        onToggleCarton={vi.fn()}
+        onStatusChange={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /open item controls/i }));
+
+    expect(screen.getByRole('dialog', { name: baseProduct.name })).toBeVisible();
   });
 });

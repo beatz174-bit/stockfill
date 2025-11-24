@@ -90,29 +90,18 @@ export const ActivePickListScreen = () => {
   );
 
   const sortedItems = useMemo(() => {
-    const normalizeProductName = (product?: Product | null) =>
-      product?.name ? product.name.trim().toLowerCase() : '';
-
     return [...itemsVisibleByStatus].sort((a, b) => {
-      const productA = productMap.get(a.product_id);
-      const productB = productMap.get(b.product_id);
+      const timeA = a.created_at ?? a.updated_at ?? 0;
+      const timeB = b.created_at ?? b.updated_at ?? 0;
 
-      const nameA = productA ? normalizeName(productA.name) : '';
-      const nameB = productB ? normalizeName(productB.name) : '';
-
-      const nameComparison = nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
-      if (nameComparison !== 0) {
-        return nameComparison;
+      if (timeA !== timeB) {
+        return timeA - timeB;
       }
 
-      if (a.is_carton !== b.is_carton) {
-        return a.is_carton ? 1 : -1;
-      }
+      const nameA = normalizeName(productMap.get(a.product_id)?.name ?? '');
+      const nameB = normalizeName(productMap.get(b.product_id)?.name ?? '');
 
-      const timeA = a.updated_at ?? a.created_at;
-      const timeB = b.updated_at ?? b.created_at;
-
-      return timeA - timeB;
+      return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
     });
   }, [itemsVisibleByStatus, productMap]);
 

@@ -432,9 +432,7 @@ export const ActivePickListScreen = () => {
               <RadioGroup
                 row
                 value={appliedItemFilter}
-                onChange={(event) =>
-                  setItemFilter(event.target.value as 'all' | 'cartons' | 'units')
-                }
+                onChange={(_, value) => setItemFilter(value as 'all' | 'cartons' | 'units')}
                 sx={{ flexGrow: 1 }}
               >
                 <FormControlLabel value="all" control={<Radio />} label="All" />

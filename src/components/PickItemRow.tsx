@@ -98,10 +98,31 @@ export const PickItemRow = ({
           onChange={(event) => toggleStatus(event.target.checked)}
           inputProps={{ 'aria-label': 'Toggle picked status' }}
         />
-        <Stack spacing={0.25} minWidth={0} flex={1}>
-          <Typography variant="subtitle1" noWrap sx={{ minWidth: 0 }}>
-            {product?.name ?? 'Unknown product'}
-          </Typography>
+        <Stack spacing={0.5} minWidth={0} flex={1}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            data-testid="pick-item-title-row"
+            sx={{ minWidth: 0 }}
+          >
+            <Typography
+              component="span"
+              variant="subtitle1"
+              noWrap
+              sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 600 }}
+            >
+              {product?.name ?? 'Unknown product'}
+            </Typography>
+            <Typography
+              component="span"
+              variant="subtitle1"
+              noWrap
+              sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}
+            >
+              {item.quantity} {packagingLabel}
+            </Typography>
+          </Stack>
           {isNarrowScreen && (
             <Typography variant="caption" color="text.secondary" noWrap>
               Tap to adjust quantity and packaging

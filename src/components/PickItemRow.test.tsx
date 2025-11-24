@@ -145,4 +145,54 @@ describe('PickItemRow', () => {
 
     expect(screen.getByRole('dialog', { name: baseProduct.name })).toBeVisible();
   });
+
+  it('uses inline controls on wide screens', async () => {
+    const onIncrement = vi.fn();
+    const onDecrement = vi.fn();
+    const onToggleCarton = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <PickItemRow
+        item={baseItem}
+        product={baseProduct}
+        onIncrementQuantity={onIncrement}
+        onDecrementQuantity={onDecrement}
+        onToggleCarton={onToggleCarton}
+        onStatusChange={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /switch to carton packaging/i }));
+    await user.click(screen.getByRole('button', { name: /increase quantity/i }));
+    await user.click(screen.getByRole('button', { name: /decrease quantity/i }));
+
+    expect(onToggleCarton).toHaveBeenCalledTimes(1);
+    expect(onIncrement).toHaveBeenCalledTimes(1);
+    expect(onDecrement).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens controls from keyboard interaction on narrow screens', async () => {
+    mockMatchMedia(true);
+    const user = userEvent.setup();
+
+    render(
+      <PickItemRow
+        item={baseItem}
+        product={baseProduct}
+        onIncrementQuantity={vi.fn()}
+        onDecrementQuantity={vi.fn()}
+        onToggleCarton={vi.fn()}
+        onStatusChange={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const row = screen.getByRole('button', { name: /test product/i });
+    row.focus();
+    await user.keyboard('{Enter}');
+
+    expect(screen.getByRole('dialog', { name: baseProduct.name })).toBeVisible();
+  });
 });

@@ -78,25 +78,20 @@ export const ActivePickListScreen = () => {
 
   const sortedItems = useMemo(() => {
     return [...itemsVisibleByStatus].sort((a, b) => {
+      const timeA = a.created_at ?? 0;
+      const timeB = b.created_at ?? 0;
+
+      if (timeA !== timeB) {
+        return timeA - timeB;
+      }
+
       const productA = productMap.get(a.product_id);
       const productB = productMap.get(b.product_id);
 
       const nameA = productA?.name.trim().toLowerCase() ?? '';
       const nameB = productB?.name.trim().toLowerCase() ?? '';
 
-      const nameComparison = nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
-      if (nameComparison !== 0) {
-        return nameComparison;
-      }
-
-      if (a.is_carton !== b.is_carton) {
-        return a.is_carton ? 1 : -1;
-      }
-
-      const timeA = a.updated_at ?? a.created_at;
-      const timeB = b.updated_at ?? b.created_at;
-
-      return timeA - timeB;
+      return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
     });
   }, [itemsVisibleByStatus, productMap]);
 

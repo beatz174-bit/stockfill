@@ -42,8 +42,32 @@ const baseProduct: Product = {
 };
 
 describe('PickItemRow', () => {
-  beforeEach(() => {
-    mockMatchMedia(false);
+  it('keeps quantity inline with matching typography to the product name', () => {
+    render(
+      <PickItemRow
+        item={baseItem}
+        product={baseProduct}
+        onIncrementQuantity={vi.fn()}
+        onDecrementQuantity={vi.fn()}
+        onToggleCarton={vi.fn()}
+        onStatusChange={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const productName = screen.getByText(baseProduct.name);
+    const quantityLabel = screen.getByText('1 unit');
+    const titleRow = screen.getByTestId('pick-item-title-row');
+
+    const rowStyle = getComputedStyle(titleRow);
+    expect(rowStyle.display).toBe('flex');
+    expect(rowStyle.flexDirection).toBe('row');
+
+    const productStyle = getComputedStyle(productName);
+    const quantityStyle = getComputedStyle(quantityLabel);
+
+    expect(productStyle.fontSize).toBe(quantityStyle.fontSize);
+    expect(productStyle.fontWeight).toBe(quantityStyle.fontWeight);
   });
 
   it('asks for confirmation before deleting a product from the pick list', async () => {

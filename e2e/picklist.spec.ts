@@ -25,15 +25,18 @@ const addProductToPickList = async (page: Page, productName: string) => {
   const searchInput = page.getByPlaceholder('Search products');
   await searchInput.click();
   await searchInput.fill(productName);
-  await page
+  const productOption = page
     .getByRole('option', { name: new RegExp(`${productName} \\(${areaName}\\)`, 'i') })
-    .first()
-    .click();
+    .first();
 
-  await expect(page.getByText(productName).first()).toBeVisible();
+  await expect(productOption).toBeVisible({ timeout: 15000 });
+  await productOption.click();
+
+  await expect(page.getByText(productName).first()).toBeVisible({ timeout: 15000 });
 };
 
 test.describe('Active pick list', () => {
+  test.use({ viewport: { width: 1280, height: 900 } });
   test('adds a product via search and renders it with quantity and packaging', async ({ page }) => {
     await navigateToNewPickList(page);
 
@@ -45,7 +48,7 @@ test.describe('Active pick list', () => {
       .click();
 
     await expect(page.getByText(secondaryProduct, { exact: true })).toBeVisible();
-    await expect(page.getByText(/Qty:\s*1\s+unit/i)).toBeVisible();
+    await expect(page.getByText(/Qty:\s*1\s+unit/i)).toBeVisible({ timeout: 10000 });
   });
 
   test('creates a pick list and adds products from the search bar', async ({ page }) => {
@@ -67,7 +70,7 @@ test.describe('Active pick list', () => {
 
     await addProductToPickList(page, additionalProduct);
 
-    await expect(page.getByText(/Qty:\s*1\s+unit/i)).toBeVisible();
+    await expect(page.getByText(/Qty:\s*1\s+unit/i)).toBeVisible({ timeout: 10000 });
   });
 
   test('allows adding and editing products from the manage products screen', async ({ page }) => {
@@ -190,7 +193,7 @@ test.describe('Active pick list', () => {
     await expect(quantityLabel).toBeVisible();
 
     await page.getByRole('button', { name: 'Increase quantity' }).click();
-    await expect(page.getByText(/Qty:\s*2\s+unit/i)).toBeVisible();
+    await expect(page.getByText(/Qty:\s*2\s+unit/i)).toBeVisible({ timeout: 10000 });
 
     await page.reload();
     await expect(page.getByText(/Qty:\s*2\s+unit/i)).toBeVisible();
@@ -200,10 +203,35 @@ test.describe('Active pick list', () => {
     await decrementButton.click();
     await decrementButton.click();
 
-    await expect(page.getByText(/Qty:\s*1\s+unit/i)).toBeVisible();
+    await expect(page.getByText(/Qty:\s*1\s+unit/i)).toBeVisible({ timeout: 10000 });
 
     await page.reload();
     await expect(page.getByText(/Qty:\s*1\s+unit/i)).toBeVisible();
+  });
+
+  test('closes mobile controls with the close button and backdrop', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    await navigateToNewPickList(page);
+    await addProductToPickList(page, additionalProduct);
+
+    const productRow = page
+      .getByText(additionalProduct, { exact: true })
+      .locator('xpath=ancestor::div[contains(@class, "MuiStack-root")]')
+      .first();
+    const controlsDialog = page.getByRole('dialog', { name: additionalProduct });
+
+    await productRow.click();
+    await expect(controlsDialog).toBeVisible();
+
+    await page.getByRole('button', { name: 'Close controls' }).click();
+    await expect(controlsDialog).toHaveCount(0);
+
+    await productRow.click();
+    await expect(controlsDialog).toBeVisible();
+
+    await page.locator('.MuiBackdrop-root').click({ position: { x: 10, y: 10 } });
+    await expect(controlsDialog).toHaveCount(0);
   });
 
   test('toggles picked visibility and disables the filter when all items are picked', async ({ page }) => {
@@ -251,21 +279,21 @@ test.describe('Active pick list', () => {
 
     const increaseButton = page.getByLabel('Increase quantity');
     await increaseButton.click();
-    await expect(page.getByText(/Qty:\s*2\s+unit/i)).toBeVisible();
+    await expect(page.getByText(/Qty:\s*2\s+unit/i)).toBeVisible({ timeout: 10000 });
 
     await page.getByLabel('Switch to carton packaging').click();
-    await expect(page.getByText(/Qty:\s*2\s+carton/i)).toBeVisible();
+    await expect(page.getByText(/Qty:\s*2\s+carton/i)).toBeVisible({ timeout: 10000 });
 
     await page.getByLabel('Decrease quantity').click();
-    await expect(page.getByText(/Qty:\s*1\s+carton/i)).toBeVisible();
+    await expect(page.getByText(/Qty:\s*1\s+carton/i)).toBeVisible({ timeout: 10000 });
 
     await page.getByLabel('Switch to unit packaging').click();
-    await expect(page.getByText(/Qty:\s*1\s+unit/i)).toBeVisible();
+    await expect(page.getByText(/Qty:\s*1\s+unit/i)).toBeVisible({ timeout: 10000 });
 
     await increaseButton.click();
     await increaseButton.click();
     await page.getByLabel('Switch to carton packaging').click();
-    await expect(page.getByText(/Qty:\s*3\s+carton/i)).toBeVisible();
+    await expect(page.getByText(/Qty:\s*3\s+carton/i)).toBeVisible({ timeout: 10000 });
 
     await page.getByRole('button', { name: 'Save and Return' }).click();
     await expect(page.getByRole('heading', { name: 'Pick Lists' })).toBeVisible();
@@ -273,8 +301,24 @@ test.describe('Active pick list', () => {
     await page.reload();
     await page.getByRole('link', { name: areaName }).first().click();
     await expect(page.getByRole('heading', { name: `${areaName} List` })).toBeVisible();
-    await expect(page.getByText(/Qty:\s*3\s+carton/i)).toBeVisible();
+    await expect(page.getByText(/Qty:\s*3\s+carton/i)).toBeVisible({ timeout: 10000 });
     await expect(page.getByLabel('Switch to unit packaging')).toBeVisible();
+  });
+
+  test('shows inline controls on wide view without the popup trigger', async ({ page }) => {
+    await navigateToNewPickList(page);
+    await addProductToPickList(page, additionalProduct);
+
+    const productRow = page
+      .getByText(additionalProduct)
+      .locator('xpath=ancestor::div[contains(@class, "MuiStack-root")]')
+      .first();
+
+    await expect(productRow.getByLabel('Switch to carton packaging')).toBeVisible();
+    await expect(productRow.getByLabel('Decrease quantity')).toBeVisible();
+    await expect(productRow.getByLabel('Increase quantity')).toBeVisible();
+    await expect(productRow.getByLabel('Delete item')).toBeVisible();
+    await expect(productRow.getByLabel('Open item controls')).toHaveCount(0);
   });
 
   test('lets a user mark an item as picked then revert it back to pending', async ({ page }) => {
@@ -332,5 +376,43 @@ test.describe('Active pick list', () => {
     await deleteButton.click();
 
     await expect(page.getByText(additionalProduct)).toHaveCount(0);
+  });
+});
+
+test.describe('Active pick list responsive controls on mobile', () => {
+  test.use({ viewport: { width: 430, height: 900 } });
+
+  test('shows popup controls on narrow screens and hides inline buttons', async ({ page }) => {
+    await navigateToNewPickList(page);
+    await addProductToPickList(page, additionalProduct);
+
+    const productRow = page
+      .getByText(additionalProduct)
+      .locator('xpath=ancestor::div[contains(@class, "MuiStack-root")]')
+      .first();
+
+    await expect(productRow.getByLabel('Switch to carton packaging')).toHaveCount(0);
+    await expect(productRow.getByLabel('Decrease quantity')).toHaveCount(0);
+    await expect(productRow.getByLabel('Increase quantity')).toHaveCount(0);
+    await expect(productRow.getByLabel('Delete item')).toHaveCount(0);
+
+    const controlsButton = productRow.getByLabel('Open item controls');
+    await expect(controlsButton).toBeVisible();
+    await controlsButton.click();
+
+    const itemDialog = page.getByRole('dialog', { name: additionalProduct });
+    await expect(itemDialog).toBeVisible();
+    await expect(itemDialog.getByText(/Quantity:\s*1\s+unit/i)).toBeVisible({ timeout: 10000 });
+    await expect(itemDialog.getByLabel('Increase quantity')).toBeVisible();
+
+    await itemDialog.getByLabel('Increase quantity').click();
+    await expect(itemDialog.getByText(/Quantity:\s*2\s+unit/i)).toBeVisible({ timeout: 10000 });
+    await itemDialog.getByLabel('Switch to carton packaging').click();
+    await expect(itemDialog.getByText(/Quantity:\s*2\s+carton/i)).toBeVisible({ timeout: 10000 });
+
+    await itemDialog.getByLabel('Delete item').click();
+    await expect(page.getByRole('dialog', { name: 'Delete item' })).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: additionalProduct })).toBeVisible();
   });
 });

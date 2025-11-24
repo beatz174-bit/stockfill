@@ -3,12 +3,9 @@ import {
   Button,
   Checkbox,
   Container,
-  FormControl,
   FormControlLabel,
   IconButton,
   InputAdornment,
-  Radio,
-  RadioGroup,
   Stack,
   TextField,
   Tooltip,
@@ -37,7 +34,6 @@ export const ActivePickListScreen = () => {
   const navigate = useNavigate();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [query, setQuery] = useState('');
-  const [itemFilter, setItemFilter] = useState<'all' | 'cartons' | 'units'>('all');
   const [showPicked, setShowPicked] = useState(true);
   const [itemState, setItemState] = useState(items);
 
@@ -45,48 +41,15 @@ export const ActivePickListScreen = () => {
     setItemState(items);
   }, [items]);
 
-  // Reworked visible/filter logic:
-  // - Keep `itemFilter` as the single source-of-truth for the radio selection.
-  // - Compute items after applying `showPicked` and `itemFilter`, and derive
-  //   disabled flags from the actual visible items to avoid races / feedback loops.
+  // Reworked visible logic:
   const itemsAfterShowPicked = useMemo(
     () => (showPicked ? itemState : itemState.filter((item) => item.status !== 'picked')),
     [itemState, showPicked],
   );
 
-  const hasCartonItemsOverall = useMemo(
-    () => itemsAfterShowPicked.some((item) => item.is_carton),
-    [itemsAfterShowPicked],
-  );
-  const hasUnitItemsOverall = useMemo(
-    () => itemsAfterShowPicked.some((item) => !item.is_carton),
-    [itemsAfterShowPicked],
-  );
-
-  const itemsAfterPackagingFilter = useMemo(() => {
-    if (itemFilter === 'cartons') return itemsAfterShowPicked.filter((item) => item.is_carton);
-    if (itemFilter === 'units') return itemsAfterShowPicked.filter((item) => !item.is_carton);
-    return itemsAfterShowPicked;
-  }, [itemsAfterShowPicked, itemFilter]);
-
-  const hasPickedItemsVisible = useMemo(
-    () => itemsAfterPackagingFilter.some((item) => item.status === 'picked'),
-    [itemsAfterPackagingFilter],
-  );
-  const hasUnpickedItemsVisible = useMemo(
-    () => itemsAfterPackagingFilter.some((item) => item.status !== 'picked'),
-    [itemsAfterPackagingFilter],
-  );
-
   const allItemsPicked = useMemo(
     () => itemState.length > 0 && itemState.every((item) => item.status === 'picked'),
     [itemState],
-  );
-
-  const packagingFiltersDisabled = useMemo(
-    // packaging filters disabled when showPicked is false, or visible items contain mixed statuses
-    () => !showPicked || (hasPickedItemsVisible && hasUnpickedItemsVisible),
-    [hasPickedItemsVisible, hasUnpickedItemsVisible, showPicked],
   );
 
   const productMap = useMemo(() => {
@@ -102,23 +65,6 @@ export const ActivePickListScreen = () => {
     () => areas.find((area) => area.id === pickList?.area_id)?.name ?? 'Area',
     [areas, pickList?.area_id],
   );
-
-  // Keep a sorted list for available items after applying showPicked (used for other UX)
-  const sortedItems = useMemo(() => {
-    return [...itemsAfterShowPicked].sort((a, b) => {
-      const timeA = a.created_at ?? a.updated_at ?? 0;
-      const timeB = b.created_at ?? b.updated_at ?? 0;
-
-      if (timeA !== timeB) {
-        return timeA - timeB;
-      }
-
-      const nameA = normalizeName(productMap.get(a.product_id)?.name ?? '');
-      const nameB = normalizeName(productMap.get(b.product_id)?.name ?? '');
-
-      return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
-    });
-  }, [itemsAfterShowPicked, productMap]);
 
   const sortedProducts = useMemo(() => {
     const dedupedById = new Map<string, Product>();
@@ -203,24 +149,9 @@ export const ActivePickListScreen = () => {
     }
   }, [allItemsPicked, showPicked]);
 
-  // Sanitize itemFilter whenever availability changes or packaging is disabled.
-  useEffect(() => {
-    if (packagingFiltersDisabled) {
-      if (itemFilter !== 'all') setItemFilter('all');
-      return;
-    }
-
-    if (itemFilter === 'cartons' && !hasCartonItemsOverall) {
-      setItemFilter(hasUnitItemsOverall ? 'units' : 'all');
-    } else if (itemFilter === 'units' && !hasUnitItemsOverall) {
-      setItemFilter(hasCartonItemsOverall ? 'cartons' : 'all');
-    }
-  }, [packagingFiltersDisabled, itemFilter, hasCartonItemsOverall, hasUnitItemsOverall]);
-
-  // Sort the items that are actually visible (after showPicked + packaging filter)
+  // Sort the items that are actually visible (after showPicked)
   const visibleItems = useMemo(() => {
-    // itemsAfterPackagingFilter is already computed after showPicked & packaging
-    const arr = [...itemsAfterPackagingFilter];
+    const arr = [...itemsAfterShowPicked];
     arr.sort((a, b) => {
       const timeA = a.created_at ?? a.updated_at ?? 0;
       const timeB = b.created_at ?? b.updated_at ?? 0;
@@ -230,7 +161,7 @@ export const ActivePickListScreen = () => {
       return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
     });
     return arr;
-  }, [itemsAfterPackagingFilter, productMap]);
+  }, [itemsAfterShowPicked, productMap]);
 
   const updateItemState = (itemId: string, updater: (item: PickItem) => PickItem) => {
     setItemState((current) => current.map((item) => (item.id === itemId ? updater(item) : item)));
@@ -426,55 +357,29 @@ export const ActivePickListScreen = () => {
           <Typography variant="caption" color="text.secondary">
             Selecting a product immediately adds it to the pick list.
           </Typography>
-          <FormControl>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-              Filter list by packaging
-            </Typography>
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-              flexWrap="wrap"
-              rowGap={1}
-            >
-              <RadioGroup
-                row
-                value={itemFilter}
-                // use the second arg (value) provided by MUI RadioGroup onChange
-                onChange={(_, value) => setItemFilter(value as 'all' | 'cartons' | 'units')}
-                sx={{ flexGrow: 1 }}
-              >
-                <FormControlLabel value="all" control={<Radio />} label="All" />
-                <FormControlLabel
-                  value="cartons"
-                  control={<Radio />}
-                  label="Cartons"
-                  disabled={packagingFiltersDisabled}
-                />
-                <FormControlLabel
-                  value="units"
-                  control={<Radio />}
-                  label="Units"
-                  disabled={packagingFiltersDisabled}
-                />
-              </RadioGroup>
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: { xs: 0, sm: 2 } }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={showPicked}
-                      onChange={(event) => setShowPicked(event.target.checked)}
-                      disabled={allItemsPicked}
-                    />
-                  }
-                  label="Show picked"
-                />
-                <Button variant="contained" size="small" onClick={handleMarkAllPicked}>
-                  Pick Complete
-                </Button>
-              </Stack>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            flexWrap="wrap"
+            rowGap={1}
+          >
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: { xs: 0, sm: 2 } }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={showPicked}
+                    onChange={(event) => setShowPicked(event.target.checked)}
+                    disabled={allItemsPicked}
+                  />
+                }
+                label="Show picked"
+              />
+              <Button variant="contained" size="small" onClick={handleMarkAllPicked}>
+                Pick Complete
+              </Button>
             </Stack>
-          </FormControl>
+          </Stack>
         </Stack>
       </Stack>
       {pickList?.notes ? (

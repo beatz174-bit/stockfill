@@ -264,42 +264,12 @@ test.describe('Active pick list', () => {
     await expect(showPickedToggle).toBeChecked();
   });
 
-  test('disables packaging filters when statuses are mixed and filters by packaging when enabled', async ({ page }) => {
+  test('omits global packaging filter controls', async ({ page }) => {
     await navigateToNewPickList(page);
 
-    await addProductToPickList(page, additionalProduct);
-    await addProductToPickList(page, secondaryProduct);
-
-    const cartonToggle = page.getByRole('button', { name: /Switch to carton packaging/i }).first();
-    await cartonToggle.click();
-
-    const cartonsRadio = page.getByRole('radio', { name: 'Cartons' });
-    const unitsRadio = page.getByRole('radio', { name: 'Units' });
-
-    await expect(cartonsRadio).toBeEnabled();
-    await expect(unitsRadio).toBeEnabled();
-
-    await unitsRadio.click();
-    await expect(unitsRadio).toBeChecked();
-    await expect(page.getByText(additionalProduct)).toHaveCount(0);
-    await expect(page.getByText(secondaryProduct)).toBeVisible();
-
-    await cartonsRadio.click();
-    await expect(cartonsRadio).toBeChecked();
-    await expect(page.getByText(secondaryProduct)).toHaveCount(0);
-    await expect(page.getByText(additionalProduct)).toBeVisible();
-
-    const statusToggles = page.getByLabel('Toggle picked status');
-    await statusToggles.first().check();
-
-    await expect(cartonsRadio).toBeDisabled();
-    await expect(unitsRadio).toBeDisabled();
-    await expect(page.getByRole('radio', { name: 'All' })).toBeChecked();
-
-    const showPickedToggle = page.getByRole('checkbox', { name: 'Show picked' });
-    await showPickedToggle.click();
-    await expect(cartonsRadio).toBeDisabled();
-    await expect(unitsRadio).toBeDisabled();
+    await expect(page.getByText('Filter list by packaging')).toHaveCount(0);
+    await expect(page.getByRole('radio', { name: 'Cartons' })).toHaveCount(0);
+    await expect(page.getByRole('radio', { name: 'Units' })).toHaveCount(0);
   });
 
   test('toggles packaging type and persists the selection', async ({ page }) => {

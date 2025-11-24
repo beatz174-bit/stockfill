@@ -209,6 +209,31 @@ test.describe('Active pick list', () => {
     await expect(page.getByText(/Qty:\s*1\s+unit/i)).toBeVisible();
   });
 
+  test('closes mobile controls with the close button and backdrop', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    await navigateToNewPickList(page);
+    await addProductToPickList(page, additionalProduct);
+
+    const productRow = page
+      .getByText(additionalProduct, { exact: true })
+      .locator('xpath=ancestor::div[contains(@class, "MuiStack-root")]')
+      .first();
+    const controlsDialog = page.getByRole('dialog', { name: additionalProduct });
+
+    await productRow.click();
+    await expect(controlsDialog).toBeVisible();
+
+    await page.getByRole('button', { name: 'Close controls' }).click();
+    await expect(controlsDialog).toHaveCount(0);
+
+    await productRow.click();
+    await expect(controlsDialog).toBeVisible();
+
+    await page.locator('.MuiBackdrop-root').click({ position: { x: 10, y: 10 } });
+    await expect(controlsDialog).toHaveCount(0);
+  });
+
   test('toggles picked visibility and disables the filter when all items are picked', async ({ page }) => {
     await navigateToNewPickList(page);
     await addProductToPickList(page, secondaryProduct);

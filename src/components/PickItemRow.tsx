@@ -60,6 +60,10 @@ export const PickItemRow = ({
     }
   };
 
+  const handleCloseControls = () => {
+    setIsControlsOpen(false);
+  };
+
   const handleRowKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!isNarrowScreen) return;
 
@@ -218,7 +222,7 @@ export const PickItemRow = ({
       {isNarrowScreen && (
         <Dialog
           open={isControlsOpen}
-          onClose={() => setIsControlsOpen(false)}
+          onClose={handleCloseControls}
           fullWidth
           maxWidth="xs"
           aria-labelledby="item-controls-title"
@@ -232,10 +236,7 @@ export const PickItemRow = ({
             </Typography>
             <IconButton
               aria-label="Close controls"
-              onClick={(event) => {
-                stopPropagation(event);
-                setIsControlsOpen(false);
-              }}
+              onClick={handleCloseControls}
             >
               <Close />
             </IconButton>

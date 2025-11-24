@@ -343,21 +343,39 @@ test.describe('Active pick list', () => {
   });
 
   test('removes a product from the pick list when deleted', async ({ page }) => {
+    await page.setViewportSize({ width: 430, height: 932 });
     await navigateToNewPickList(page);
     await addProductToPickList(page, additionalProduct);
 
-    const productRowDeleteButton = page
-      .getByText(additionalProduct)
-      .locator('xpath=ancestor::div[contains(@class, "MuiStack-root")]//button[@aria-label="Delete item"]')
-      .first();
+    const productRow = page.getByText(additionalProduct).first();
 
-    await expect(page.getByText(additionalProduct).first()).toBeVisible();
-    await productRowDeleteButton.click();
+    await expect(productRow).toBeVisible();
+    await productRow.click();
 
-    await expect(page.getByRole('dialog', { name: 'Delete item' })).toBeVisible();
-    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+    const controlsDialog = page.getByRole('dialog', { name: additionalProduct });
+    await expect(controlsDialog).toBeVisible();
 
-    await expect(page.getByText(additionalProduct).first()).not.toBeVisible();
+    await controlsDialog.getByRole('button', { name: 'Delete item' }).click();
+
+    const confirmDialog = page.getByRole('dialog', { name: 'Delete item' });
+    await expect(confirmDialog).toBeVisible();
+
+    const cancelButton = confirmDialog.getByRole('button', { name: 'Cancel' });
+    await expect(cancelButton).toBeVisible();
+    await cancelButton.click();
+
+    await expect(confirmDialog).not.toBeVisible();
+    await expect(controlsDialog).not.toBeVisible();
+
+    await productRow.click();
+    await expect(page.getByRole('dialog', { name: additionalProduct })).toBeVisible();
+    await page.getByRole('button', { name: 'Delete item' }).click();
+
+    const deleteButton = page.getByRole('button', { name: 'Delete', exact: true });
+    await expect(deleteButton).toBeVisible();
+    await deleteButton.click();
+
+    await expect(page.getByText(additionalProduct)).toHaveCount(0);
   });
 });
 

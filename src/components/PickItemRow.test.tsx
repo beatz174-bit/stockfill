@@ -1,9 +1,22 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PickItemRow } from './PickItemRow';
 import { PickItem } from '../models/PickItem';
 import { Product } from '../models/Product';
+
+const mockMatchMedia = (matches: boolean) => {
+  window.matchMedia = vi.fn().mockImplementation((query) => ({
+    matches,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  }));
+};
 
 const baseItem: PickItem = {
   id: 'item-1',
@@ -80,7 +93,7 @@ describe('PickItemRow', () => {
     ).toBeVisible();
     expect(onDelete).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole('button', { name: /confirm delete/i }));
+    await user.click(screen.getByRole('button', { name: /^delete$/i }));
 
     expect(onDelete).toHaveBeenCalledTimes(1);
   });

@@ -43,17 +43,22 @@ export const ActivePickListScreen = () => {
     setItemState(items);
   }, [items]);
 
+  const itemsVisibleByStatus = useMemo(
+    () => (showPicked ? itemState : itemState.filter((item) => item.status !== 'picked')),
+    [itemState, showPicked],
+  );
+
   const allItemsPicked = useMemo(
     () => itemState.length > 0 && itemState.every((item) => item.status === 'picked'),
     [itemState],
   );
   const hasUnpickedItems = useMemo(
-    () => itemState.some((item) => item.status !== 'picked'),
-    [itemState],
+    () => itemsVisibleByStatus.some((item) => item.status !== 'picked'),
+    [itemsVisibleByStatus],
   );
   const hasPickedItems = useMemo(
-    () => itemState.some((item) => item.status === 'picked'),
-    [itemState],
+    () => itemsVisibleByStatus.some((item) => item.status === 'picked'),
+    [itemsVisibleByStatus],
   );
   const hasMixedPickStatuses = hasPickedItems && hasUnpickedItems;
 
@@ -71,13 +76,8 @@ export const ActivePickListScreen = () => {
     [areas, pickList?.area_id],
   );
 
-  const visibleItemsByStatus = useMemo(
-    () => (showPicked ? itemState : itemState.filter((item) => item.status !== 'picked')),
-    [itemState, showPicked],
-  );
-
   const sortedItems = useMemo(() => {
-    return [...visibleItemsByStatus].sort((a, b) => {
+    return [...itemsVisibleByStatus].sort((a, b) => {
       const productA = productMap.get(a.product_id);
       const productB = productMap.get(b.product_id);
 
@@ -98,7 +98,7 @@ export const ActivePickListScreen = () => {
 
       return timeA - timeB;
     });
-  }, [visibleItemsByStatus, productMap]);
+  }, [itemsVisibleByStatus, productMap]);
 
   const sortedProducts = useMemo(() => {
     const dedupedById = new Map<string, Product>();
@@ -141,12 +141,12 @@ export const ActivePickListScreen = () => {
   }, [pickList?.categories, sortedProducts]);
 
   const hasCartonItems = useMemo(
-    () => itemState.some((item) => item.is_carton),
-    [itemState],
+    () => itemsVisibleByStatus.some((item) => item.is_carton),
+    [itemsVisibleByStatus],
   );
   const hasUnitItems = useMemo(
-    () => itemState.some((item) => !item.is_carton),
-    [itemState],
+    () => itemsVisibleByStatus.some((item) => !item.is_carton),
+    [itemsVisibleByStatus],
   );
   const packagingTypeCount = Number(hasCartonItems) + Number(hasUnitItems);
   const singlePackagingType = packagingTypeCount === 1;

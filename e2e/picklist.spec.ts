@@ -264,6 +264,37 @@ test.describe('Active pick list', () => {
     await expect(showPickedToggle).toBeChecked();
   });
 
+  test('enables packaging filters when mixed pick statuses are visible and keeps the selection', async ({ page }) => {
+    await navigateToNewPickList(page);
+
+    await addProductToPickList(page, additionalProduct);
+    await addProductToPickList(page, secondaryProduct);
+
+    await page.getByRole('button', { name: /Switch to carton packaging/i }).first().click();
+
+    const statusToggles = page.getByLabel('Toggle picked status');
+    await statusToggles.first().check();
+
+    const cartonsRadio = page.getByRole('radio', { name: 'Cartons' });
+    const unitsRadio = page.getByRole('radio', { name: 'Units' });
+
+    await expect(cartonsRadio).toBeEnabled();
+    await expect(unitsRadio).toBeEnabled();
+
+    await unitsRadio.click();
+    await expect(unitsRadio).toBeChecked();
+    await expect(cartonsRadio).not.toBeChecked();
+    await expect(page.getByText(secondaryProduct)).toBeVisible();
+    await expect(page.getByText(additionalProduct)).toHaveCount(0);
+
+    const showPickedToggle = page.getByRole('checkbox', { name: 'Show picked' });
+    await showPickedToggle.click();
+
+    await expect(cartonsRadio).toBeDisabled();
+    await expect(unitsRadio).toBeDisabled();
+    await expect(page.getByRole('radio', { name: 'All' })).toBeChecked();
+  });
+
   test('toggles packaging type and persists the selection', async ({ page }) => {
     await navigateToNewPickList(page);
     await addProductToPickList(page, additionalProduct);

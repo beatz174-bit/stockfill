@@ -50,10 +50,11 @@ const inferTypeFromName = (name: string): DataType | undefined => {
 
 const parseCsv = async (content: string) => {
   const result = Papa.parse<Record<string, string>>(content, {
-    header: true,
-    skipEmptyLines: true,
-    transformHeader: (header) => header.trim().toLowerCase(),
-  });
+  header: true,
+  skipEmptyLines: true,
+  transformHeader: (header: string) => header.trim().toLowerCase(),
+});
+
 
   if (result.errors.length > 0) {
     throw new Error(result.errors[0].message);
@@ -329,13 +330,9 @@ export const importFiles = async (
 
   try {
     await db.transaction(
-      'rw',
-      db.areas,
-      db.categories,
-      db.products,
-      db.pickLists,
-      db.pickItems,
-      async () => {
+  'rw',
+  [db.areas, db.categories, db.products, db.pickLists, db.pickItems],
+  async () => {
         const parseTimestamp = (value?: string) =>
           value && value.trim() !== '' ? Number(value) || now : now;
 

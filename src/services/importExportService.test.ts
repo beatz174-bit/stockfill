@@ -43,7 +43,7 @@ const createMockDb = (data?: {
       const callback = args[args.length - 1];
       return callback();
     },
-  } as unknown as StockFillDB;
+  } as unknown as any;
 
   return db;
 };
@@ -52,9 +52,9 @@ const stubDownloads = () => {
   const anchor = { href: '', download: '', click: vi.fn() } as unknown as HTMLAnchorElement;
   const createObjectURL = vi.fn(() => 'blob:url');
   const revokeObjectURL = vi.fn();
-  // @ts-expect-error jsdom stub
+  // @ts-ignore jsdom stub
   vi.stubGlobal('document', { createElement: () => anchor });
-  // @ts-expect-error jsdom stub
+  // @ts-ignore jsdom stub
   vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
   return { anchor, createObjectURL, revokeObjectURL };
 };
@@ -118,7 +118,7 @@ describe('import/export service', () => {
 
     expect(productCsv).toContain('Clothing');
     expect(pickItemsCsv).toContain('Shirt');
-    expect(db.importExportLogs.items).toHaveLength(1);
+    expect((db.importExportLogs as any).items).toHaveLength(1);
   });
 
   it('imports products while deduplicating by name and auto-creating categories', async () => {
@@ -155,8 +155,9 @@ describe('import/export service', () => {
     );
 
     expect(result.log.summary.inserted).toBeGreaterThanOrEqual(1);
-    expect(db.products.items.find((p) => p.name === 'Existing')).toBeTruthy();
-    expect(db.products.items.find((p) => p.name === 'New Shirt')).toBeTruthy();
-    expect(db.categories.items.find((c) => c.name === 'New Category')).toBeTruthy();
+    expect((db.products as any).items.find((p: any) => p.name === 'Existing')).toBeTruthy();
+    expect((db.products as any).items.find((p: any) => p.name === 'New Shirt')).toBeTruthy();
+    expect((db.categories as any).items.find((c: any) => c.name === 'New Category')).toBeTruthy();
+
   });
 });

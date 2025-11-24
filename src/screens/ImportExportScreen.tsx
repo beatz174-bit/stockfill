@@ -6,7 +6,6 @@ import {
   Checkbox,
   Divider,
   FormControlLabel,
-  Grid,
   List,
   ListItem,
   ListItemText,
@@ -107,8 +106,14 @@ export const ImportExportScreen = () => {
       <Typography variant="h4" gutterBottom>
         Import / Export Data
       </Typography>
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={3}>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 2,
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' },
+        }}
+      >
+        <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 3' } }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -123,8 +128,9 @@ export const ImportExportScreen = () => {
               </Stack>
             </CardContent>
           </Card>
-        </Grid>
-        <Grid item xs={12} md={5}>
+        </Box>
+
+        <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 5' } }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -146,8 +152,9 @@ export const ImportExportScreen = () => {
               </Stack>
             </CardContent>
           </Card>
-        </Grid>
-        <Grid item xs={12} md={4}>
+        </Box>
+
+        <Box sx={{ gridColumn: { xs: '1 / -1', md: 'span 4' } }}>
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
@@ -176,8 +183,8 @@ export const ImportExportScreen = () => {
               </Stack>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
       <Box mt={3}>
         <Card>
           <CardContent>

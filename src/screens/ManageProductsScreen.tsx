@@ -308,7 +308,7 @@ export const ManageProductsScreen = () => {
           onClose={() => setFeedback(null)}
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         >
-          {feedback ? <Alert severity={feedback.severity}>{feedback.text}</Alert> : null}
+          {feedback ? <Alert severity={feedback.severity}>{feedback.text}</Alert> : undefined}
         </Snackbar>
         <Button component={RouterLink} to="/categories" variant="outlined" sx={{ alignSelf: 'flex-start' }}>
           Edit Categories

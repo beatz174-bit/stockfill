@@ -210,7 +210,7 @@ export const ActivePickListScreen = () => {
   }, [appliedItemFilter]);
 
   const visibleItems = useMemo(() => {
-    let filteredItems = showPicked
+    const filteredItems = showPicked
       ? sortedItems
       : sortedItems.filter((item) => item.status !== 'picked');
 

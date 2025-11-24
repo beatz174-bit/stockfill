@@ -44,7 +44,7 @@ export const fetchProductFromOFF = async (barcode: string): Promise<ExternalProd
       image: data.product.image_url ?? null,
       source: 'openfoodfacts',
     } satisfies ExternalProductInfo;
-  } catch (error) {
+  } catch {
     return null;
   } finally {
     clearTimeout(timeout);

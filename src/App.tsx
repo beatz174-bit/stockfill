@@ -42,7 +42,7 @@ const AppRoutes = () => {
 export const App = () => (
   <ThemeProvider theme={theme}>
     <CssBaseline />
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <BrowserRouter>
       <DBProvider>
         <AppRoutes />
       </DBProvider>

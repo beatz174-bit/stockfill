@@ -48,19 +48,22 @@ export const ActivePickListScreen = () => {
     [itemState, showPicked],
   );
 
-  const allItemsPicked = useMemo(
-    () => itemState.length > 0 && itemState.every((item) => item.status === 'picked'),
+  const hasPickedItemsInList = useMemo(
+    () => itemState.some((item) => item.status === 'picked'),
     [itemState],
   );
-  const hasUnpickedItems = useMemo(
-    () => itemsVisibleByStatus.some((item) => item.status !== 'picked'),
-    [itemsVisibleByStatus],
+  const hasUnpickedItemsInList = useMemo(
+    () => itemState.some((item) => item.status !== 'picked'),
+    [itemState],
   );
-  const hasPickedItems = useMemo(
-    () => itemsVisibleByStatus.some((item) => item.status === 'picked'),
-    [itemsVisibleByStatus],
+  const allItemsPicked = useMemo(
+    () => itemState.length > 0 && !hasUnpickedItemsInList,
+    [hasUnpickedItemsInList, itemState.length],
   );
-  const hasMixedPickStatuses = hasPickedItems && hasUnpickedItems;
+  const allItemsUnpicked = useMemo(
+    () => itemState.length > 0 && !hasPickedItemsInList,
+    [hasPickedItemsInList, itemState.length],
+  );
 
   const productMap = useMemo(() => {
     const map = new Map<string, Product>();
@@ -140,17 +143,7 @@ export const ActivePickListScreen = () => {
     );
   }, [pickList?.categories, sortedProducts]);
 
-  const hasCartonItems = useMemo(
-    () => itemsVisibleByStatus.some((item) => item.is_carton),
-    [itemsVisibleByStatus],
-  );
-  const hasUnitItems = useMemo(
-    () => itemsVisibleByStatus.some((item) => !item.is_carton),
-    [itemsVisibleByStatus],
-  );
-  const packagingTypeCount = Number(hasCartonItems) + Number(hasUnitItems);
-  const singlePackagingType = packagingTypeCount === 1;
-  const packagingFiltersDisabled = !hasMixedPickStatuses;
+  const packagingFiltersDisabled = !showPicked || allItemsPicked || allItemsUnpicked;
 
   const productIdsInList = useMemo(
     () => new Set(itemState.map((item) => item.product_id)),
@@ -185,20 +178,10 @@ export const ActivePickListScreen = () => {
   }, [allItemsPicked, showPicked]);
 
   useEffect(() => {
-    if (packagingTypeCount <= 1) {
-      if (itemFilter !== 'all') {
-        setItemFilter('all');
-      }
-
-      return;
+    if (packagingFiltersDisabled && itemFilter !== 'all') {
+      setItemFilter('all');
     }
-
-    if (itemFilter === 'cartons' && !hasCartonItems) {
-      setItemFilter('units');
-    } else if (itemFilter === 'units' && !hasUnitItems) {
-      setItemFilter('cartons');
-    }
-  }, [itemFilter, hasCartonItems, hasUnitItems, packagingTypeCount]);
+  }, [itemFilter, packagingFiltersDisabled]);
 
   const visibleItems = useMemo(() => {
     let filteredItems = showPicked
@@ -434,13 +417,13 @@ export const ActivePickListScreen = () => {
                   value="cartons"
                   control={<Radio />}
                   label="Cartons"
-                  disabled={packagingFiltersDisabled || !hasCartonItems}
+                  disabled={packagingFiltersDisabled}
                 />
                 <FormControlLabel
                   value="units"
                   control={<Radio />}
                   label="Units"
-                  disabled={packagingFiltersDisabled || !hasUnitItems}
+                  disabled={packagingFiltersDisabled}
                 />
               </RadioGroup>
               <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: { xs: 0, sm: 2 } }}>

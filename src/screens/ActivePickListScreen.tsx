@@ -47,6 +47,15 @@ export const ActivePickListScreen = () => {
     () => itemState.length > 0 && itemState.every((item) => item.status === 'picked'),
     [itemState],
   );
+  const hasUnpickedItems = useMemo(
+    () => itemState.some((item) => item.status !== 'picked'),
+    [itemState],
+  );
+  const hasPickedItems = useMemo(
+    () => itemState.some((item) => item.status === 'picked'),
+    [itemState],
+  );
+  const hasMixedPickStatuses = hasPickedItems && hasUnpickedItems;
 
   const productMap = useMemo(() => {
     const map = new Map<string, Product>();
@@ -132,15 +141,16 @@ export const ActivePickListScreen = () => {
   }, [pickList?.categories, sortedProducts]);
 
   const hasCartonItems = useMemo(
-    () => visibleItemsByStatus.some((item) => item.is_carton),
-    [visibleItemsByStatus],
+    () => itemState.some((item) => item.is_carton),
+    [itemState],
   );
   const hasUnitItems = useMemo(
-    () => visibleItemsByStatus.some((item) => !item.is_carton),
-    [visibleItemsByStatus],
+    () => itemState.some((item) => !item.is_carton),
+    [itemState],
   );
   const packagingTypeCount = Number(hasCartonItems) + Number(hasUnitItems);
   const singlePackagingType = packagingTypeCount === 1;
+  const packagingFiltersDisabled = !hasMixedPickStatuses;
 
   const productIdsInList = useMemo(
     () => new Set(itemState.map((item) => item.product_id)),
@@ -424,13 +434,13 @@ export const ActivePickListScreen = () => {
                   value="cartons"
                   control={<Radio />}
                   label="Cartons"
-                  disabled={singlePackagingType || !hasCartonItems}
+                  disabled={packagingFiltersDisabled || !hasCartonItems}
                 />
                 <FormControlLabel
                   value="units"
                   control={<Radio />}
                   label="Units"
-                  disabled={singlePackagingType || !hasUnitItems}
+                  disabled={packagingFiltersDisabled || !hasUnitItems}
                 />
               </RadioGroup>
               <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: { xs: 0, sm: 2 } }}>

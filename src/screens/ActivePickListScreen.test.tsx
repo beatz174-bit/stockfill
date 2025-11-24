@@ -631,8 +631,6 @@ describe('ActivePickListScreen product search', () => {
   });
 
   it('resets the filter when the selected packaging type is unavailable', async () => {
-    const user = userEvent.setup();
-
     pickItemsMock.mockReturnValue([
       {
         id: 'item-1',

@@ -41,6 +41,8 @@ export const PickItemRow = ({
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isControlsOpen, setIsControlsOpen] = useState(false);
   const isNarrowScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const isDesktop = !isNarrowScreen;
+  const controlsTitleId = `item-controls-title-${item.id}`;
   const packagingLabel = item.is_carton
     ? product?.bulk_name ?? DEFAULT_BULK_NAME
     : product?.unit_type ?? DEFAULT_UNIT_TYPE;
@@ -200,13 +202,10 @@ export const PickItemRow = ({
           onClose={() => setIsControlsOpen(false)}
           fullWidth
           maxWidth="xs"
-          aria-labelledby="item-controls-title"
+          aria-labelledby={controlsTitleId}
         >
-          <DialogTitle
-            id="item-controls-title"
-            sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-          >
-            <Typography variant="h6" noWrap sx={{ minWidth: 0, flex: 1 }}>
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography id={controlsTitleId} variant="h6" noWrap sx={{ minWidth: 0, flex: 1 }}>
               {product?.name ?? 'Unknown product'}
             </Typography>
             <IconButton

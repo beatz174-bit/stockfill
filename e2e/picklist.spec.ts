@@ -225,13 +225,13 @@ test.describe('Active pick list', () => {
     await expect(controlsDialog).toBeVisible();
 
     await page.getByRole('button', { name: 'Close controls' }).click();
-    await expect(controlsDialog).toHaveCount(0);
+    await expect(controlsDialog).toBeHidden();
 
     await productRow.click();
     await expect(controlsDialog).toBeVisible();
 
     await page.locator('.MuiBackdrop-root').click({ position: { x: 10, y: 10 } });
-    await expect(controlsDialog).toHaveCount(0);
+    await expect(controlsDialog).toBeHidden();
   });
 
   test('toggles picked visibility and disables the filter when all items are picked', async ({ page }) => {

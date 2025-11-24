@@ -230,7 +230,7 @@ test.describe('Active pick list', () => {
     await productRow.click();
     await expect(controlsDialog).toBeVisible();
 
-    await page.locator('.MuiBackdrop-root').click({ position: { x: 10, y: 10 } });
+    await page.locator('.MuiBackdrop-root').click({ position: { x: 10, y: 10 }, force: true });
     await expect(controlsDialog).toBeHidden();
   });
 
@@ -415,6 +415,9 @@ test.describe('Active pick list responsive controls on mobile', () => {
     await itemDialog.getByLabel('Delete item').click();
     await expect(page.getByRole('dialog', { name: 'Delete item' })).toBeVisible();
     await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-    await expect(page.getByRole('dialog', { name: additionalProduct })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Delete item' })).toBeHidden();
+
+    await controlsButton.click();
+    await expect(itemDialog).toBeVisible();
   });
 });

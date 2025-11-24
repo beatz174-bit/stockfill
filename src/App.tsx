@@ -11,6 +11,7 @@ import { ManageAreasScreen } from './screens/ManageAreasScreen';
 import { ManageCategoriesScreen } from './screens/ManageCategoriesScreen';
 import { BarcodeScannerScreen } from './screens/BarcodeScannerScreen';
 import { useServiceWorker } from './hooks/useServiceWorker';
+import { ImportExportScreen } from './screens/ImportExportScreen';
 
 const theme = createTheme({
   palette: {
@@ -34,6 +35,7 @@ const AppRoutes = () => {
         <Route path="/categories" element={<ManageCategoriesScreen />} />
         <Route path="/areas" element={<ManageAreasScreen />} />
         <Route path="/scan" element={<BarcodeScannerScreen />} />
+        <Route path="/data" element={<ImportExportScreen />} />
       </Route>
     </Routes>
   );

@@ -8,6 +8,7 @@ const navLinks = [
   { to: '/products', label: 'Products' },
   { to: '/categories', label: 'Categories' },
   { to: '/areas', label: 'Areas' },
+  { to: '/data', label: 'Import/Export' },
   { to: '/scan', label: 'Scan' },
 ];
 

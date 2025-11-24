@@ -5,6 +5,7 @@ import { Category } from '../models/Category';
 import { PickItem } from '../models/PickItem';
 import { PickList } from '../models/PickList';
 import { Product } from '../models/Product';
+import { ImportExportLog } from '../models/ImportExportLog';
 import { applyMigrations } from './migrations';
 import { seedDatabase } from './seed';
 
@@ -14,6 +15,7 @@ export class StockFillDB extends Dexie {
   pickLists!: Table<PickList>;
   pickItems!: Table<PickItem>;
   categories!: Table<Category>;
+  importExportLogs!: Table<ImportExportLog>;
 
   constructor() {
     super('stockfill');
@@ -234,6 +236,17 @@ export class StockFillDB extends Dexie {
           }),
         );
       });
+
+    this.version(8).stores({
+      products: 'id, name, category, &barcode, archived, created_at, updated_at',
+      areas: 'id, name, created_at, updated_at',
+      pickLists:
+        'id, area_id, created_at, completed_at, auto_add_new_products, categories',
+      pickItems:
+        'id, pick_list_id, product_id, status, is_carton, quantity, created_at, updated_at',
+      categories: 'id, name, created_at, updated_at',
+      importExportLogs: 'id, type, timestamp',
+    });
   }
 }
 

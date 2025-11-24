@@ -772,6 +772,48 @@ describe('ActivePickListScreen product search', () => {
     expect(screen.queryByText('Chips')).not.toBeInTheDocument();
   });
 
+  it('retains a chosen packaging filter when statuses are mixed but packaging types are not', async () => {
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-1',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-2',
+        pick_list_id: 'list-1',
+        product_id: 'prod-2',
+        quantity: 1,
+        is_carton: false,
+        status: 'picked',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const unitsRadio = screen.getByRole('radio', { name: /units/i });
+    await user.click(unitsRadio);
+
+    expect(unitsRadio).toBeChecked();
+    expect(screen.getByText('Cola')).toBeVisible();
+    expect(screen.getByText('Chips')).toBeVisible();
+  });
+
   it('disables packaging filters when all items share the same status', () => {
     pickItemsMock.mockReturnValue([
       {

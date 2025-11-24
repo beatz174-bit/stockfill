@@ -156,12 +156,12 @@ export const ActivePickListScreen = () => {
     );
   }, [pickList?.categories, sortedProducts]);
 
-  const hasCartonItems = useMemo(
-    () => itemsVisibleByStatus.some((item) => item.is_carton),
+  const visibleHasPicked = useMemo(
+    () => itemsVisibleByStatus.some((item) => item.status === 'picked'),
     [itemsVisibleByStatus],
   );
-  const hasUnitItems = useMemo(
-    () => itemsVisibleByStatus.some((item) => !item.is_carton),
+  const visibleHasUnpicked = useMemo(
+    () => itemsVisibleByStatus.some((item) => item.status !== 'picked'),
     [itemsVisibleByStatus],
   );
   const packagingTypeCount = Number(hasCartonItems) + Number(hasUnitItems);
@@ -227,16 +227,16 @@ export const ActivePickListScreen = () => {
       ? sortedItems
       : sortedItems.filter((item) => item.status !== 'picked');
 
-    if (itemFilter === 'cartons') {
+    if (appliedItemFilter === 'cartons') {
       return filteredItems.filter((item) => item.is_carton);
     }
 
-    if (itemFilter === 'units') {
+    if (appliedItemFilter === 'units') {
       return filteredItems.filter((item) => !item.is_carton);
     }
 
     return filteredItems;
-  }, [itemFilter, showPicked, sortedItems]);
+  }, [appliedItemFilter, showPicked, sortedItems]);
 
   const updateItemState = (itemId: string, updater: (item: PickItem) => PickItem) => {
     setItemState((current) => current.map((item) => (item.id === itemId ? updater(item) : item)));
@@ -445,7 +445,7 @@ export const ActivePickListScreen = () => {
             >
               <RadioGroup
                 row
-                value={itemFilter}
+                value={appliedItemFilter}
                 onChange={(event) =>
                   setItemFilter(event.target.value as 'all' | 'cartons' | 'units')
                 }

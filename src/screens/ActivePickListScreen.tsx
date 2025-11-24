@@ -48,19 +48,22 @@ export const ActivePickListScreen = () => {
     [itemState, showPicked],
   );
 
-  const allItemsPicked = useMemo(
-    () => itemState.length > 0 && itemState.every((item) => item.status === 'picked'),
+  const hasPickedItemsInList = useMemo(
+    () => itemState.some((item) => item.status === 'picked'),
     [itemState],
   );
-  const hasUnpickedItems = useMemo(
-    () => itemsVisibleByStatus.some((item) => item.status !== 'picked'),
-    [itemsVisibleByStatus],
+  const hasUnpickedItemsInList = useMemo(
+    () => itemState.some((item) => item.status !== 'picked'),
+    [itemState],
   );
-  const hasPickedItems = useMemo(
-    () => itemsVisibleByStatus.some((item) => item.status === 'picked'),
-    [itemsVisibleByStatus],
+  const allItemsPicked = useMemo(
+    () => itemState.length > 0 && !hasUnpickedItemsInList,
+    [hasUnpickedItemsInList, itemState.length],
   );
-  const hasMixedPickStatuses = hasPickedItems && hasUnpickedItems;
+  const allItemsUnpicked = useMemo(
+    () => itemState.length > 0 && !hasPickedItemsInList,
+    [hasPickedItemsInList, itemState.length],
+  );
 
   const productMap = useMemo(() => {
     const map = new Map<string, Product>();
@@ -150,7 +153,7 @@ export const ActivePickListScreen = () => {
   );
   const packagingTypeCount = Number(hasCartonItems) + Number(hasUnitItems);
   const singlePackagingType = packagingTypeCount === 1;
-  const packagingFiltersDisabled = !hasMixedPickStatuses;
+  const packagingFiltersDisabled = !showPicked || allItemsPicked || allItemsUnpicked;
 
   const productIdsInList = useMemo(
     () => new Set(itemState.map((item) => item.product_id)),
@@ -183,6 +186,12 @@ export const ActivePickListScreen = () => {
       setShowPicked(true);
     }
   }, [allItemsPicked, showPicked]);
+
+  useEffect(() => {
+    if (packagingFiltersDisabled && itemFilter !== 'all') {
+      setItemFilter('all');
+    }
+  }, [itemFilter, packagingFiltersDisabled]);
 
   useEffect(() => {
     if (packagingTypeCount <= 1) {

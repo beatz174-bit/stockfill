@@ -120,7 +120,7 @@ describe('ManageProductsScreen barcode lookup', () => {
 
     const user = userEvent.setup();
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter>
         <ManageProductsScreen />
       </MemoryRouter>,
     );
@@ -150,7 +150,7 @@ describe('ManageProductsScreen barcode lookup', () => {
 
     const user = userEvent.setup();
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter>
         <ManageProductsScreen />
       </MemoryRouter>,
     );
@@ -182,7 +182,7 @@ describe('ManageProductsScreen barcode lookup', () => {
 
     const user = userEvent.setup();
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter>
         <ManageProductsScreen />
       </MemoryRouter>,
     );
@@ -204,7 +204,7 @@ describe('ManageProductsScreen barcode lookup', () => {
     try {
       const user = userEvent.setup();
       render(
-        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <MemoryRouter>
           <ManageProductsScreen />
         </MemoryRouter>,
       );
@@ -249,7 +249,7 @@ describe('ManageProductsScreen barcode lookup', () => {
 
     const user = userEvent.setup();
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter>
         <ManageProductsScreen />
       </MemoryRouter>,
     );
@@ -295,7 +295,7 @@ describe('ManageProductsScreen barcode lookup', () => {
 
     const user = userEvent.setup();
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter>
         <ManageProductsScreen />
       </MemoryRouter>,
     );
@@ -333,7 +333,7 @@ describe('ManageProductsScreen auto-adding products to pick lists', () => {
 
     const user = userEvent.setup();
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter>
         <ManageProductsScreen />
       </MemoryRouter>,
     );
@@ -374,7 +374,7 @@ describe('ManageProductsScreen deletion safeguards', () => {
 
     const user = userEvent.setup();
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter>
         <ManageProductsScreen />
       </MemoryRouter>,
     );
@@ -407,7 +407,7 @@ describe('ManageProductsScreen filtering feedback', () => {
 
     const user = userEvent.setup();
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter>
         <ManageProductsScreen />
       </MemoryRouter>,
     );

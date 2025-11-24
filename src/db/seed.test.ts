@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it } from 'vitest';
 import { seedAreas, seedCategories, seedDatabase, seedProducts } from './seed';
 import { Area } from '../models/Area';
@@ -29,14 +29,14 @@ class MockTable<T extends { id: string; name: string }> {
 }
 
 const buildArea = (overrides: Partial<Area> = {}): Area => ({
-  id: overrides.id ?? randomUUID(),
+  id: overrides.id ?? uuidv4(),
   name: overrides.name ?? 'Area',
   created_at: overrides.created_at ?? Date.now(),
   updated_at: overrides.updated_at ?? Date.now(),
 });
 
 const buildProduct = (overrides: Partial<Product> = {}): Product => ({
-  id: overrides.id ?? randomUUID(),
+  id: overrides.id ?? uuidv4(),
   name: overrides.name ?? 'Product',
   category: overrides.category ?? 'Category',
   unit_type: overrides.unit_type ?? DEFAULT_UNIT_TYPE,
@@ -48,7 +48,7 @@ const buildProduct = (overrides: Partial<Product> = {}): Product => ({
 });
 
 const buildCategory = (overrides: Partial<Category> = {}): Category => ({
-  id: overrides.id ?? randomUUID(),
+  id: overrides.id ?? uuidv4(),
   name: overrides.name ?? 'Category',
   created_at: overrides.created_at ?? Date.now(),
   updated_at: overrides.updated_at ?? Date.now(),

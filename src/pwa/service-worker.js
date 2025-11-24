@@ -1,3 +1,5 @@
+/* eslint-env serviceworker */
+
 const CACHE_NAME = 'stockfill-cache-v1';
 const OFFLINE_URLS = ['/', '/index.html'];
 

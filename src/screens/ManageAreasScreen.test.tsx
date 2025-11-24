@@ -36,7 +36,7 @@ describe('ManageAreasScreen deletion safeguards', () => {
 
     const user = userEvent.setup();
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter>
         <ManageAreasScreen />
       </MemoryRouter>,
     );

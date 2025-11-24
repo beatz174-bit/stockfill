@@ -54,7 +54,7 @@ describe('PickListsScreen sorting', () => {
 
   it('sorts pick lists alphabetically by area name', () => {
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter>
         <PickListsScreen />
       </MemoryRouter>,
     );
@@ -80,7 +80,7 @@ describe('PickListsScreen sorting', () => {
     ];
 
     render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter>
         <PickListsScreen />
       </MemoryRouter>,
     );

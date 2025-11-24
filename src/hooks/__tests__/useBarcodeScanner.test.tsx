@@ -5,9 +5,9 @@ import { useBarcodeScanner } from '../useBarcodeScanner';
 const decodeFromVideoDevice = vi.fn();
 
 vi.mock('@zxing/browser', () => ({
-  BrowserMultiFormatReader: vi.fn().mockImplementation(() => ({
-    decodeFromVideoDevice,
-  })),
+  BrowserMultiFormatReader: vi.fn(function MockBrowserMultiFormatReader() {
+    return { decodeFromVideoDevice };
+  }),
 }));
 
 declare global {

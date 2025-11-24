@@ -86,7 +86,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -118,7 +118,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -171,7 +171,7 @@ describe('ActivePickListScreen product search', () => {
     ]);
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -191,7 +191,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -253,7 +253,7 @@ describe('ActivePickListScreen product search', () => {
     ]);
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -270,7 +270,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -295,7 +295,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -322,7 +322,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -354,7 +354,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -387,7 +387,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -424,7 +424,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -486,7 +486,7 @@ describe('ActivePickListScreen product search', () => {
     ]);
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -525,7 +525,7 @@ describe('ActivePickListScreen product search', () => {
     ]);
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -563,7 +563,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -613,7 +613,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -657,7 +657,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -702,7 +702,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -749,7 +749,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -797,7 +797,7 @@ describe('ActivePickListScreen product search', () => {
     const user = userEvent.setup();
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -837,7 +837,7 @@ describe('ActivePickListScreen product search', () => {
     ]);
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -873,7 +873,7 @@ describe('ActivePickListScreen product search', () => {
     ]);
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>
@@ -899,7 +899,7 @@ describe('ActivePickListScreen product search', () => {
     ]);
 
     render(
-      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
         <Routes>
           <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
         </Routes>

@@ -25,6 +25,8 @@ import { PickItemRow } from '../components/PickItemRow';
 import { PickItem } from '../models/PickItem';
 import { Product } from '../models/Product';
 
+const normalizeName = (name: string) => name.trim().toLowerCase();
+
 export const ActivePickListScreen = () => {
   const { id } = useParams();
   const pickList = usePickList(id);
@@ -81,8 +83,8 @@ export const ActivePickListScreen = () => {
       const productA = productMap.get(a.product_id);
       const productB = productMap.get(b.product_id);
 
-      const nameA = productA?.name.trim().toLowerCase() ?? '';
-      const nameB = productB?.name.trim().toLowerCase() ?? '';
+      const nameA = productA ? normalizeName(productA.name) : '';
+      const nameB = productB ? normalizeName(productB.name) : '';
 
       const nameComparison = nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
       if (nameComparison !== 0) {
@@ -121,9 +123,20 @@ export const ActivePickListScreen = () => {
       }
     });
 
-    return Array.from(dedupedByName.values()).sort((a, b) =>
-      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
-    );
+    return Array.from(dedupedByName.values()).sort((a, b) => {
+      const normalizedNameA = normalizeName(a.name);
+      const normalizedNameB = normalizeName(b.name);
+
+      const nameComparison = normalizedNameA.localeCompare(normalizedNameB, undefined, {
+        sensitivity: 'base',
+      });
+
+      if (nameComparison !== 0) {
+        return nameComparison;
+      }
+
+      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+    });
   }, [products]);
 
   const categoryFilteredProducts = useMemo(() => {

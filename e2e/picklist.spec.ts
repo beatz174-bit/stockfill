@@ -264,16 +264,14 @@ test.describe('Active pick list', () => {
     await expect(showPickedToggle).toBeChecked();
   });
 
-  test('enables packaging filters when mixed pick statuses are visible and keeps the selection', async ({ page }) => {
+  test('disables packaging filters when statuses are mixed and filters by packaging when enabled', async ({ page }) => {
     await navigateToNewPickList(page);
 
     await addProductToPickList(page, additionalProduct);
     await addProductToPickList(page, secondaryProduct);
 
-    await page.getByRole('button', { name: /Switch to carton packaging/i }).first().click();
-
-    const statusToggles = page.getByLabel('Toggle picked status');
-    await statusToggles.first().check();
+    const cartonToggle = page.getByRole('button', { name: /Switch to carton packaging/i }).first();
+    await cartonToggle.click();
 
     const cartonsRadio = page.getByRole('radio', { name: 'Cartons' });
     const unitsRadio = page.getByRole('radio', { name: 'Units' });
@@ -283,16 +281,25 @@ test.describe('Active pick list', () => {
 
     await unitsRadio.click();
     await expect(unitsRadio).toBeChecked();
-    await expect(cartonsRadio).not.toBeChecked();
-    await expect(page.getByText(secondaryProduct)).toBeVisible();
     await expect(page.getByText(additionalProduct)).toHaveCount(0);
+    await expect(page.getByText(secondaryProduct)).toBeVisible();
 
-    const showPickedToggle = page.getByRole('checkbox', { name: 'Show picked' });
-    await showPickedToggle.click();
+    await cartonsRadio.click();
+    await expect(cartonsRadio).toBeChecked();
+    await expect(page.getByText(secondaryProduct)).toHaveCount(0);
+    await expect(page.getByText(additionalProduct)).toBeVisible();
+
+    const statusToggles = page.getByLabel('Toggle picked status');
+    await statusToggles.first().check();
 
     await expect(cartonsRadio).toBeDisabled();
     await expect(unitsRadio).toBeDisabled();
     await expect(page.getByRole('radio', { name: 'All' })).toBeChecked();
+
+    const showPickedToggle = page.getByRole('checkbox', { name: 'Show picked' });
+    await showPickedToggle.click();
+    await expect(cartonsRadio).toBeDisabled();
+    await expect(unitsRadio).toBeDisabled();
   });
 
   test('toggles packaging type and persists the selection', async ({ page }) => {

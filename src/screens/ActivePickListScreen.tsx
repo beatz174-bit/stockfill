@@ -50,13 +50,13 @@ export const ActivePickListScreen = () => {
     [itemState, showPicked],
   );
 
-  const hasPickedItemsInList = useMemo(
-    () => itemState.some((item) => item.status === 'picked'),
-    [itemState],
+  const hasPickedItemsVisible = useMemo(
+    () => itemsVisibleByStatus.some((item) => item.status === 'picked'),
+    [itemsVisibleByStatus],
   );
-  const hasUnpickedItemsInList = useMemo(
-    () => itemState.some((item) => item.status !== 'picked'),
-    [itemState],
+  const hasUnpickedItemsVisible = useMemo(
+    () => itemsVisibleByStatus.some((item) => item.status !== 'picked'),
+    [itemsVisibleByStatus],
   );
   const hasCartonItems = useMemo(
     () => itemsVisibleByStatus.some((item) => item.is_carton),
@@ -67,12 +67,12 @@ export const ActivePickListScreen = () => {
     [itemsVisibleByStatus],
   );
   const allItemsPicked = useMemo(
-    () => itemState.length > 0 && !hasUnpickedItemsInList,
-    [hasUnpickedItemsInList, itemState.length],
+    () => itemState.length > 0 && itemState.every((item) => item.status === 'picked'),
+    [itemState],
   );
-  const allItemsUnpicked = useMemo(
-    () => itemState.length > 0 && !hasPickedItemsInList,
-    [hasPickedItemsInList, itemState.length],
+  const packagingFiltersDisabled = useMemo(
+    () => !showPicked || (hasPickedItemsVisible && hasUnpickedItemsVisible),
+    [hasPickedItemsVisible, hasUnpickedItemsVisible, showPicked],
   );
 
   const productMap = useMemo(() => {
@@ -156,7 +156,6 @@ export const ActivePickListScreen = () => {
     );
   }, [pickList?.categories, sortedProducts]);
 
-  const packagingFiltersDisabled = !showPicked || allItemsPicked || allItemsUnpicked;
   const appliedItemFilter = useMemo(() => {
     if (packagingFiltersDisabled) {
       return 'all';

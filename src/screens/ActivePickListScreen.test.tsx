@@ -500,7 +500,7 @@ describe('ActivePickListScreen product search', () => {
     expect(itemLabels).toEqual(['Apple Juice', 'Chips', 'Cola', 'Cola']);
   });
 
-  it('keeps packaging filters enabled when items share a single packaging type but mixed statuses', () => {
+  it('disables packaging filters when the visible list has mixed pick statuses', () => {
     pickItemsMock.mockReturnValue([
       {
         id: 'item-1',
@@ -532,11 +532,11 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('radio', { name: /cartons/i })).toBeEnabled();
-    expect(screen.getByRole('radio', { name: /units/i })).toBeEnabled();
+    expect(screen.getByRole('radio', { name: /cartons/i })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: /units/i })).toBeDisabled();
   });
 
-  it('enables and disables packaging filters based on the visible item statuses', async () => {
+  it('disables packaging filters when show picked is unchecked', async () => {
     pickItemsMock.mockReturnValue([
       {
         id: 'item-1',
@@ -544,7 +544,7 @@ describe('ActivePickListScreen product search', () => {
         product_id: 'prod-1',
         quantity: 1,
         is_carton: true,
-        status: 'picked',
+        status: 'pending',
         created_at: 0,
         updated_at: 0,
       },
@@ -580,10 +580,6 @@ describe('ActivePickListScreen product search', () => {
 
     expect(cartonsRadio).toBeDisabled();
     expect(unitsRadio).toBeDisabled();
-
-    await user.click(togglePicked);
-    expect(cartonsRadio).toBeEnabled();
-    expect(unitsRadio).toBeEnabled();
   });
 
   it('resets the packaging filter when show picked is unchecked', async () => {
@@ -594,7 +590,7 @@ describe('ActivePickListScreen product search', () => {
         product_id: 'prod-1',
         quantity: 1,
         is_carton: true,
-        status: 'picked',
+        status: 'pending',
         created_at: 0,
         updated_at: 0,
       },
@@ -638,7 +634,7 @@ describe('ActivePickListScreen product search', () => {
         product_id: 'prod-1',
         quantity: 1,
         is_carton: true,
-        status: 'picked',
+        status: 'pending',
         created_at: 0,
         updated_at: 0,
       },
@@ -730,7 +726,7 @@ describe('ActivePickListScreen product search', () => {
         product_id: 'prod-1',
         quantity: 1,
         is_carton: true,
-        status: 'picked',
+        status: 'pending',
         created_at: 0,
         updated_at: 0,
       },
@@ -770,49 +766,7 @@ describe('ActivePickListScreen product search', () => {
     expect(screen.queryByText('Chips')).not.toBeInTheDocument();
   });
 
-  it('retains a chosen packaging filter when statuses are mixed but packaging types are not', async () => {
-    pickItemsMock.mockReturnValue([
-      {
-        id: 'item-1',
-        pick_list_id: 'list-1',
-        product_id: 'prod-1',
-        quantity: 1,
-        is_carton: false,
-        status: 'pending',
-        created_at: 0,
-        updated_at: 0,
-      },
-      {
-        id: 'item-2',
-        pick_list_id: 'list-1',
-        product_id: 'prod-2',
-        quantity: 1,
-        is_carton: false,
-        status: 'picked',
-        created_at: 0,
-        updated_at: 0,
-      },
-    ]);
-
-    const user = userEvent.setup();
-
-    render(
-      <MemoryRouter initialEntries={['/pick-lists/1']}>
-        <Routes>
-          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    const unitsRadio = screen.getByRole('radio', { name: /units/i });
-    await user.click(unitsRadio);
-
-    expect(unitsRadio).toBeChecked();
-    expect(screen.getByText('Cola')).toBeVisible();
-    expect(screen.getByText('Chips')).toBeVisible();
-  });
-
-  it('disables packaging filters when all items share the same status', () => {
+  it('keeps packaging filters enabled when all items share the same status', () => {
     pickItemsMock.mockReturnValue([
       {
         id: 'item-1',
@@ -844,11 +798,11 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('radio', { name: /cartons/i })).toBeDisabled();
-    expect(screen.getByRole('radio', { name: /units/i })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: /cartons/i })).toBeEnabled();
+    expect(screen.getByRole('radio', { name: /units/i })).toBeEnabled();
   });
 
-  it('disables packaging filters when every item is picked', () => {
+  it('keeps packaging filters enabled when every item is picked', () => {
     pickItemsMock.mockReturnValue([
       {
         id: 'item-1',
@@ -880,8 +834,8 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('radio', { name: /cartons/i })).toBeDisabled();
-    expect(screen.getByRole('radio', { name: /units/i })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: /cartons/i })).toBeEnabled();
+    expect(screen.getByRole('radio', { name: /units/i })).toBeEnabled();
   });
 
   it('disables show picked toggle when all items are picked', async () => {

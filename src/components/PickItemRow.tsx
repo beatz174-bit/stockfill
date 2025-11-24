@@ -49,20 +49,22 @@ export const PickItemRow = ({
     onStatusChange(checked ? 'picked' : 'pending');
   };
 
-  const closeDialogs = () => {
+  const closeDialogs = (event?: { stopPropagation?: () => void }) => {
+    event?.stopPropagation?.();
     setIsConfirmOpen(false);
     setIsControlsOpen(false);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = (event?: { stopPropagation?: () => void }) => {
+    event?.stopPropagation?.();
     onDelete();
     closeDialogs();
   };
 
   const handleRowClick = () => {
-    if (isNarrowScreen) {
-      setIsControlsOpen(true);
-    }
+    if (!isNarrowScreen || isControlsOpen) return;
+
+    setIsControlsOpen(true);
   };
 
   const openControls = (event: React.SyntheticEvent) => {
@@ -70,7 +72,8 @@ export const PickItemRow = ({
     setIsControlsOpen(true);
   };
 
-  const handleCloseControls = () => {
+  const handleCloseControls = (event?: { stopPropagation?: () => void }) => {
+    event?.stopPropagation?.();
     setIsControlsOpen(false);
   };
 
@@ -201,7 +204,7 @@ export const PickItemRow = ({
       {isNarrowScreen && (
         <Dialog
           open={isControlsOpen}
-          onClose={handleCloseControls}
+          onClose={(event) => handleCloseControls(event)}
           fullWidth
           maxWidth="xs"
           aria-labelledby="item-controls-title"

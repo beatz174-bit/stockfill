@@ -10,6 +10,10 @@ import {
   TextField,
   Tooltip,
   Typography,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  Radio,
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import SearchIcon from '@mui/icons-material/Search';
@@ -37,6 +41,7 @@ export const ActivePickListScreen = () => {
   const [showPicked, setShowPicked] = useState(true);
   const [itemState, setItemState] = useState(items);
   const [isBatchUpdating, setIsBatchUpdating] = useState(false);
+  const [packagingFilter, setPackagingFilter] = useState<'all' | 'units' | 'cartons'>('all');
 
   useEffect(() => {
     setItemState((current) => {
@@ -62,6 +67,21 @@ export const ActivePickListScreen = () => {
     () => (showPicked ? itemState : itemState.filter((item) => item.status !== 'picked')),
     [itemState, showPicked],
   );
+
+  const packagingInfo = useMemo(() => {
+    const visible = itemsAfterShowPicked ?? [];
+    const uniqueValues = new Set(visible.map((it) => !!it.is_carton));
+    return {
+      visibleCount: visible.length,
+      uniquePackagingCount: uniqueValues.size,
+    };
+  }, [itemsAfterShowPicked]);
+
+  useEffect(() => {
+    if (packagingInfo.visibleCount === 0 || packagingInfo.uniquePackagingCount === 1) {
+      setPackagingFilter('all');
+    }
+  }, [packagingInfo.visibleCount, packagingInfo.uniquePackagingCount]);
 
   const allItemsPicked = useMemo(
     () => itemState.length > 0 && itemState.every((item) => item.status === 'picked'),
@@ -165,9 +185,16 @@ export const ActivePickListScreen = () => {
     }
   }, [allItemsPicked, showPicked]);
 
-  // Sort the items that are actually visible (after showPicked)
+  // Sort the items that are actually visible (after showPicked and packaging filter)
   const visibleItems = useMemo(() => {
-    const arr = [...itemsAfterShowPicked];
+    let arr = [...itemsAfterShowPicked];
+
+    if (packagingFilter === 'units') {
+      arr = arr.filter((item) => !item.is_carton);
+    } else if (packagingFilter === 'cartons') {
+      arr = arr.filter((item) => item.is_carton);
+    }
+
     arr.sort((a, b) => {
       const nameA = normalizeName(productMap.get(a.product_id)?.name ?? '');
       const nameB = normalizeName(productMap.get(b.product_id)?.name ?? '');
@@ -178,7 +205,7 @@ export const ActivePickListScreen = () => {
       return timeA - timeB;
     });
     return arr;
-  }, [itemsAfterShowPicked, productMap]);
+  }, [itemsAfterShowPicked, productMap, packagingFilter]);
 
   const updateItemState = (itemId: string, updater: (item: PickItem) => PickItem) => {
     setItemState((current) => current.map((item) => (item.id === itemId ? updater(item) : item)));
@@ -393,6 +420,40 @@ export const ActivePickListScreen = () => {
             flexWrap="wrap"
             rowGap={1}
           >
+            <FormControl component="fieldset" sx={{ ml: { xs: 0, sm: 2 } }}>
+              <FormLabel component="legend" sx={{ fontSize: '0.875rem' }}>
+                Packaging
+              </FormLabel>
+              <RadioGroup
+                row
+                aria-label="packaging-filter"
+                name="packaging-filter"
+                value={packagingFilter}
+                onChange={(_, value) => setPackagingFilter(value as 'all' | 'units' | 'cartons')}
+              >
+                <FormControlLabel
+                  value="all"
+                  control={<Radio size="small" />}
+                  label="All"
+                  data-testid="packaging-all"
+                />
+                <FormControlLabel
+                  value="units"
+                  control={<Radio size="small" />}
+                  label="Units"
+                  disabled={packagingInfo.visibleCount === 0 || packagingInfo.uniquePackagingCount === 1}
+                  data-testid="packaging-units"
+                />
+                <FormControlLabel
+                  value="cartons"
+                  control={<Radio size="small" />}
+                  label="Cartons"
+                  disabled={packagingInfo.visibleCount === 0 || packagingInfo.uniquePackagingCount === 1}
+                  data-testid="packaging-cartons"
+                />
+              </RadioGroup>
+            </FormControl>
+
             <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: { xs: 0, sm: 2 } }}>
               <FormControlLabel
                 control={

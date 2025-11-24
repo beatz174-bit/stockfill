@@ -65,6 +65,11 @@ export const PickItemRow = ({
     }
   };
 
+  const openControls = (event: React.SyntheticEvent) => {
+    event.stopPropagation();
+    setIsControlsOpen(true);
+  };
+
   const handleCloseControls = () => {
     setIsControlsOpen(false);
   };
@@ -139,42 +144,11 @@ export const PickItemRow = ({
           )}
         </Stack>
       </Stack>
-      {isDesktop ? (
-        <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" justifyContent="flex-end">
-          <IconButton
-            aria-label={`Switch to ${item.is_carton ? 'unit' : 'carton'} packaging`}
-            color={item.is_carton ? 'primary' : 'default'}
-            onClick={onToggleCarton}
-            sx={{
-              boxShadow: item.is_carton
-                ? (theme) => `0 0 0 8px ${alpha(theme.palette.primary.main, 0.15)}`
-                : 'none',
-            }}
-          >
-            <Inventory2 />
-          </IconButton>
-          <IconButton aria-label="Decrease quantity" color="primary" onClick={onDecrementQuantity}>
-            <Remove />
-          </IconButton>
-          <IconButton aria-label="Increase quantity" color="primary" onClick={onIncrementQuantity}>
-            <Add />
-          </IconButton>
-          <IconButton
-            color="error"
-            onClick={() => setIsConfirmOpen(true)}
-            aria-label="Delete item"
-            sx={{ ml: { xs: 0, sm: 1 } }}
-          >
-            <Delete />
-          </IconButton>
-        </Stack>
-      ) : (
+      {isNarrowScreen ? (
         <IconButton aria-label="Open item controls" onClick={openControls}>
           <MoreHoriz />
         </IconButton>
-      )}
-
-      {!isNarrowScreen && (
+      ) : (
         <Stack direction="row" spacing={1} alignItems="center">
           <IconButton
             aria-label={`Switch to ${item.is_carton ? 'unit' : 'carton'} packaging`}

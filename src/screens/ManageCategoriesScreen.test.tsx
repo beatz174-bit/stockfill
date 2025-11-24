@@ -1,7 +1,7 @@
 import { MemoryRouter } from 'react-router-dom';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ManageCategoriesScreen } from './ManageCategoriesScreen';
 
 const categoriesMock = [{ id: 'cat-1', name: 'Snacks', created_at: 0, updated_at: 0 }];

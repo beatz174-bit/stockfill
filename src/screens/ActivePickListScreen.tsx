@@ -58,6 +58,14 @@ export const ActivePickListScreen = () => {
     () => itemState.some((item) => item.status !== 'picked'),
     [itemState],
   );
+  const hasCartonItems = useMemo(
+    () => itemsVisibleByStatus.some((item) => item.is_carton),
+    [itemsVisibleByStatus],
+  );
+  const hasUnitItems = useMemo(
+    () => itemsVisibleByStatus.some((item) => !item.is_carton),
+    [itemsVisibleByStatus],
+  );
   const allItemsPicked = useMemo(
     () => itemState.length > 0 && !hasUnpickedItemsInList,
     [hasUnpickedItemsInList, itemState.length],
@@ -159,17 +167,22 @@ export const ActivePickListScreen = () => {
     );
   }, [pickList?.categories, sortedProducts]);
 
-  const visibleHasPicked = useMemo(
-    () => itemsVisibleByStatus.some((item) => item.status === 'picked'),
-    [itemsVisibleByStatus],
-  );
-  const visibleHasUnpicked = useMemo(
-    () => itemsVisibleByStatus.some((item) => item.status !== 'picked'),
-    [itemsVisibleByStatus],
-  );
-  const packagingTypeCount = Number(hasCartonItems) + Number(hasUnitItems);
-  const singlePackagingType = packagingTypeCount === 1;
   const packagingFiltersDisabled = !showPicked || allItemsPicked || allItemsUnpicked;
+  const appliedItemFilter = useMemo(() => {
+    if (packagingFiltersDisabled) {
+      return 'all';
+    }
+
+    if (itemFilter === 'cartons' && !hasCartonItems) {
+      return hasUnitItems ? 'units' : 'all';
+    }
+
+    if (itemFilter === 'units' && !hasUnitItems) {
+      return hasCartonItems ? 'cartons' : 'all';
+    }
+
+    return itemFilter;
+  }, [hasCartonItems, hasUnitItems, itemFilter, packagingFiltersDisabled]);
 
   const productIdsInList = useMemo(
     () => new Set(itemState.map((item) => item.product_id)),
@@ -204,26 +217,8 @@ export const ActivePickListScreen = () => {
   }, [allItemsPicked, showPicked]);
 
   useEffect(() => {
-    if (packagingFiltersDisabled && itemFilter !== 'all') {
-      setItemFilter('all');
-    }
-  }, [itemFilter, packagingFiltersDisabled]);
-
-  useEffect(() => {
-    if (packagingTypeCount <= 1) {
-      if (itemFilter !== 'all') {
-        setItemFilter('all');
-      }
-
-      return;
-    }
-
-    if (itemFilter === 'cartons' && !hasCartonItems) {
-      setItemFilter('units');
-    } else if (itemFilter === 'units' && !hasUnitItems) {
-      setItemFilter('cartons');
-    }
-  }, [itemFilter, packagingFiltersDisabled]);
+    setItemFilter((current) => (current === appliedItemFilter ? current : appliedItemFilter));
+  }, [appliedItemFilter]);
 
   const visibleItems = useMemo(() => {
     let filteredItems = showPicked

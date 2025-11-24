@@ -6,3 +6,4 @@ app/build/
 test-results/
 playwright-report/
 .tmp/
+coverage/

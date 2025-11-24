@@ -67,6 +67,8 @@ vi.mock('../context/DBProvider', () => ({
 }));
 
 describe('ActivePickListScreen product search', () => {
+  const getRadio = (testId: string) => within(screen.getByTestId(testId)).getByRole('radio');
+
   beforeEach(() => {
     addMock.mockReset();
     updateMock.mockReset();
@@ -572,5 +574,137 @@ describe('ActivePickListScreen product search', () => {
     const togglePicked = screen.getByLabelText(/show picked/i);
     expect(togglePicked).toBeDisabled();
     expect(togglePicked).toBeChecked();
+  });
+
+  it('enables packaging filters when both packaging types are visible and filters items', async () => {
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-1',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-2',
+        pick_list_id: 'list-1',
+        product_id: 'prod-2',
+        quantity: 1,
+        is_carton: true,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const allRadio = getRadio('packaging-all');
+    const unitsRadio = getRadio('packaging-units');
+    const cartonsRadio = getRadio('packaging-cartons');
+
+    expect(allRadio).toBeChecked();
+    expect(unitsRadio).not.toBeDisabled();
+    expect(cartonsRadio).not.toBeDisabled();
+
+    await user.click(unitsRadio);
+    expect(unitsRadio).toBeChecked();
+    expect(screen.getByText('Cola')).toBeVisible();
+    expect(screen.queryByText('Chips')).not.toBeInTheDocument();
+
+    await user.click(cartonsRadio);
+    expect(cartonsRadio).toBeChecked();
+    expect(screen.getByText('Chips')).toBeVisible();
+    expect(screen.queryByText('Cola')).not.toBeInTheDocument();
+  });
+
+  it('disables units and cartons packaging options when only units are visible', () => {
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-1',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(getRadio('packaging-all')).toBeChecked();
+    expect(getRadio('packaging-units')).toBeDisabled();
+    expect(getRadio('packaging-cartons')).toBeDisabled();
+  });
+
+  it('resets packaging filter to all and disables options when visible items become single packaging type', async () => {
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-1',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-2',
+        pick_list_id: 'list-1',
+        product_id: 'prod-2',
+        quantity: 1,
+        is_carton: true,
+        status: 'picked',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const cartonsRadio = getRadio('packaging-cartons');
+
+    expect(cartonsRadio).not.toBeDisabled();
+
+    await user.click(cartonsRadio);
+    expect(cartonsRadio).toBeChecked();
+    expect(screen.getByText('Chips')).toBeVisible();
+    expect(screen.queryByText('Cola')).not.toBeInTheDocument();
+
+    await user.click(screen.getByLabelText(/show picked/i));
+
+    expect(getRadio('packaging-all')).toBeChecked();
+    expect(getRadio('packaging-units')).toBeDisabled();
+    expect(getRadio('packaging-cartons')).toBeDisabled();
+    expect(screen.getByText('Cola')).toBeVisible();
+    expect(screen.queryByText('Chips')).not.toBeInTheDocument();
   });
 });

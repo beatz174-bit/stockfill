@@ -7,7 +7,6 @@ import { PickList } from '../models/PickList';
 import { Product } from '../models/Product';
 import { ImportExportLog } from '../models/ImportExportLog';
 import { applyMigrations } from './migrations';
-import { seedDatabase } from './seed';
 
 export class StockFillDB extends Dexie {
   products!: Table<Product>;
@@ -254,5 +253,4 @@ export const db = new StockFillDB();
 
 export const initializeDatabase = async () => {
   await applyMigrations(db);
-  await seedDatabase(db);
-};
+  };

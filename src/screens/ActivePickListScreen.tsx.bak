@@ -45,46 +45,32 @@ export const ActivePickListScreen = () => {
     setItemState(items);
   }, [items]);
 
-  // Reworked visible/filter logic:
-  // - Keep `itemFilter` as the single source-of-truth for the radio selection.
-  // - Compute items after applying `showPicked` and `itemFilter`, and derive
-  //   disabled flags from the actual visible items to avoid races / feedback loops.
-  const itemsAfterShowPicked = useMemo(
+  const itemsVisibleByStatus = useMemo(
     () => (showPicked ? itemState : itemState.filter((item) => item.status !== 'picked')),
     [itemState, showPicked],
   );
 
-  const hasCartonItemsOverall = useMemo(
-    () => itemsAfterShowPicked.some((item) => item.is_carton),
-    [itemsAfterShowPicked],
-  );
-  const hasUnitItemsOverall = useMemo(
-    () => itemsAfterShowPicked.some((item) => !item.is_carton),
-    [itemsAfterShowPicked],
-  );
-
-  const itemsAfterPackagingFilter = useMemo(() => {
-    if (itemFilter === 'cartons') return itemsAfterShowPicked.filter((item) => item.is_carton);
-    if (itemFilter === 'units') return itemsAfterShowPicked.filter((item) => !item.is_carton);
-    return itemsAfterShowPicked;
-  }, [itemsAfterShowPicked, itemFilter]);
-
   const hasPickedItemsVisible = useMemo(
-    () => itemsAfterPackagingFilter.some((item) => item.status === 'picked'),
-    [itemsAfterPackagingFilter],
+    () => itemsVisibleByStatus.some((item) => item.status === 'picked'),
+    [itemsVisibleByStatus],
   );
   const hasUnpickedItemsVisible = useMemo(
-    () => itemsAfterPackagingFilter.some((item) => item.status !== 'picked'),
-    [itemsAfterPackagingFilter],
+    () => itemsVisibleByStatus.some((item) => item.status !== 'picked'),
+    [itemsVisibleByStatus],
   );
-
+  const hasCartonItems = useMemo(
+    () => itemsVisibleByStatus.some((item) => item.is_carton),
+    [itemsVisibleByStatus],
+  );
+  const hasUnitItems = useMemo(
+    () => itemsVisibleByStatus.some((item) => !item.is_carton),
+    [itemsVisibleByStatus],
+  );
   const allItemsPicked = useMemo(
     () => itemState.length > 0 && itemState.every((item) => item.status === 'picked'),
     [itemState],
   );
-
   const packagingFiltersDisabled = useMemo(
-    // packaging filters disabled when showPicked is false, or visible items contain mixed statuses
     () => !showPicked || (hasPickedItemsVisible && hasUnpickedItemsVisible),
     [hasPickedItemsVisible, hasUnpickedItemsVisible, showPicked],
   );
@@ -103,9 +89,8 @@ export const ActivePickListScreen = () => {
     [areas, pickList?.area_id],
   );
 
-  // Keep a sorted list for available items after applying showPicked (used for other UX)
   const sortedItems = useMemo(() => {
-    return [...itemsAfterShowPicked].sort((a, b) => {
+    return [...itemsVisibleByStatus].sort((a, b) => {
       const timeA = a.created_at ?? a.updated_at ?? 0;
       const timeB = b.created_at ?? b.updated_at ?? 0;
 
@@ -118,7 +103,7 @@ export const ActivePickListScreen = () => {
 
       return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
     });
-  }, [itemsAfterShowPicked, productMap]);
+  }, [itemsVisibleByStatus, productMap]);
 
   const sortedProducts = useMemo(() => {
     const dedupedById = new Map<string, Product>();
@@ -171,6 +156,22 @@ export const ActivePickListScreen = () => {
     );
   }, [pickList?.categories, sortedProducts]);
 
+  const appliedItemFilter = useMemo(() => {
+    if (packagingFiltersDisabled) {
+      return 'all';
+    }
+
+    if (itemFilter === 'cartons' && !hasCartonItems) {
+      return hasUnitItems ? 'units' : 'all';
+    }
+
+    if (itemFilter === 'units' && !hasUnitItems) {
+      return hasCartonItems ? 'cartons' : 'all';
+    }
+
+    return itemFilter;
+  }, [hasCartonItems, hasUnitItems, itemFilter, packagingFiltersDisabled]);
+
   const productIdsInList = useMemo(
     () => new Set(itemState.map((item) => item.product_id)),
     [itemState],
@@ -203,34 +204,25 @@ export const ActivePickListScreen = () => {
     }
   }, [allItemsPicked, showPicked]);
 
-  // Sanitize itemFilter whenever availability changes or packaging is disabled.
   useEffect(() => {
-    if (packagingFiltersDisabled) {
-      if (itemFilter !== 'all') setItemFilter('all');
-      return;
-    }
+    setItemFilter((current) => (current === appliedItemFilter ? current : appliedItemFilter));
+  }, [appliedItemFilter]);
 
-    if (itemFilter === 'cartons' && !hasCartonItemsOverall) {
-      setItemFilter(hasUnitItemsOverall ? 'units' : 'all');
-    } else if (itemFilter === 'units' && !hasUnitItemsOverall) {
-      setItemFilter(hasCartonItemsOverall ? 'cartons' : 'all');
-    }
-  }, [packagingFiltersDisabled, itemFilter, hasCartonItemsOverall, hasUnitItemsOverall]);
-
-  // Sort the items that are actually visible (after showPicked + packaging filter)
   const visibleItems = useMemo(() => {
-    // itemsAfterPackagingFilter is already computed after showPicked & packaging
-    const arr = [...itemsAfterPackagingFilter];
-    arr.sort((a, b) => {
-      const timeA = a.created_at ?? a.updated_at ?? 0;
-      const timeB = b.created_at ?? b.updated_at ?? 0;
-      if (timeA !== timeB) return timeA - timeB;
-      const nameA = normalizeName(productMap.get(a.product_id)?.name ?? '');
-      const nameB = normalizeName(productMap.get(b.product_id)?.name ?? '');
-      return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
-    });
-    return arr;
-  }, [itemsAfterPackagingFilter, productMap]);
+    const filteredItems = showPicked
+      ? sortedItems
+      : sortedItems.filter((item) => item.status !== 'picked');
+
+    if (appliedItemFilter === 'cartons') {
+      return filteredItems.filter((item) => item.is_carton);
+    }
+
+    if (appliedItemFilter === 'units') {
+      return filteredItems.filter((item) => !item.is_carton);
+    }
+
+    return filteredItems;
+  }, [appliedItemFilter, showPicked, sortedItems]);
 
   const updateItemState = (itemId: string, updater: (item: PickItem) => PickItem) => {
     setItemState((current) => current.map((item) => (item.id === itemId ? updater(item) : item)));
@@ -439,8 +431,7 @@ export const ActivePickListScreen = () => {
             >
               <RadioGroup
                 row
-                value={itemFilter}
-                // use the second arg (value) provided by MUI RadioGroup onChange
+                value={appliedItemFilter}
                 onChange={(_, value) => setItemFilter(value as 'all' | 'cartons' | 'units')}
                 sx={{ flexGrow: 1 }}
               >

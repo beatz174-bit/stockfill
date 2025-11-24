@@ -100,27 +100,30 @@ export const PickItemRow = ({
           onClick={(event) => event.stopPropagation()}
         />
         <Stack spacing={0.5} minWidth={0} flex={1}>
-          <Typography
-            variant="subtitle1"
-            noWrap
-            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            data-testid="pick-item-title-row"
+            sx={{ minWidth: 0 }}
           >
             <Typography
               component="span"
               variant="subtitle1"
               noWrap
-              sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}
+              sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 600 }}
             >
               {product?.name ?? 'Unknown product'}
             </Typography>
             <Typography
               component="span"
               variant="subtitle1"
-              sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}
+              noWrap
+              sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}
             >
               {item.quantity} {packagingLabel}
             </Typography>
-          </Typography>
+          </Stack>
           {isNarrowScreen && (
             <Typography variant="caption" color="text.secondary" noWrap>
               Tap to adjust quantity and packaging

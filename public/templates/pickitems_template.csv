@@ -1,0 +1,2 @@
+id,pick_list_id,pick_list_name,product_id,product_name,quantity,is_carton,status,created_at,updated_at
+,,"My Pick List",,"Blue T-Shirt",2,false,pending,,

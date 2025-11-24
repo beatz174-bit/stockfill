@@ -1,0 +1,2 @@
+id,name,category,unit_type,bulk_name,barcode,archived,created_at,updated_at
+"Blue T-Shirt","Clothing","unit","carton","0123456789012",false,,

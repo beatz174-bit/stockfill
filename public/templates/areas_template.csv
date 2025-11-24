@@ -1,0 +1,3 @@
+id,name,created_at,updated_at
+# id optional — you can use empty for new rows. created/updated optional
+Area A,,

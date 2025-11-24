@@ -82,6 +82,9 @@ export const ActivePickListScreen = () => {
   );
 
   const sortedItems = useMemo(() => {
+    const normalizeProductName = (product?: Product | null) =>
+      product?.name ? product.name.trim().toLowerCase() : '';
+
     return [...itemsVisibleByStatus].sort((a, b) => {
       const productA = productMap.get(a.product_id);
       const productB = productMap.get(b.product_id);

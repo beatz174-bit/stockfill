@@ -442,7 +442,7 @@ describe('ActivePickListScreen product search', () => {
     expect(screen.getByRole('radio', { name: /units/i })).toBeDisabled();
   });
 
-  it('evaluates packaging filters based on visible (unpicketed) items when hiding picked', async () => {
+  it('enables and disables packaging filters based on the visible item statuses', async () => {
     pickItemsMock.mockReturnValue([
       {
         id: 'item-1',
@@ -476,15 +476,20 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('radio', { name: /cartons/i })).toBeEnabled();
-    expect(screen.getByRole('radio', { name: /units/i })).toBeEnabled();
+    const cartonsRadio = screen.getByRole('radio', { name: /cartons/i });
+    const unitsRadio = screen.getByRole('radio', { name: /units/i });
+    expect(cartonsRadio).toBeEnabled();
+    expect(unitsRadio).toBeEnabled();
 
-    await user.click(screen.getByLabelText(/show picked/i));
+    const togglePicked = screen.getByLabelText(/show picked/i);
+    await user.click(togglePicked);
 
-    await waitFor(() => expect(screen.getByRole('radio', { name: /cartons/i })).toBeDisabled());
+    expect(cartonsRadio).toBeDisabled();
+    expect(unitsRadio).toBeDisabled();
 
-    expect(screen.getByRole('radio', { name: /all/i })).toBeChecked();
-    expect(screen.getByRole('radio', { name: /units/i })).toBeDisabled();
+    await user.click(togglePicked);
+    expect(cartonsRadio).toBeEnabled();
+    expect(unitsRadio).toBeEnabled();
   });
 
   it('resets the filter when the selected packaging type is unavailable', async () => {
@@ -497,7 +502,7 @@ describe('ActivePickListScreen product search', () => {
         product_id: 'prod-1',
         quantity: 1,
         is_carton: true,
-        status: 'pending',
+        status: 'picked',
         created_at: 0,
         updated_at: 0,
       },
@@ -595,6 +600,90 @@ describe('ActivePickListScreen product search', () => {
 
     await user.click(togglePicked);
     expect(screen.getByText('Cola')).toBeVisible();
+  });
+
+  it('filters the visible list by packaging type and keeps the selection active', async () => {
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-1',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        is_carton: true,
+        status: 'picked',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-2',
+        pick_list_id: 'list-1',
+        product_id: 'prod-2',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const cartonsRadio = screen.getByRole('radio', { name: /cartons/i });
+    const unitsRadio = screen.getByRole('radio', { name: /units/i });
+
+    await user.click(unitsRadio);
+    expect(unitsRadio).toBeChecked();
+    expect(screen.getByText('Chips')).toBeVisible();
+    expect(screen.queryByText('Cola')).not.toBeInTheDocument();
+
+    await user.click(cartonsRadio);
+    expect(cartonsRadio).toBeChecked();
+    expect(screen.getByText('Cola')).toBeVisible();
+    expect(screen.queryByText('Chips')).not.toBeInTheDocument();
+  });
+
+  it('disables packaging filters when all items share the same status', () => {
+    pickItemsMock.mockReturnValue([
+      {
+        id: 'item-1',
+        pick_list_id: 'list-1',
+        product_id: 'prod-1',
+        quantity: 1,
+        is_carton: true,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+      {
+        id: 'item-2',
+        pick_list_id: 'list-1',
+        product_id: 'prod-2',
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: 0,
+        updated_at: 0,
+      },
+    ]);
+
+    render(
+      <MemoryRouter initialEntries={['/pick-lists/1']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Routes>
+          <Route path="/pick-lists/:id" element={<ActivePickListScreen />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('radio', { name: /cartons/i })).toBeDisabled();
+    expect(screen.getByRole('radio', { name: /units/i })).toBeDisabled();
   });
 
   it('disables show picked toggle when all items are picked', async () => {

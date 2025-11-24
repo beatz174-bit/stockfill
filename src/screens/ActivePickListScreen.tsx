@@ -43,10 +43,24 @@ export const ActivePickListScreen = () => {
     setItemState(items);
   }, [items]);
 
+  const itemsVisibleByStatus = useMemo(
+    () => (showPicked ? itemState : itemState.filter((item) => item.status !== 'picked')),
+    [itemState, showPicked],
+  );
+
   const allItemsPicked = useMemo(
     () => itemState.length > 0 && itemState.every((item) => item.status === 'picked'),
     [itemState],
   );
+  const hasUnpickedItems = useMemo(
+    () => itemsVisibleByStatus.some((item) => item.status !== 'picked'),
+    [itemsVisibleByStatus],
+  );
+  const hasPickedItems = useMemo(
+    () => itemsVisibleByStatus.some((item) => item.status === 'picked'),
+    [itemsVisibleByStatus],
+  );
+  const hasMixedPickStatuses = hasPickedItems && hasUnpickedItems;
 
   const productMap = useMemo(() => {
     const map = new Map<string, Product>();
@@ -62,13 +76,8 @@ export const ActivePickListScreen = () => {
     [areas, pickList?.area_id],
   );
 
-  const visibleItemsByStatus = useMemo(
-    () => (showPicked ? itemState : itemState.filter((item) => item.status !== 'picked')),
-    [itemState, showPicked],
-  );
-
   const sortedItems = useMemo(() => {
-    return [...visibleItemsByStatus].sort((a, b) => {
+    return [...itemsVisibleByStatus].sort((a, b) => {
       const productA = productMap.get(a.product_id);
       const productB = productMap.get(b.product_id);
 
@@ -89,7 +98,7 @@ export const ActivePickListScreen = () => {
 
       return timeA - timeB;
     });
-  }, [visibleItemsByStatus, productMap]);
+  }, [itemsVisibleByStatus, productMap]);
 
   const sortedProducts = useMemo(() => {
     const dedupedById = new Map<string, Product>();
@@ -132,15 +141,16 @@ export const ActivePickListScreen = () => {
   }, [pickList?.categories, sortedProducts]);
 
   const hasCartonItems = useMemo(
-    () => visibleItemsByStatus.some((item) => item.is_carton),
-    [visibleItemsByStatus],
+    () => itemsVisibleByStatus.some((item) => item.is_carton),
+    [itemsVisibleByStatus],
   );
   const hasUnitItems = useMemo(
-    () => visibleItemsByStatus.some((item) => !item.is_carton),
-    [visibleItemsByStatus],
+    () => itemsVisibleByStatus.some((item) => !item.is_carton),
+    [itemsVisibleByStatus],
   );
   const packagingTypeCount = Number(hasCartonItems) + Number(hasUnitItems);
   const singlePackagingType = packagingTypeCount === 1;
+  const packagingFiltersDisabled = !hasMixedPickStatuses;
 
   const productIdsInList = useMemo(
     () => new Set(itemState.map((item) => item.product_id)),
@@ -424,13 +434,13 @@ export const ActivePickListScreen = () => {
                   value="cartons"
                   control={<Radio />}
                   label="Cartons"
-                  disabled={singlePackagingType || !hasCartonItems}
+                  disabled={packagingFiltersDisabled || !hasCartonItems}
                 />
                 <FormControlLabel
                   value="units"
                   control={<Radio />}
                   label="Units"
-                  disabled={singlePackagingType || !hasUnitItems}
+                  disabled={packagingFiltersDisabled || !hasUnitItems}
                 />
               </RadioGroup>
               <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: { xs: 0, sm: 2 } }}>

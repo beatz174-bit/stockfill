@@ -49,9 +49,14 @@ export const PickItemRow = ({
     onStatusChange(checked ? 'picked' : 'pending');
   };
 
+  const closeDialogs = () => {
+    setIsConfirmOpen(false);
+    setIsControlsOpen(false);
+  };
+
   const handleConfirmDelete = () => {
     onDelete();
-    setIsConfirmOpen(false);
+    closeDialogs();
   };
 
   const handleRowClick = () => {
@@ -263,7 +268,7 @@ export const PickItemRow = ({
 
       <Dialog
         open={isConfirmOpen}
-        onClose={() => setIsConfirmOpen(false)}
+        onClose={closeDialogs}
         aria-labelledby="confirm-delete-title"
         aria-describedby="confirm-delete-description"
       >
@@ -274,15 +279,10 @@ export const PickItemRow = ({
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsConfirmOpen(false)} aria-label="Cancel delete" autoFocus>
+          <Button onClick={closeDialogs} autoFocus>
             Cancel
           </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={handleConfirmDelete}
-            aria-label="Confirm delete"
-          >
+          <Button color="error" variant="contained" onClick={handleConfirmDelete}>
             Delete
           </Button>
         </DialogActions>

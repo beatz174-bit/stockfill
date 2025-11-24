@@ -220,7 +220,7 @@ export const ActivePickListScreen = () => {
     } else if (itemFilter === 'units' && !hasUnitItems) {
       setItemFilter('cartons');
     }
-  }, [itemFilter, hasCartonItems, hasUnitItems, packagingTypeCount]);
+  }, [itemFilter, packagingFiltersDisabled]);
 
   const visibleItems = useMemo(() => {
     let filteredItems = showPicked
@@ -456,13 +456,13 @@ export const ActivePickListScreen = () => {
                   value="cartons"
                   control={<Radio />}
                   label="Cartons"
-                  disabled={packagingFiltersDisabled || !hasCartonItems}
+                  disabled={packagingFiltersDisabled}
                 />
                 <FormControlLabel
                   value="units"
                   control={<Radio />}
                   label="Units"
-                  disabled={packagingFiltersDisabled || !hasUnitItems}
+                  disabled={packagingFiltersDisabled}
                 />
               </RadioGroup>
               <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: { xs: 0, sm: 2 } }}>

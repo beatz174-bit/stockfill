@@ -402,13 +402,15 @@ test.describe('Active pick list responsive controls on mobile', () => {
 
     const itemDialog = page.getByRole('dialog', { name: additionalProduct });
     await expect(itemDialog).toBeVisible();
-    await expect(itemDialog.getByText(/Quantity:\s*1\s+unit/i)).toBeVisible({ timeout: 10000 });
+    const quantityDisplay = itemDialog.getByText(/Quantity/i);
+
+    await expect(quantityDisplay).toHaveText(/Quantity:\s*1\s+unit/i, { timeout: 10000 });
     await expect(itemDialog.getByLabel('Increase quantity')).toBeVisible();
 
     await itemDialog.getByLabel('Increase quantity').click();
-    await expect(itemDialog.getByText(/Quantity:\s*2\s+unit/i)).toBeVisible({ timeout: 10000 });
+    await expect(quantityDisplay).toHaveText(/Quantity:\s*2\s+unit/i, { timeout: 10000 });
     await itemDialog.getByLabel('Switch to carton packaging').click();
-    await expect(itemDialog.getByText(/Quantity:\s*2\s+carton/i)).toBeVisible({ timeout: 10000 });
+    await expect(quantityDisplay).toHaveText(/Quantity:\s*2\s+carton/i, { timeout: 10000 });
 
     await itemDialog.getByLabel('Delete item').click();
     await expect(page.getByRole('dialog', { name: 'Delete item' })).toBeVisible();

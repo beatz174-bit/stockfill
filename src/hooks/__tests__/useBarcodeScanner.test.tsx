@@ -2,12 +2,16 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, beforeEach, afterEach, expect, vi, type MockInstance } from 'vitest';
 import { useBarcodeScanner } from '../useBarcodeScanner';
 
-const decodeFromVideoDevice = vi.fn();
+const { decodeFromVideoDevice, MockBrowserMultiFormatReader } = vi.hoisted(() => {
+  const decodeSpy = vi.fn();
+  const Reader = vi.fn(function MockBrowserMultiFormatReader(this: { decodeFromVideoDevice: typeof decodeSpy }) {
+    this.decodeFromVideoDevice = decodeSpy;
+  });
+  return { decodeFromVideoDevice: decodeSpy, MockBrowserMultiFormatReader: Reader };
+});
 
 vi.mock('@zxing/browser', () => ({
-  BrowserMultiFormatReader: vi.fn(function MockBrowserMultiFormatReader() {
-    return { decodeFromVideoDevice };
-  }),
+  BrowserMultiFormatReader: MockBrowserMultiFormatReader,
 }));
 
 declare global {

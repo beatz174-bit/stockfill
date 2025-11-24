@@ -8,6 +8,7 @@ import {
   DialogTitle,
   InputAdornment,
   MenuItem,
+  Snackbar,
   Stack,
   TextField,
   Typography,
@@ -301,7 +302,14 @@ export const ManageProductsScreen = () => {
         Manage Products
       </Typography>
       <Stack spacing={2}>
-        {feedback ? <Alert severity={feedback.severity}>{feedback.text}</Alert> : null}
+        <Snackbar
+          open={Boolean(feedback)}
+          autoHideDuration={4000}
+          onClose={() => setFeedback(null)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          {feedback ? <Alert severity={feedback.severity}>{feedback.text}</Alert> : null}
+        </Snackbar>
         <Button component={RouterLink} to="/categories" variant="outlined" sx={{ alignSelf: 'flex-start' }}>
           Edit Categories
         </Button>

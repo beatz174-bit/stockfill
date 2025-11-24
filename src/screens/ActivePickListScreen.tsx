@@ -48,19 +48,22 @@ export const ActivePickListScreen = () => {
     [itemState, showPicked],
   );
 
-  const allItemsPicked = useMemo(
-    () => itemState.length > 0 && itemState.every((item) => item.status === 'picked'),
+  const hasPickedItemsInList = useMemo(
+    () => itemState.some((item) => item.status === 'picked'),
     [itemState],
   );
-  const hasUnpickedItems = useMemo(
-    () => itemsVisibleByStatus.some((item) => item.status !== 'picked'),
-    [itemsVisibleByStatus],
+  const hasUnpickedItemsInList = useMemo(
+    () => itemState.some((item) => item.status !== 'picked'),
+    [itemState],
   );
-  const hasPickedItems = useMemo(
-    () => itemsVisibleByStatus.some((item) => item.status === 'picked'),
-    [itemsVisibleByStatus],
+  const allItemsPicked = useMemo(
+    () => itemState.length > 0 && !hasUnpickedItemsInList,
+    [hasUnpickedItemsInList, itemState.length],
   );
-  const hasMixedPickStatuses = hasPickedItems && hasUnpickedItems;
+  const allItemsUnpicked = useMemo(
+    () => itemState.length > 0 && !hasPickedItemsInList,
+    [hasPickedItemsInList, itemState.length],
+  );
 
   const productMap = useMemo(() => {
     const map = new Map<string, Product>();
@@ -77,12 +80,15 @@ export const ActivePickListScreen = () => {
   );
 
   const sortedItems = useMemo(() => {
+    const normalizeProductName = (product?: Product | null) =>
+      product?.name ? product.name.trim().toLowerCase() : '';
+
     return [...itemsVisibleByStatus].sort((a, b) => {
       const productA = productMap.get(a.product_id);
       const productB = productMap.get(b.product_id);
 
-      const nameA = productA?.name.trim().toLowerCase() ?? '';
-      const nameB = productB?.name.trim().toLowerCase() ?? '';
+      const nameA = normalizeProductName(productA);
+      const nameB = normalizeProductName(productB);
 
       const nameComparison = nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
       if (nameComparison !== 0) {
@@ -140,17 +146,19 @@ export const ActivePickListScreen = () => {
     );
   }, [pickList?.categories, sortedProducts]);
 
-  const hasCartonItems = useMemo(
-    () => itemsVisibleByStatus.some((item) => item.is_carton),
+  const visibleHasPicked = useMemo(
+    () => itemsVisibleByStatus.some((item) => item.status === 'picked'),
     [itemsVisibleByStatus],
   );
-  const hasUnitItems = useMemo(
-    () => itemsVisibleByStatus.some((item) => !item.is_carton),
+  const visibleHasUnpicked = useMemo(
+    () => itemsVisibleByStatus.some((item) => item.status !== 'picked'),
     [itemsVisibleByStatus],
   );
-  const packagingTypeCount = Number(hasCartonItems) + Number(hasUnitItems);
-  const singlePackagingType = packagingTypeCount === 1;
-  const packagingFiltersDisabled = !hasMixedPickStatuses;
+
+  const packagingFiltersDisabled =
+    !showPicked || itemsVisibleByStatus.length === 0 || !visibleHasPicked || !visibleHasUnpicked;
+
+  const appliedItemFilter = packagingFiltersDisabled ? 'all' : itemFilter;
 
   const productIdsInList = useMemo(
     () => new Set(itemState.map((item) => item.product_id)),
@@ -185,36 +193,26 @@ export const ActivePickListScreen = () => {
   }, [allItemsPicked, showPicked]);
 
   useEffect(() => {
-    if (packagingTypeCount <= 1) {
-      if (itemFilter !== 'all') {
-        setItemFilter('all');
-      }
-
-      return;
+    if (packagingFiltersDisabled && itemFilter !== 'all') {
+      setItemFilter('all');
     }
-
-    if (itemFilter === 'cartons' && !hasCartonItems) {
-      setItemFilter('units');
-    } else if (itemFilter === 'units' && !hasUnitItems) {
-      setItemFilter('cartons');
-    }
-  }, [itemFilter, hasCartonItems, hasUnitItems, packagingTypeCount]);
+  }, [itemFilter, packagingFiltersDisabled]);
 
   const visibleItems = useMemo(() => {
     let filteredItems = showPicked
       ? sortedItems
       : sortedItems.filter((item) => item.status !== 'picked');
 
-    if (itemFilter === 'cartons') {
+    if (appliedItemFilter === 'cartons') {
       return filteredItems.filter((item) => item.is_carton);
     }
 
-    if (itemFilter === 'units') {
+    if (appliedItemFilter === 'units') {
       return filteredItems.filter((item) => !item.is_carton);
     }
 
     return filteredItems;
-  }, [itemFilter, showPicked, sortedItems]);
+  }, [appliedItemFilter, showPicked, sortedItems]);
 
   const updateItemState = (itemId: string, updater: (item: PickItem) => PickItem) => {
     setItemState((current) => current.map((item) => (item.id === itemId ? updater(item) : item)));
@@ -423,7 +421,7 @@ export const ActivePickListScreen = () => {
             >
               <RadioGroup
                 row
-                value={itemFilter}
+                value={appliedItemFilter}
                 onChange={(event) =>
                   setItemFilter(event.target.value as 'all' | 'cartons' | 'units')
                 }
@@ -434,13 +432,13 @@ export const ActivePickListScreen = () => {
                   value="cartons"
                   control={<Radio />}
                   label="Cartons"
-                  disabled={packagingFiltersDisabled || !hasCartonItems}
+                  disabled={packagingFiltersDisabled}
                 />
                 <FormControlLabel
                   value="units"
                   control={<Radio />}
                   label="Units"
-                  disabled={packagingFiltersDisabled || !hasUnitItems}
+                  disabled={packagingFiltersDisabled}
                 />
               </RadioGroup>
               <Stack direction="row" spacing={1} alignItems="center" sx={{ ml: { xs: 0, sm: 2 } }}>

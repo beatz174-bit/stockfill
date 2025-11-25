@@ -17,12 +17,21 @@ const product: Product = {
 
 const categories = ['Drinks', 'Snacks'];
 
+// Provide a categoriesById Map for the new required prop.
+// The test product uses category 'Drinks' (a name), so mapping name->name is fine.
+// If you had an ID in the product, this map could be id->name.
+const categoriesById = new Map<string, string>([
+  ['Drinks', 'Drinks'],
+  ['Snacks', 'Snacks'],
+]);
+
 describe('ProductRow', () => {
   it('shows name, category, and barcode without unit text in read-only mode', () => {
     render(
       <ProductRow
         product={product}
         categories={categories}
+        categoriesById={categoriesById}
         onSave={vi.fn()}
         onDelete={vi.fn()}
       />,
@@ -39,7 +48,7 @@ describe('ProductRow', () => {
     const onSave = vi.fn();
 
     render(
-      <ProductRow product={product} categories={categories} onSave={onSave} onDelete={vi.fn()} />,
+      <ProductRow product={product} categories={categories} categoriesById={categoriesById} onSave={onSave} onDelete={vi.fn()} />,
     );
 
     await user.click(screen.getByLabelText(/edit sparkling water/i));
@@ -59,12 +68,12 @@ describe('ProductRow', () => {
 
   it('surfaces validation errors from duplicate constraints', async () => {
     const user = userEvent.setup();
-    const onSave = vi.fn().mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'DuplicateNameError' }))
+    const onSave = vi
+      .fn()
+      .mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'DuplicateNameError' }))
       .mockRejectedValueOnce(Object.assign(new Error('dup'), { name: 'DuplicateBarcodeError' }));
 
-    render(
-      <ProductRow product={product} categories={categories} onSave={onSave} onDelete={vi.fn()} />,
-    );
+    render(<ProductRow product={product} categories={categories} categoriesById={categoriesById} onSave={onSave} onDelete={vi.fn()} />);
 
     await user.click(screen.getByLabelText(/edit sparkling water/i));
     await user.clear(screen.getByLabelText(/name/i));
@@ -82,9 +91,7 @@ describe('ProductRow', () => {
   it('allows clearing and scanning a new barcode', async () => {
     const user = userEvent.setup();
 
-    render(
-      <ProductRow product={product} categories={categories} onSave={vi.fn()} onDelete={vi.fn()} />,
-    );
+    render(<ProductRow product={product} categories={categories} categoriesById={categoriesById} onSave={vi.fn()} onDelete={vi.fn()} />);
 
     await user.click(screen.getByLabelText(/edit sparkling water/i));
     await user.click(screen.getByRole('button', { name: /clear/i }));

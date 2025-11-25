@@ -1,2 +1,4 @@
-id,name,category,unit_type,bulk_name,barcode,archived,created_at,updated_at
-"Blue T-Shirt","Clothing","unit","carton","0123456789012",false,,
+name,barcode,category
+Running Shorts,0123456789,Clothing
+Crop Top,9876543210,Clothing
+Yoga Pants,,Bottoms

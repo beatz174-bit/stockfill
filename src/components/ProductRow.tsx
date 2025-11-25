@@ -21,12 +21,15 @@ import { BarcodeScannerView } from './BarcodeScannerView';
 
 interface ProductRowProps {
   product: Product;
+  // list of category display names for the select
   categories: string[];
+  // map of category id -> category name, used to resolve ids to names
+  categoriesById: Map<string, string>;
   onSave: (
     productId: string,
     updates: {
       name: string;
-      category: string;
+      category: string; // this is the *name* when passed back to parent
       barcode?: string;
     },
   ) => Promise<void> | void;
@@ -39,22 +42,23 @@ interface ProductFormState {
   barcode: string;
 }
 
-const getInitialFormState = (product: Product): ProductFormState => ({
+const getInitialFormState = (product: Product, categoriesById: Map<string, string>): ProductFormState => ({
   name: product.name,
-  category: product.category,
+  // If product.category is an id, resolve to name; otherwise assume it is already a name
+  category: categoriesById.get(product.category) ?? product.category ?? '',
   barcode: product.barcode ?? '',
 });
 
-export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRowProps) => {
+export const ProductRow = ({ product, categories, categoriesById, onSave, onDelete }: ProductRowProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [formState, setFormState] = useState<ProductFormState>(() => getInitialFormState(product));
+  const [formState, setFormState] = useState<ProductFormState>(() => getInitialFormState(product, categoriesById));
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ name?: string; barcode?: string }>({});
 
   useEffect(() => {
-    setFormState(getInitialFormState(product));
+    setFormState(getInitialFormState(product, categoriesById));
     setFieldErrors({});
-  }, [product]);
+  }, [product, categoriesById]);
 
   const handleChange = (field: keyof ProductFormState) => (event: ChangeEvent<HTMLInputElement>) => {
     setFormState((prev) => ({ ...prev, [field]: event.target.value }));
@@ -86,7 +90,7 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
 
   const handleCancel = () => {
     setIsEditing(false);
-    setFormState(getInitialFormState(product));
+    setFormState(getInitialFormState(product, categoriesById));
     setFieldErrors({});
   };
 
@@ -103,14 +107,7 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
               error={Boolean(fieldErrors.name)}
               helperText={fieldErrors.name || undefined}
             />
-            <TextField
-              select
-              SelectProps={{ native: true }}
-              label="Category"
-              value={formState.category}
-              onChange={handleChange('category')}
-              size="small"
-            >
+            <TextField select SelectProps={{ native: true }} label="Category" value={formState.category} onChange={handleChange('category')} size="small">
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
@@ -145,12 +142,7 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
               </Button>
             )}
             <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
-              <IconButton
-                aria-label={`Delete ${product.name}`}
-                onClick={() => onDelete(product.id)}
-                size="small"
-                color="error"
-              >
+              <IconButton aria-label={`Delete ${product.name}`} onClick={() => onDelete(product.id)} size="small" color="error">
                 <DeleteIcon fontSize="small" />
               </IconButton>
               <IconButton aria-label="Save product" onClick={handleSave} disabled={!formState.name} color="primary">
@@ -169,7 +161,8 @@ export const ProductRow = ({ product, categories, onSave, onDelete }: ProductRow
                   {product.name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" noWrap>
-                  {product.category}
+                  {/* Resolve id -> name for display */}
+                  {categoriesById.get(product.category) ?? product.category ?? ''}
                 </Typography>
               </Stack>
               {product.barcode ? (

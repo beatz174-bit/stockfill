@@ -37,59 +37,31 @@ export const ManageProductsScreen = () => {
   const [barcodeError, setBarcodeError] = useState('');
   const [nameError, setNameError] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
-  const [lookupStatus, setLookupStatus] = useState<'idle' | 'loading' | 'found' | 'notfound' | 'offline'>(
-    'idle',
-  );
+  const [lookupStatus, setLookupStatus] = useState<'idle' | 'loading' | 'found' | 'notfound' | 'offline'>('idle');
   const [externalProduct, setExternalProduct] = useState<ExternalProductInfo | null>(null);
   const [feedback, setFeedback] = useState<{ text: string; severity: AlertColor } | null>(null);
 
-  const lookupBarcode = useCallback(async (code: string) => {
-    if (!code) return;
+  // Map category id -> name
+  const categoriesById = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
-    if (typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine) {
-      setLookupStatus('offline');
-      setExternalProduct(null);
-      return;
-    }
-
-    setLookupStatus('loading');
-    const result = await fetchProductFromOFF(code);
-
-    if (result) {
-      setExternalProduct(result);
-      setLookupStatus('found');
-      if (result.name) {
-        setName((prev) => prev || result.name || '');
-      }
-    } else {
-      setExternalProduct(null);
-      setLookupStatus('notfound');
-    }
-  }, []);
-
+  // category options are display names (union of known category names and product-resolved names)
   const categoryOptions = useMemo(() => {
     const categoryNames = categories.map((item) => item.name);
-    const productCategories = products.map((product) => product.category);
-    return Array.from(new Set([...categoryNames, ...productCategories]));
-  }, [categories, products]);
+    const productCategories = products.map((product) => categoriesById.get(product.category) ?? product.category ?? '');
+    return Array.from(new Set([...categoryNames, ...productCategories].filter(Boolean)));
+  }, [categories, products, categoriesById]);
 
   const findBarcodeConflict = useCallback(
     (value?: string, productId?: string) =>
-      value
-        ? products.find((product) => product.barcode === value && product.id !== productId)
-        : undefined,
+      value ? products.find((product) => product.barcode === value && product.id !== productId) : undefined,
     [products],
   );
 
   const findNameConflict = useCallback(
     (value?: string, productId?: string) => {
       if (!value) return undefined;
-
       const normalizedValue = value.trim().toLowerCase();
-
-      return products.find(
-        (product) => product.id !== productId && product.name.trim().toLowerCase() === normalizedValue,
-      );
+      return products.find((product) => product.id !== productId && product.name.trim().toLowerCase() === normalizedValue);
     },
     [products],
   );
@@ -97,10 +69,7 @@ export const ManageProductsScreen = () => {
   const assertUniqueBarcode = useCallback(
     async (value?: string, productId?: string) => {
       if (!value) return;
-
-      const conflict =
-        findBarcodeConflict(value, productId) ?? (await db.products.where('barcode').equals(value).first());
-
+      const conflict = findBarcodeConflict(value, productId) ?? (await db.products.where('barcode').equals(value).first());
       if (conflict && conflict.id !== productId) {
         const error = new Error('This barcode is already assigned to another product.');
         error.name = 'DuplicateBarcodeError';
@@ -114,9 +83,7 @@ export const ManageProductsScreen = () => {
     async (value: string, productId?: string) => {
       const normalized = value.trim().toLowerCase();
       if (!normalized) return;
-
       const conflict = findNameConflict(value, productId);
-
       if (conflict) {
         const error = new Error('A product with this name already exists.');
         error.name = 'DuplicateNameError';
@@ -129,15 +96,10 @@ export const ManageProductsScreen = () => {
   const addProductToAutoLists = useCallback(
     async (product: Product, timestamp: number) => {
       const pickLists = await db.pickLists.toArray();
-      const eligibleLists = pickLists.filter(
-        (pickList) =>
-          pickList.auto_add_new_products && Array.isArray(pickList.categories)
-            ? pickList.categories.includes(product.category)
-            : false,
+      const eligibleLists = pickLists.filter((pickList) =>
+        pickList.auto_add_new_products && Array.isArray(pickList.categories) ? pickList.categories.includes(product.category) : false,
       );
-
       if (eligibleLists.length === 0) return;
-
       await Promise.all(
         eligibleLists.map(async (pickList) => {
           const existing = await db.pickItems
@@ -145,9 +107,7 @@ export const ManageProductsScreen = () => {
             .equals(pickList.id)
             .filter((item) => item.product_id === product.id)
             .first();
-
           if (existing) return undefined;
-
           return db.pickItems.add({
             id: uuidv4(),
             pick_list_id: pickList.id,
@@ -180,13 +140,12 @@ export const ManageProductsScreen = () => {
   const filtered = useMemo(
     () =>
       products.filter((p) => {
-        const matchesSearch = `${p.name} ${p.category}`
-          .toLowerCase()
-          .includes(search.toLowerCase());
-        const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
+        const pCategoryName = categoriesById.get(p.category) ?? p.category ?? '';
+        const matchesSearch = `${p.name} ${pCategoryName}`.toLowerCase().includes(search.toLowerCase());
+        const matchesCategory = selectedCategory === 'all' || pCategoryName === selectedCategory;
         return matchesSearch && matchesCategory;
       }),
-    [products, search, selectedCategory],
+    [products, search, selectedCategory, categoriesById],
   );
 
   const sortedFiltered = useMemo(
@@ -200,7 +159,8 @@ export const ManageProductsScreen = () => {
       setBarcode(state.newBarcode);
       void lookupBarcode(state.newBarcode);
     }
-  }, [location.state, lookupBarcode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   useEffect(() => {
     if (!barcode) {
@@ -210,9 +170,29 @@ export const ManageProductsScreen = () => {
     setBarcodeError('');
   }, [barcode]);
 
+  async function lookupBarcode(code: string) {
+    if (!code) return;
+    if (typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine) {
+      setLookupStatus('offline');
+      setExternalProduct(null);
+      return;
+    }
+    setLookupStatus('loading');
+    const result = await fetchProductFromOFF(code);
+    if (result) {
+      setExternalProduct(result);
+      setLookupStatus('found');
+      if (result.name) {
+        setName((prev) => prev || result.name || '');
+      }
+    } else {
+      setExternalProduct(null);
+      setLookupStatus('notfound');
+    }
+  }
+
   const addProduct = async () => {
     if (!name || !category) return;
-
     try {
       await assertUniqueName(name);
       await assertUniqueBarcode(barcode || undefined);
@@ -229,10 +209,15 @@ export const ManageProductsScreen = () => {
     }
     const timestamp = Date.now();
     const productId = uuidv4();
+
+    // Resolve selected category name -> id if possible
+    const chosenCategoryObj = categories.find((c) => c.name === category);
+    const categoryIdToSave = chosenCategoryObj ? chosenCategoryObj.id : category || '';
+
     const newProduct: Product = {
       id: productId,
       name,
-      category,
+      category: categoryIdToSave,
       unit_type: DEFAULT_UNIT_TYPE,
       bulk_name: DEFAULT_BULK_NAME,
       barcode: barcode || undefined,
@@ -265,12 +250,18 @@ export const ManageProductsScreen = () => {
     const existing = await db.products.get(productId);
     if (!existing) return;
 
+    // Map the provided category name back to the id (if it exists)
+    let categoryIdToSave = updates.category;
+    const matchingCategory = categories.find((c) => c.name === updates.category);
+    if (matchingCategory) categoryIdToSave = matchingCategory.id;
+
     const normalizedName = updates.name.trim();
     const oldNameKey = existing.name.trim().toLowerCase();
     const updatedProduct: Product = {
       ...existing,
       ...updates,
       name: normalizedName,
+      category: categoryIdToSave,
       unit_type: DEFAULT_UNIT_TYPE,
       bulk_name: DEFAULT_BULK_NAME,
       updated_at: Date.now(),
@@ -302,17 +293,13 @@ export const ManageProductsScreen = () => {
         Manage Products
       </Typography>
       <Stack spacing={2}>
-        <Snackbar
-          open={Boolean(feedback)}
-          autoHideDuration={4000}
-          onClose={() => setFeedback(null)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        >
+        <Snackbar open={Boolean(feedback)} autoHideDuration={4000} onClose={() => setFeedback(null)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
           {feedback ? <Alert severity={feedback.severity}>{feedback.text}</Alert> : undefined}
         </Snackbar>
         <Button component={RouterLink} to="/categories" variant="outlined" sx={{ alignSelf: 'flex-start' }}>
           Edit Categories
         </Button>
+
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
           <TextField
             placeholder="Search"
@@ -337,6 +324,7 @@ export const ManageProductsScreen = () => {
             ))}
           </TextField>
         </Stack>
+
         <Stack spacing={1}>
           <Typography variant="subtitle1">Add Product</Typography>
           <TextField
@@ -366,13 +354,7 @@ export const ManageProductsScreen = () => {
                 : undefined
             }
           />
-          <TextField
-            select
-            label="Add product category"
-            value={category}
-            onChange={(event) => setCategory(event.target.value)}
-            disabled={categoryOptions.length === 0}
-          >
+          <TextField select label="Add product category" value={category} onChange={(event) => setCategory(event.target.value)} disabled={categoryOptions.length === 0}>
             {categoryOptions.map((cat) => (
               <MenuItem key={cat} value={cat}>
                 {cat}
@@ -401,54 +383,34 @@ export const ManageProductsScreen = () => {
                   Found {externalProduct.name ?? 'product'} via Open Food Facts. Please confirm details.
                 </Typography>
               ) : null}
-              {lookupStatus === 'notfound' ? (
-                <Typography variant="body2" color="text.secondary">
-                  Product not found. Add it manually.
-                </Typography>
-              ) : null}
-              {lookupStatus === 'offline' ? (
-                <Typography variant="body2" color="text.secondary">
-                  You are offline. Enter details manually.
-                </Typography>
-              ) : null}
             </Stack>
           ) : (
             <Button variant="outlined" onClick={() => setScannerOpen(true)}>
               Scan Barcode
             </Button>
           )}
-          <Button variant="contained" onClick={addProduct} disabled={!name || !category}>
-            Save Product
+          <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} fullWidth>
+            <DialogTitle>Scan Barcode</DialogTitle>
+            <DialogContent>
+              <BarcodeScannerView
+                onDetected={(code) => {
+                  setBarcode(code);
+                  setScannerOpen(false);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+          <Button variant="contained" onClick={() => void addProduct()} disabled={!name || !category}>
+            Add product
           </Button>
         </Stack>
-        {sortedFiltered.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            No products match your search and category filter.
-          </Typography>
-        ) : (
-          sortedFiltered.map((product) => (
-            <ProductRow
-              key={product.id}
-              product={product}
-              categories={categoryOptions}
-              onSave={updateProduct}
-              onDelete={deleteProduct}
-            />
-          ))
-        )}
+
+        <Stack spacing={1}>
+          {sortedFiltered.map((product) => (
+            <ProductRow key={product.id} product={product} categories={categoryOptions} categoriesById={categoriesById} onSave={updateProduct} onDelete={deleteProduct} />
+          ))}
+        </Stack>
       </Stack>
-      <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} fullWidth>
-        <DialogTitle>Scan Barcode</DialogTitle>
-        <DialogContent>
-          <BarcodeScannerView
-            onDetected={(code) => {
-              setBarcode(code);
-              void lookupBarcode(code);
-              setScannerOpen(false);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
     </Container>
   );
 };

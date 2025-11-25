@@ -156,23 +156,18 @@ export const exportData = async (
     fileEntries.push({ name: 'categories.csv', content: serializeCsv(rows) });
   }
 
-  if (selectedTypes.includes('products')) {
-    const products = await db.products.toArray();
-    const rows = products.map((product) => ({
-      id: product.id,
-      name: product.name,
-      category: categoriesById.get(product.category) ?? '',
-      unit_type: product.unit_type,
-      bulk_name: product.bulk_name,
-      barcode: product.barcode,
-      archived: product.archived,
-      created_at: product.created_at,
-      updated_at: product.updated_at,
-    }));
-    inserted += rows.length;
-    addDetail(`Exported ${rows.length} products`);
-    fileEntries.push({ name: 'products.csv', content: serializeCsv(rows) });
-  }
+if (selectedTypes.includes('products')) {
+  const products = await db.products.toArray();
+  const rows = products.map((product) => ({
+    name: product.name,
+    barcode: product.barcode ?? '',
+    category: categoriesById.get(product.category) ?? '',
+  }));
+  inserted += rows.length;
+  addDetail(`Exported ${rows.length} products`);
+  fileEntries.push({ name: 'products.csv', content: serializeCsv(rows) });
+}
+
 
   if (selectedTypes.includes('pick-lists')) {
     const pickLists = await db.pickLists.toArray();
@@ -283,18 +278,34 @@ export const importFiles = async (
 
   const parsedRows: Partial<Record<DataType, Record<string, string>[]>> = {};
 
-  for (const file of parsedFiles) {
+let productRows: Record<string, string>[] = [];
+
+for (const file of parsedFiles) {
+  const rows = await parseCsv(file.content);
+  addDetail(`Parsed ${rows.length} rows from ${file.name}`);
+  if (!rows || rows.length === 0) continue;
+
+  // Look at headers of first row to decide if it's product-centric
+  const headerKeys = Object.keys(rows[0]).map(h => h.trim().toLowerCase());
+  const isProductCentric =
+    headerKeys.includes('category') && (headerKeys.includes('name') || headerKeys.includes('product_name'));
+
+  if (isProductCentric) {
+    // Collect product rows for product-centric import
+    productRows.push(...rows);
+    // record that we detected products (for logging later)
+    if (!selectedTypes.includes('products')) selectedTypes.push('products');
+  } else {
+    // Fallback to filename-based inference for older templates
     const type = inferTypeFromName(file.name);
     if (!type) {
-      addDetail(`Skipped ${file.name}: could not infer data type`);
+      addDetail(`Skipped ${file.name}: not product-centric and could not infer data type`);
       continue;
     }
-    // eslint-disable-next-line no-await-in-loop
-    const rows = await parseCsv(file.content);
     parsedRows[type] = rows;
     selectedTypes.push(type);
-    addDetail(`Parsed ${rows.length} rows from ${file.name}`);
   }
+}
 
   let inserted = 0;
   let skipped = 0;
@@ -331,223 +342,78 @@ export const importFiles = async (
   try {
     await db.transaction(
   'rw',
-  [db.areas, db.categories, db.products, db.pickLists, db.pickItems],
+  [db.categories, db.products],
   async () => {
-        const parseTimestamp = (value?: string) =>
-          value && value.trim() !== '' ? Number(value) || now : now;
+if (productRows.length > 0) {
+  // 1) Make a unique list of category names from CSV (normalized)
+  const uniqueCategoryNames = new Map<string, string>(); // normalized -> raw
+  for (const row of productRows) {
+    const rawCat = (row.category ?? '').trim();
+    if (!rawCat) continue;
+    const norm = normalizeName(rawCat);
+    if (norm && !uniqueCategoryNames.has(norm)) uniqueCategoryNames.set(norm, rawCat);
+  }
 
-        // Areas
-        if (parsedRows['areas']) {
-          for (const row of parsedRows['areas']) {
-            const name = normalizeName(row.name);
-            if (!name) {
-              addDetail('Skipped area with empty name');
-              skipped += 1;
-              continue;
-            }
-            if (areaNameToId.has(name)) {
-              addDetail(`Area "${row.name}" exists, skipping`);
-              skipped += 1;
-              continue;
-            }
-            const id = row.id && !(await db.areas.get(row.id)) ? row.id : uuidv4();
-            const area: Area = {
-              id,
-              name: row.name.trim(),
-              created_at: parseTimestamp(row.created_at),
-              updated_at: parseTimestamp(row.updated_at),
-            };
-            await db.areas.add(area);
-            areaNameToId.set(name, id);
-            inserted += 1;
-            addDetail(`Created area "${area.name}"`);
-          }
-        }
+  // 2) Create missing categories in DB
+  for (const [norm, raw] of uniqueCategoryNames) {
+    if (!categoryNameToId.has(norm)) {
+      const newId = uuidv4();
+      categoryNameToId.set(norm, newId);
+      await db.categories.add({
+        id: newId,
+        name: raw,
+        created_at: now,
+        updated_at: now,
+      });
+      addDetail(`Created category "${raw}"`);
+    }
+  }
 
-        // Categories
-        if (parsedRows['categories']) {
-          for (const row of parsedRows['categories']) {
-            const name = normalizeName(row.name);
-            if (!name) {
-              addDetail('Skipped category with empty name');
-              skipped += 1;
-              continue;
-            }
-            if (categoryNameToId.has(name)) {
-              addDetail(`Category "${row.name}" exists, skipping`);
-              skipped += 1;
-              continue;
-            }
-            const id = row.id && !(await db.categories.get(row.id)) ? row.id : uuidv4();
-            const category: Category = {
-              id,
-              name: row.name.trim(),
-              created_at: parseTimestamp(row.created_at),
-              updated_at: parseTimestamp(row.updated_at),
-            };
-            await db.categories.add(category);
-            categoryNameToId.set(name, id);
-            inserted += 1;
-            addDetail(`Created category "${category.name}"`);
-          }
-        }
+  // 3) Create products, linking to categories
+  for (const row of productRows) {
+    const nameRaw = (row.product_name ?? row.name ?? '').trim();
+    const name = normalizeName(nameRaw);
+    if (!name) {
+      addDetail('Skipped product with empty name');
+      skipped += 1;
+      continue;
+    }
+    if (productNameToId.has(name)) {
+      addDetail(`Product "${nameRaw}" exists, skipping`);
+      skipped += 1;
+      continue;
+    }
 
-        // Products
-        if (parsedRows['products']) {
-          for (const row of parsedRows['products']) {
-            const name = normalizeName(row.name);
-            if (!name) {
-              addDetail('Skipped product with empty name');
-              skipped += 1;
-              continue;
-            }
-            if (productNameToId.has(name)) {
-              addDetail(`Product "${row.name}" exists, skipping`);
-              skipped += 1;
-              continue;
-            }
+    const catRaw = (row.category ?? '').trim();
+    const categoryId = catRaw ? categoryNameToId.get(normalizeName(catRaw)) : undefined;
 
-            const categoryName = normalizeName(row.category);
-            let categoryId = categoryName ? categoryNameToId.get(categoryName) : undefined;
-            if (!categoryId && categoryName) {
-              if (options.allowAutoCreateMissing) {
-                const newId = uuidv4();
-                categoryId = newId;
-                categoryNameToId.set(categoryName, newId);
-                await db.categories.add({
-                  id: newId,
-                  name: row.category.trim(),
-                  created_at: now,
-                  updated_at: now,
-                });
-                addDetail(`Auto-created category "${row.category}" for product "${row.name}"`);
-              } else {
-                addDetail(`Missing category for product "${row.name}", skipping`);
-                skipped += 1;
-                continue;
-              }
-            }
+    const barcode = row.barcode?.trim();
+    if (barcode && barcodeToProductId.has(barcode)) {
+      addDetail(`Barcode ${barcode} already exists, clearing for product "${nameRaw}"`);
+    }
 
-            const barcode = row.barcode?.trim();
-            if (barcode && barcodeToProductId.has(barcode)) {
-              addDetail(`Barcode ${barcode} already exists, clearing for product "${row.name}"`);
-            }
+    const id = uuidv4();
+    const product: Product = {
+      id,
+      name: nameRaw,
+      category: categoryId ?? '',
+      unit_type: DEFAULT_UNIT_TYPE,
+      bulk_name: DEFAULT_BULK_NAME,
+      barcode: barcode && !barcodeToProductId.has(barcode) ? barcode : undefined,
+      archived: false,
+      created_at: now,
+      updated_at: now,
+    };
+    await db.products.add(product);
+    productNameToId.set(name, id);
+    if (product.barcode) {
+      barcodeToProductId.set(product.barcode, id);
+    }
+    inserted += 1;
+    addDetail(`Created product "${product.name}"`);
+  }
+}
 
-            const id = row.id && !(await db.products.get(row.id)) ? row.id : uuidv4();
-            const product: Product = {
-              id,
-              name: row.name.trim(),
-              category: categoryId ?? '',
-              unit_type: row.unit_type?.trim() || DEFAULT_UNIT_TYPE,
-              bulk_name: row.bulk_name?.trim() || DEFAULT_BULK_NAME,
-              barcode: barcode && !barcodeToProductId.has(barcode) ? barcode : undefined,
-              archived: coerceBoolean(row.archived),
-              created_at: parseTimestamp(row.created_at),
-              updated_at: parseTimestamp(row.updated_at),
-            };
-            await db.products.add(product);
-            productNameToId.set(name, id);
-            if (product.barcode) {
-              barcodeToProductId.set(product.barcode, id);
-            }
-            inserted += 1;
-            addDetail(`Created product "${product.name}"`);
-          }
-        }
-
-        // Pick lists
-        if (parsedRows['pick-lists']) {
-          for (const row of parsedRows['pick-lists']) {
-            const inferredAreaName = normalizeName(row.area_name);
-            const areaId = row.area_id || (inferredAreaName ? areaNameToId.get(inferredAreaName) : undefined);
-            if (!areaId && !options.allowAutoCreateMissing) {
-              addDetail(`Missing area for pick list, skipping`);
-              skipped += 1;
-              continue;
-            }
-            let resolvedAreaId = areaId;
-            if (!resolvedAreaId && inferredAreaName) {
-              const newAreaId = uuidv4();
-              resolvedAreaId = newAreaId;
-              areaNameToId.set(inferredAreaName, newAreaId);
-              await db.areas.add({
-                id: newAreaId,
-                name: row.area_name.trim(),
-                created_at: now,
-                updated_at: now,
-              });
-              addDetail(`Auto-created area "${row.area_name}" for pick list`);
-            }
-            const categoriesFromRow = (row.categories || '')
-              .split(';')
-              .map((name) => normalizeName(name))
-              .filter(Boolean);
-            const categoryIds: string[] = [];
-            for (const catName of categoriesFromRow) {
-              let catId = categoryNameToId.get(catName);
-              if (!catId && options.allowAutoCreateMissing) {
-                const newId = uuidv4();
-                catId = newId;
-                categoryNameToId.set(catName, newId);
-                await db.categories.add({
-                  id: newId,
-                  name: catName,
-                  created_at: now,
-                  updated_at: now,
-                });
-                addDetail(`Auto-created category "${catName}" for pick list`);
-              }
-              if (catId) categoryIds.push(catId);
-            }
-
-            const id = row.id && !(await db.pickLists.get(row.id)) ? row.id : uuidv4();
-            const pickList: PickList = {
-              id,
-              area_id: resolvedAreaId ?? uuidv4(),
-              created_at: parseTimestamp(row.created_at),
-              completed_at: row.completed_at ? Number(row.completed_at) : undefined,
-              notes: row.notes ?? '',
-              categories: categoryIds,
-              auto_add_new_products: coerceBoolean(row.auto_add_new_products),
-            };
-            await db.pickLists.add(pickList);
-            if (pickList.notes) {
-              pickListNameToId.set(normalizeName(pickList.notes), pickList.id);
-            }
-            inserted += 1;
-            addDetail(`Created pick list ${pickList.id}`);
-          }
-        }
-
-        // Pick items
-        if (parsedRows['pick-items']) {
-          for (const row of parsedRows['pick-items']) {
-            const pickListId =
-              row.pick_list_id || pickListNameToId.get(normalizeName(row.pick_list_name));
-            const productId = row.product_id || productNameToId.get(normalizeName(row.product_name));
-
-            if (!pickListId || !productId) {
-              addDetail(`Missing pick list or product for pick item, skipping`);
-              skipped += 1;
-              continue;
-            }
-
-            const id = row.id && !(await db.pickItems.get(row.id)) ? row.id : uuidv4();
-            const pickItem: PickItem = {
-              id,
-              pick_list_id: pickListId,
-              product_id: productId,
-              quantity: coerceNumber(row.quantity) || 1,
-              is_carton: coerceBoolean(row.is_carton),
-              status: (row.status as PickItemStatus) || 'pending',
-              created_at: parseTimestamp(row.created_at),
-              updated_at: parseTimestamp(row.updated_at),
-            };
-            await db.pickItems.add(pickItem);
-            inserted += 1;
-            addDetail(`Added pick item for product ${row.product_name ?? pickItem.product_id}`);
-          }
-        }
       },
     );
   } catch (error) {

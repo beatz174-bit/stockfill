@@ -2,7 +2,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { StartPickListScreen } from './StartPickListScreen';
+import StartPickListScreen from './StartPickListScreen';
 
 const navigateMock = vi.fn();
 

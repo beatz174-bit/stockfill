@@ -20,7 +20,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAreas } from '../hooks/dataHooks';
 import { useDatabase } from '../context/DBProvider';
 
-export const ManageAreasScreen = () => {
+const ManageAreasScreen = () => {
   const db = useDatabase();
   const areas = useAreas();
   const [name, setName] = useState('');
@@ -128,3 +128,5 @@ export const ManageAreasScreen = () => {
     </Container>
   );
 };
+
+export default ManageAreasScreen

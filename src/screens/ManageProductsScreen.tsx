@@ -24,7 +24,7 @@ import { BarcodeScannerView } from '../components/BarcodeScannerView';
 import { ExternalProductInfo, fetchProductFromOFF } from '../modules/openFoodFacts';
 import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE, Product } from '../models/Product';
 
-export const ManageProductsScreen = () => {
+const ManageProductsScreen = () => {
   const db = useDatabase();
   const products = useProducts();
   const categories = useCategories();
@@ -505,3 +505,5 @@ export const ManageProductsScreen = () => {
     </Container>
   );
 };
+
+export default ManageProductsScreen

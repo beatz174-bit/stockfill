@@ -2,7 +2,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PickListsScreen } from './PickListsScreen';
+import PickListsScreen from './PickListsScreen';
 
 let areasMock = [
   { id: 'area-1', name: 'Front Counter', created_at: 0, updated_at: 0 },

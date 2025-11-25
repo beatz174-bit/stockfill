@@ -26,7 +26,7 @@ interface ProductLookup {
   pickLists: { list: PickList; area?: Area }[];
 }
 
-export const BarcodeScannerScreen = () => {
+const BarcodeScannerScreen = () => {
   const db = useDatabase();
   const navigate = useNavigate();
   const [lastCode, setLastCode] = useState('');
@@ -193,3 +193,5 @@ export const BarcodeScannerScreen = () => {
     </Container>
   );
 };
+
+export default BarcodeScannerScreen

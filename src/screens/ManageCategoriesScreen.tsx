@@ -20,7 +20,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useDatabase } from '../context/DBProvider';
 import { useCategories, useProducts } from '../hooks/dataHooks';
 
-export const ManageCategoriesScreen = () => {
+const ManageCategoriesScreen = () => {
   const db = useDatabase();
   const categories = useCategories();
   const products = useProducts();
@@ -198,3 +198,5 @@ const deleteCategory = async (categoryId: string, categoryName: string) => {
     </Container>
   );
 };
+
+export default ManageCategoriesScreen

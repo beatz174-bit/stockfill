@@ -2,7 +2,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { ManageAreasScreen } from './ManageAreasScreen';
+import ManageAreasScreen from './ManageAreasScreen';
 
 const areasMock = [{ id: 'area-1', name: 'Front Counter', created_at: 0, updated_at: 0 }];
 

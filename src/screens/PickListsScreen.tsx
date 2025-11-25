@@ -22,7 +22,7 @@ import { usePickLists, useAreas } from '../hooks/dataHooks';
 import { useDatabase } from '../context/DBProvider';
 import { PickList } from '../models/PickList';
 
-export const PickListsScreen = () => {
+const PickListsScreen = () => {
   const lists = usePickLists();
   const areas = useAreas();
   const db = useDatabase();
@@ -176,3 +176,5 @@ export const PickListsScreen = () => {
     </Container>
   );
 };
+
+export default PickListsScreen

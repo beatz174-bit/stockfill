@@ -19,7 +19,7 @@ import { ImportExportLog } from '../models/ImportExportLog';
 
 const templateFiles: { label: string; file: string }[] = [{ label: 'Products', file: 'products_template.csv' }];
 
-export const ImportExportScreen = () => {
+const ImportExportScreen = () => {
   const db = useDatabase();
   const [logLines, setLogLines] = useState<string[]>([]);
   const [history, setHistory] = useState<ImportExportLog[]>([]);
@@ -176,3 +176,5 @@ export const ImportExportScreen = () => {
     </Box>
   );
 };
+
+export default ImportExportScreen

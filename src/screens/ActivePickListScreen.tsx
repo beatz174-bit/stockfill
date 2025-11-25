@@ -34,7 +34,7 @@ import { ProductAutocomplete } from '../components/ProductAutocomplete';
 
 const normalizeName = (name: string) => name.trim().toLowerCase();
 
-export const ActivePickListScreen = () => {
+const ActivePickListScreen = () => {
   const { id } = useParams();
   const pickList = usePickList(id);
   const items = usePickItems(id);
@@ -558,3 +558,5 @@ export const ActivePickListScreen = () => {
     </Container>
   );
 };
+
+export default ActivePickListScreen

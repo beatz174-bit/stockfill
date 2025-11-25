@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { fireEvent, render, screen, waitFor, waitForElementToBeRemoved } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ManageProductsScreen } from './ManageProductsScreen';
+import ManageProductsScreen from './ManageProductsScreen';
 
 let mockScannedBarcode = '123456';
 const mockUseProducts = vi.fn();

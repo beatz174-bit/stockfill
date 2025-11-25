@@ -2,10 +2,11 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { ActivePickListScreen } from './ActivePickListScreen';
+import ActivePickListScreen from './ActivePickListScreen';
 import { PickItem } from '../models/PickItem';
 import { Product } from '../models/Product';
 
+//const ActivePickListScreen = lazy(() => import('./screens/ActivePickListScreen'));
 const addMock = vi.fn();
 const updateMock = vi.fn();
 const pickItemsMock = vi.fn<() => PickItem[]>();

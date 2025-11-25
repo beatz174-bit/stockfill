@@ -15,7 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAreas, useCategories } from '../hooks/dataHooks';
 import { useDatabase } from '../context/DBProvider';
 
-export const StartPickListScreen = () => {
+const StartPickListScreen = () => {
   const areas = useAreas();
   const categories = useCategories();
   const db = useDatabase();
@@ -175,3 +175,5 @@ export const StartPickListScreen = () => {
     </Container>
   );
 };
+
+export default StartPickListScreen

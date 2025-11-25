@@ -1,7 +1,7 @@
 import { Button, Container, Stack, Typography } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 
-export const HomeScreen = () => (
+const HomeScreen = () => (
   <Container sx={{ py: 4 }}>
     <Typography variant="h4" gutterBottom>
       StockFill
@@ -28,3 +28,5 @@ export const HomeScreen = () => (
     </Stack>
   </Container>
 );
+
+export default HomeScreen;

@@ -56,9 +56,10 @@ export const StartPickListScreen = () => {
     const pickListId = uuidv4();
     const timestamp = Date.now();
 
-    const selectedCategoryNames = categories
+    // NOTE: Persist category *ids* (not names)
+    const selectedCategoryIds = categories
       .filter((category) => selectedCategories.includes(category.id))
-      .map((category) => category.name);
+      .map((category) => category.id);
 
     await db.transaction('rw', db.pickLists, db.pickItems, db.products, async () => {
       await db.pickLists.add({
@@ -66,17 +67,18 @@ export const StartPickListScreen = () => {
         area_id: areaId,
         created_at: timestamp,
         notes: notes.trim() || undefined,
-        categories: selectedCategoryNames,
+        categories: selectedCategoryIds,
         auto_add_new_products: autoAddNewProducts,
       });
 
-      if (selectedCategoryNames.length === 0) {
+      if (selectedCategoryIds.length === 0) {
         return;
       }
 
       const products = await db.products.toArray();
+      // Match product.category to selectedCategoryIds (product.category is an id)
       const productsInCategories = products.filter(
-        (product) => selectedCategoryNames.includes(product.category) && !product.archived,
+        (product) => selectedCategoryIds.includes(product.category) && !product.archived,
       );
 
       const uniqueProducts: typeof productsInCategories = [];

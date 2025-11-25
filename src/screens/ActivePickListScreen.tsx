@@ -1,5 +1,5 @@
+// src/screens/ActivePickListScreen.tsx
 import {
-  Autocomplete,
   Button,
   Checkbox,
   Container,
@@ -15,16 +15,21 @@ import {
   RadioGroup,
   Radio,
 } from '@mui/material';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import SearchIcon from '@mui/icons-material/Search';
 import { Link as RouterLink, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { useAreas, usePickItems, usePickList, useProducts } from '../hooks/dataHooks';
+import {
+  useAreas,
+  useCategories,
+  usePickItems,
+  usePickList,
+  useProducts,
+} from '../hooks/dataHooks';
 import { useDatabase } from '../context/DBProvider';
 import { PickItemRow } from '../components/PickItemRow';
 import { PickItem } from '../models/PickItem';
 import { Product } from '../models/Product';
+import { ProductAutocomplete } from '../components/ProductAutocomplete';
 
 const normalizeName = (name: string) => name.trim().toLowerCase();
 
@@ -34,19 +39,21 @@ export const ActivePickListScreen = () => {
   const items = usePickItems(id);
   const products = useProducts();
   const areas = useAreas();
+  const categoriesList = useCategories();
   const db = useDatabase();
   const navigate = useNavigate();
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
   const [query, setQuery] = useState('');
   const [showPicked, setShowPicked] = useState(true);
-  const [itemState, setItemState] = useState(items);
+  const [itemState, setItemState] = useState<PickItem[]>(items ?? []);
   const [isBatchUpdating, setIsBatchUpdating] = useState(false);
   const [packagingFilter, setPackagingFilter] = useState<'all' | 'units' | 'cartons'>('all');
 
+  // Keep local item state in sync with DB-driven `items`
   useEffect(() => {
-    setItemState((current) => {
-      const currentById = new Map(current.map((item) => [item.id, item]));
-      return items.map((incoming) => {
+    setItemState((current: PickItem[]) => {
+      const currentById = new Map<string, PickItem>(current.map((item: PickItem) => [item.id, item]));
+      return (items ?? []).map((incoming: PickItem) => {
         const local = currentById.get(incoming.id);
         if (!local) return incoming;
 
@@ -90,10 +97,9 @@ export const ActivePickListScreen = () => {
 
   const productMap = useMemo(() => {
     const map = new Map<string, Product>();
-    products.forEach((product) => {
+    products.forEach((product: Product) => {
       map.set(product.id, product);
     });
-
     return map;
   }, [products]);
 
@@ -105,7 +111,7 @@ export const ActivePickListScreen = () => {
   const sortedProducts = useMemo(() => {
     const dedupedById = new Map<string, Product>();
 
-    products.forEach((product) => {
+    products.forEach((product: Product) => {
       const existing = dedupedById.get(product.id);
       if (!existing || product.updated_at > existing.updated_at) {
         dedupedById.set(product.id, product);
@@ -114,7 +120,7 @@ export const ActivePickListScreen = () => {
 
     const dedupedByName = new Map<string, Product>();
 
-    dedupedById.forEach((product) => {
+    dedupedById.forEach((product: Product) => {
       const normalizedName = product.name.trim().toLowerCase();
       const existing = dedupedByName.get(normalizedName);
 
@@ -139,51 +145,168 @@ export const ActivePickListScreen = () => {
     });
   }, [products]);
 
+  // Build a category id -> name map for display and name -> id map for resolution
+  const categoriesById = useMemo(() => new Map(categoriesList.map((c) => [c.id, c.name])), [categoriesList]);
+  const categoryNameToId = useMemo(() => new Map(categoriesList.map((c) => [c.name.trim().toLowerCase(), c.id])), [categoriesList]);
+
+  // Filter products by pickList.categories (now stored as ids). Fallback: resolve name -> id
   const categoryFilteredProducts = useMemo(() => {
     if (!pickList?.categories || pickList.categories.length === 0) {
       return sortedProducts;
     }
 
-    const allowedCategories = new Set(
-      pickList.categories.map((category) => category.trim().toLowerCase()),
-    );
+    const categoryIdsKnown = new Set(categoriesList.map((c) => c.id));
+    const allowedCategoryIds = new Set<string>();
 
-    return sortedProducts.filter((product) =>
-      allowedCategories.has(product.category.trim().toLowerCase()),
-    );
-  }, [pickList?.categories, sortedProducts]);
+    pickList.categories.forEach((entry: string) => {
+      if (!entry) return;
+      if (categoryIdsKnown.has(entry)) {
+        // entry already an id
+        allowedCategoryIds.add(entry);
+      } else {
+        // maybe it's a name (legacy) — resolve
+        const resolved = categoryNameToId.get(entry.trim().toLowerCase());
+        if (resolved) allowedCategoryIds.add(resolved);
+      }
+    });
 
-  const productIdsInList = useMemo(
-    () => new Set(itemState.map((item) => item.product_id)),
-    [itemState],
-  );
+    if (allowedCategoryIds.size === 0) return sortedProducts;
+
+    return sortedProducts.filter((product: Product) => allowedCategoryIds.has(product.category));
+  }, [pickList?.categories, sortedProducts, categoriesList, categoryNameToId]);
+
+  const productIdsInList = useMemo(() => new Set(itemState.map((item) => item.product_id)), [itemState]);
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const availableProducts = categoryFilteredProducts.filter(
-      (product) => !productIdsInList.has(product.id),
+      (product: Product) => !productIdsInList.has(product.id),
     );
 
     if (!normalizedQuery) return availableProducts;
 
-    return availableProducts.filter((product) => {
-      const searchableText = `${product.name} ${product.category} ${product.barcode ?? ''}`.toLowerCase();
+    return availableProducts.filter((product: Product) => {
+      const catName = categoriesById.get(product.category) ?? product.category ?? '';
+      const searchableText = `${product.name} ${catName} ${product.barcode ?? ''}`.toLowerCase();
       return searchableText.includes(normalizedQuery);
     });
-  }, [categoryFilteredProducts, productIdsInList, query]);
+  }, [categoryFilteredProducts, productIdsInList, query, categoriesById]);
 
-  useEffect(() => {
-    if (!selectedProduct) return;
-    if (!filteredProducts.some((product) => product.id === selectedProduct.id)) {
-      setSelectedProduct(null);
-    }
-  }, [filteredProducts, selectedProduct]);
+  // If a filtered list leaves a previously-selected product missing, callers (ProductAutocomplete) will handle clear.
+  // --- Handlers (restored) ---
 
-  useEffect(() => {
-    if (allItemsPicked && !showPicked) {
-      setShowPicked(true);
+  const handleIncrementQuantity = async (itemId: string) => {
+    const existing = await db.pickItems.get(itemId);
+    if (!existing) return;
+
+    const nextQuantity = existing.quantity + 1;
+    setItemState((current) => current.map((item) => (item.id === itemId ? { ...item, quantity: nextQuantity, updated_at: Date.now() } : item)));
+    await db.pickItems.update(itemId, {
+      quantity: nextQuantity,
+      updated_at: Date.now(),
+    });
+  };
+
+  const handleDecrementQuantity = async (itemId: string) => {
+    const existing = await db.pickItems.get(itemId);
+    if (!existing) return;
+
+    const nextQuantity = Math.max(1, (existing.quantity || 1) - 1);
+    setItemState((current) => current.map((item) => (item.id === itemId ? { ...item, quantity: nextQuantity, updated_at: Date.now() } : item)));
+    await db.pickItems.update(itemId, {
+      quantity: nextQuantity,
+      updated_at: Date.now(),
+    });
+  };
+
+  const handleToggleCarton = async (itemId: string) => {
+    const existing = await db.pickItems.get(itemId);
+    if (!existing) return;
+
+    const nextCartonFlag = !existing.is_carton;
+    const nextQuantity = existing.quantity || 1;
+
+    setItemState((current) => current.map((item) => (item.id === itemId ? { ...item, is_carton: nextCartonFlag, quantity: nextQuantity, updated_at: Date.now() } : item)));
+    await db.pickItems.update(itemId, {
+      is_carton: nextCartonFlag,
+      quantity: nextQuantity,
+      updated_at: Date.now(),
+    });
+  };
+
+  const handleStatusChange = async (itemId: string, status: PickItem['status']) => {
+    const nextStatus = status === 'picked' ? 'picked' : 'pending';
+    setItemState((current) => current.map((item) => (item.id === itemId ? { ...item, status: nextStatus, updated_at: Date.now() } : item)));
+    await db.pickItems.update(itemId, { status: nextStatus, updated_at: Date.now() });
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    setItemState((current) => current.filter((item) => item.id !== itemId));
+    await db.pickItems.delete(itemId);
+  };
+
+  const handleMarkAllPicked = async () => {
+    if (!id) return;
+
+    setShowPicked(true);
+    const timestamp = Date.now();
+    setItemState((current) => current.map((item) => ({ ...item, status: 'picked', updated_at: timestamp })));
+    setIsBatchUpdating(true);
+
+    // if itemState is empty at invocation, fall back to DB items
+    const itemsToUpdate = itemState.length > 0 ? itemState : (items ?? []);
+
+    try {
+      await Promise.all(itemsToUpdate.map((item: PickItem) => db.pickItems.update(item.id, { status: 'picked', updated_at: timestamp })));
+      const refreshedItems = await db.pickItems.where('pick_list_id').equals(id as string).toArray();
+      setItemState(refreshedItems);
+    } finally {
+      setIsBatchUpdating(false);
     }
-  }, [allItemsPicked, showPicked]);
+  };
+
+  const addOrUpdateItem = async (product: Product) => {
+    if (!id) return;
+
+    const timestamp = Date.now();
+    const existing = itemState.find((item) => item.product_id === product.id && item.is_carton === false);
+
+    if (existing) {
+      setItemState((current) =>
+        current.map((item) =>
+          item.id === existing.id
+            ? { ...item, quantity: item.quantity + 1, updated_at: timestamp }
+            : item,
+        ),
+      );
+      await db.pickItems.update(existing.id, {
+        quantity: existing.quantity + 1,
+        updated_at: timestamp,
+      });
+    } else {
+      const newItem: PickItem = {
+        id: uuidv4(),
+        pick_list_id: id as string,
+        product_id: product.id,
+        quantity: 1,
+        is_carton: false,
+        status: 'pending',
+        created_at: timestamp,
+        updated_at: timestamp,
+      };
+
+      setItemState((current) => [...current, newItem]);
+      await db.pickItems.add({
+        ...newItem,
+      });
+    }
+
+    setQuery('');
+  };
+
+  const returnToLists = () => {
+    navigate('/pick-lists');
+  };
 
   // Sort the items that are actually visible (after showPicked and packaging filter)
   const visibleItems = useMemo(() => {
@@ -207,137 +330,6 @@ export const ActivePickListScreen = () => {
     return arr;
   }, [itemsAfterShowPicked, productMap, packagingFilter]);
 
-  const updateItemState = (itemId: string, updater: (item: PickItem) => PickItem) => {
-    setItemState((current) => current.map((item) => (item.id === itemId ? updater(item) : item)));
-  };
-
-  const handleIncrementQuantity = async (itemId: string) => {
-    const existing = await db.pickItems.get(itemId);
-    if (!existing) return;
-
-    const nextQuantity = existing.quantity + 1;
-    updateItemState(itemId, (item) => ({ ...item, quantity: nextQuantity, updated_at: Date.now() }));
-    await db.pickItems.update(itemId, {
-      quantity: nextQuantity,
-      updated_at: Date.now(),
-    });
-  };
-
-  const handleDecrementQuantity = async (itemId: string) => {
-    const existing = await db.pickItems.get(itemId);
-    if (!existing) return;
-
-    const nextQuantity = Math.max(1, (existing.quantity || 1) - 1);
-
-    updateItemState(itemId, (item) => ({ ...item, quantity: nextQuantity, updated_at: Date.now() }));
-    await db.pickItems.update(itemId, {
-      quantity: nextQuantity,
-      updated_at: Date.now(),
-    });
-  };
-
-  const handleToggleCarton = async (itemId: string) => {
-    const existing = await db.pickItems.get(itemId);
-    if (!existing) return;
-
-    const nextCartonFlag = !existing.is_carton;
-    const nextQuantity = existing.quantity || 1;
-
-    updateItemState(itemId, (item) => ({
-      ...item,
-      is_carton: nextCartonFlag,
-      quantity: nextQuantity,
-      updated_at: Date.now(),
-    }));
-    await db.pickItems.update(itemId, {
-      is_carton: nextCartonFlag,
-      quantity: nextQuantity,
-      updated_at: Date.now(),
-    });
-  };
-
-  const handleStatusChange = async (itemId: string, status: PickItem['status']) => {
-    const nextStatus = status === 'picked' ? 'picked' : 'pending';
-    updateItemState(itemId, (item) => ({ ...item, status: nextStatus, updated_at: Date.now() }));
-    await db.pickItems.update(itemId, { status: nextStatus, updated_at: Date.now() });
-  };
-
-  const handleDeleteItem = async (itemId: string) => {
-    setItemState((current) => current.filter((item) => item.id !== itemId));
-    await db.pickItems.delete(itemId);
-  };
-
-  const handleMarkAllPicked = async () => {
-    if (!id) return;
-
-    setShowPicked(true);
-    const timestamp = Date.now();
-    setItemState((current) =>
-      current.map((item) => ({ ...item, status: 'picked', updated_at: timestamp })),
-    );
-    setIsBatchUpdating(true);
-
-    const itemsToUpdate = itemState.length > 0 ? itemState : items;
-
-    try {
-      await Promise.all(
-        itemsToUpdate.map((item) =>
-          db.pickItems.update(item.id, { status: 'picked', updated_at: timestamp }),
-        ),
-      );
-      const refreshedItems = await db.pickItems.where('pick_list_id').equals(id).toArray();
-      setItemState(refreshedItems);
-    } finally {
-      setIsBatchUpdating(false);
-    }
-  };
-
-  const addOrUpdateItem = async (product: Product) => {
-    if (!id) return;
-
-    const timestamp = Date.now();
-    const existing = itemState.find(
-      (item) => item.product_id === product.id && item.is_carton === false,
-    );
-
-    if (existing) {
-      setItemState((current) =>
-        current.map((item) =>
-          item.id === existing.id
-            ? { ...item, quantity: item.quantity + 1, updated_at: timestamp }
-            : item,
-        ),
-      );
-      await db.pickItems.update(existing.id, {
-        quantity: existing.quantity + 1,
-        updated_at: timestamp,
-      });
-    } else {
-      const newItem: PickItem = {
-        id: uuidv4(),
-        pick_list_id: id,
-        product_id: product.id,
-        quantity: 1,
-        is_carton: false,
-        status: 'pending',
-        created_at: timestamp,
-        updated_at: timestamp,
-      };
-
-      setItemState((current) => [...current, newItem]);
-      await db.pickItems.add({
-        ...newItem,
-      });
-    }
-
-    setSelectedProduct(null);
-    setQuery('');
-  };
-
-  const returnToLists = () => {
-    navigate('/pick-lists');
-  };
-
   return (
     <Container sx={{ py: 4 }}>
       <Stack spacing={2} mb={2}>
@@ -346,65 +338,14 @@ export const ActivePickListScreen = () => {
           <Typography variant="subtitle2" color="text.secondary">
             Add products to this list
           </Typography>
-          <Autocomplete
-            options={filteredProducts}
-            getOptionLabel={(option) => `${option.name} (${option.category})`}
-            isOptionEqualToValue={(option, value) => option.id === value.id}
-            value={selectedProduct}
-            onChange={(_, value) => {
-              setSelectedProduct(value);
-              if (value) {
-                void addOrUpdateItem(value);
-              }
-            }}
-            inputValue={query}
-            onInputChange={(_, value, reason) => {
-              if (reason === 'input') {
-                setQuery(value);
-              }
 
-              if (reason === 'clear') {
-                setQuery('');
-              }
+          <ProductAutocomplete
+            availableProducts={filteredProducts}
+            onSelect={(product: Product) => {
+              void addOrUpdateItem(product);
             }}
-            filterOptions={(options) => options}
-            noOptionsText="No available products"
-            fullWidth
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                placeholder="Search products"
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <>
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                      {params.InputProps.startAdornment}
-                    </>
-                  ),
-                  endAdornment: (
-                    <>
-                      {params.InputProps.endAdornment}
-                      <InputAdornment position="end">
-                        <Tooltip title="Add a new product">
-                          <IconButton
-                            aria-label="Add product"
-                            component={RouterLink}
-                            to="/products"
-                            size="small"
-                          >
-                            <AddCircleOutlineIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </InputAdornment>
-                    </>
-                  ),
-                }}
-              />
-            )}
           />
+
           {filteredProducts.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
               No available products

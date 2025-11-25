@@ -28,13 +28,17 @@ export const ManageCategoriesScreen = () => {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [feedback, setFeedback] = useState<{ text: string; severity: AlertColor } | null>(null);
+  const categoriesById = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
   const usageByCategory = useMemo(() => {
-    return products.reduce<Record<string, number>>((acc, product) => {
-      acc[product.category] = (acc[product.category] ?? 0) + 1;
-      return acc;
-    }, {});
-  }, [products]);
+  return products.reduce<Record<string, number>>((acc, product) => {
+    const categoryName = categoriesById.get(product.category) ?? product.category ?? '';
+    if (!categoryName) return acc;
+    acc[categoryName] = (acc[categoryName] ?? 0) + 1;
+    return acc;
+  }, {});
+}, [products, categoriesById]);
+
 
   const addCategory = async () => {
     const trimmed = name.trim();
@@ -55,34 +59,52 @@ export const ManageCategoriesScreen = () => {
     setFeedback(null);
   };
 
-  const saveCategory = async () => {
-    if (!editingCategoryId) return;
-    const trimmed = editName.trim();
-    if (!trimmed) return;
+const saveCategory = async () => {
+  if (!editingCategoryId) return;
+  const trimmed = editName.trim();
+  if (!trimmed) return;
 
-    const category = categories.find((item) => item.id === editingCategoryId);
-    if (!category) return;
+  const category = categories.find((item) => item.id === editingCategoryId);
+  if (!category) return;
 
-    const nameExists = categories.some(
-      (item) => item.id !== editingCategoryId && item.name.toLowerCase() === trimmed.toLowerCase(),
+  const nameExists = categories.some(
+    (item) => item.id !== editingCategoryId && item.name.toLowerCase() === trimmed.toLowerCase(),
+  );
+  if (nameExists) {
+    setFeedback({ text: 'A category with this name already exists.', severity: 'error' });
+    return;
+  }
+
+  await db.transaction('rw', db.categories, db.products, db.pickLists, async () => {
+    // Update category name
+    await db.categories.update(editingCategoryId, { name: trimmed, updated_at: Date.now() });
+
+    // For backward-compat products that stored category as the old name,
+    // update them to reference the new name OR ideally, to the id.
+    // We map products that still have category === oldName to the new name value.
+    // (If you ran the normalization migration earlier, most products will already have ids.)
+    await db.products
+      .where('category')
+      .equals(category.name)
+      .modify({ category: trimmed, updated_at: Date.now() });
+
+    // Update pickLists that used the old category name
+    const pickLists = await db.pickLists.toArray();
+    await Promise.all(
+      pickLists.map(async (pl) => {
+        if (!Array.isArray((pl as any).categories)) return;
+        const needs = (pl as any).categories.includes(category.name);
+        if (!needs) return;
+        const updated = (pl as any).categories.map((c: string) => (c === category.name ? trimmed : c));
+        await db.pickLists.update(pl.id, { categories: updated });
+      }),
     );
-    if (nameExists) {
-      setFeedback({ text: 'A category with this name already exists.', severity: 'error' });
-      return;
-    }
+  });
 
-    await db.transaction('rw', db.categories, db.products, async () => {
-      await db.categories.update(editingCategoryId, { name: trimmed, updated_at: Date.now() });
-      await db.products
-        .where('category')
-        .equals(category.name)
-        .modify({ category: trimmed, updated_at: Date.now() });
-    });
-
-    setEditingCategoryId(null);
-    setEditName('');
-    setFeedback({ text: 'Category updated. Linked products were refreshed.', severity: 'success' });
-  };
+  setEditingCategoryId(null);
+  setEditName('');
+  setFeedback({ text: 'Category updated. Linked products were refreshed.', severity: 'success' });
+};
 
   const cancelEditing = () => {
     setEditingCategoryId(null);
@@ -90,21 +112,27 @@ export const ManageCategoriesScreen = () => {
     setFeedback(null);
   };
 
-  const deleteCategory = async (categoryId: string, categoryName: string) => {
-    const usageCount = usageByCategory[categoryName] ?? 0;
-    if (usageCount > 0) {
-      setFeedback({
-        text: `Cannot delete '${categoryName}' while ${usageCount} product(s) use it. Update those products first.`,
-        severity: 'error',
-      });
-      return;
-    }
-    await db.categories.delete(categoryId);
-    if (editingCategoryId === categoryId) {
-      cancelEditing();
-    }
-    setFeedback({ text: 'Category deleted.', severity: 'success' });
-  };
+const deleteCategory = async (categoryId: string, categoryName: string) => {
+  // Count products referencing either the id or the name (legacy)
+  const [countById, countByName] = await Promise.all([
+    db.products.where('category').equals(categoryId).count(),
+    db.products.where('category').equals(categoryName).count(),
+  ]);
+  const usageCount = countById + countByName;
+
+  if (usageCount > 0) {
+    setFeedback({
+      text: `Cannot delete '${categoryName}' while ${usageCount} product(s) use it. Update those products first.`,
+      severity: 'error',
+    });
+    return;
+  }
+
+  await db.categories.delete(categoryId);
+  if (editingCategoryId === categoryId) cancelEditing();
+  setFeedback({ text: 'Category deleted.', severity: 'success' });
+};
+
 
   return (
     <Container sx={{ py: 4 }}>

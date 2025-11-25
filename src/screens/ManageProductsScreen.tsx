@@ -93,48 +93,47 @@ export const ManageProductsScreen = () => {
     [findNameConflict],
   );
 
-const addProductToAutoLists = useCallback(
-  async (product: Product, timestamp: number) => {
-    const pickLists = await db.pickLists.toArray();
-    const categoriesAll = await db.categories.toArray();
-    const categoriesByName = new Map(categoriesAll.map((c) => [c.name, c.id]));
+  const addProductToAutoLists = useCallback(
+    async (product: Product, timestamp: number) => {
+      const pickLists = await db.pickLists.toArray();
+      const categoriesAll = await db.categories.toArray();
+      const categoriesByName = new Map(categoriesAll.map((c) => [c.name, c.id]));
 
-    const eligibleLists = pickLists.filter((pickList) =>
-      pickList.auto_add_new_products && Array.isArray(pickList.categories)
-        ? pickList.categories.some((catRef: string) => {
-            // catRef can be an id or a name — resolve both
-            if (catRef === product.category) return true;
-            const resolvedId = categoriesByName.get(catRef);
-            return resolvedId === product.category;
-          })
-        : false,
-    );
+      const eligibleLists = pickLists.filter((pickList) =>
+        pickList.auto_add_new_products && Array.isArray(pickList.categories)
+          ? pickList.categories.some((catRef: string) => {
+              // catRef can be an id or a name — resolve both
+              if (catRef === product.category) return true;
+              const resolvedId = categoriesByName.get(catRef);
+              return resolvedId === product.category;
+            })
+          : false,
+      );
 
-    if (eligibleLists.length === 0) return;
-    await Promise.all(
-      eligibleLists.map(async (pickList) => {
-        const existing = await db.pickItems
-          .where('pick_list_id')
-          .equals(pickList.id)
-          .filter((item) => item.product_id === product.id)
-          .first();
-        if (existing) return undefined;
-        return db.pickItems.add({
-          id: uuidv4(),
-          pick_list_id: pickList.id,
-          product_id: product.id,
-          quantity: 1,
-          is_carton: false,
-          status: 'pending',
-          created_at: timestamp,
-          updated_at: timestamp,
-        });
-      }),
-    );
-  },
-  [db.pickItems, db.pickLists, db.categories],
-);
-
+      if (eligibleLists.length === 0) return;
+      await Promise.all(
+        eligibleLists.map(async (pickList) => {
+          const existing = await db.pickItems
+            .where('pick_list_id')
+            .equals(pickList.id)
+            .filter((item) => item.product_id === product.id)
+            .first();
+          if (existing) return undefined;
+          return db.pickItems.add({
+            id: uuidv4(),
+            pick_list_id: pickList.id,
+            product_id: product.id,
+            quantity: 1,
+            is_carton: false,
+            status: 'pending',
+            created_at: timestamp,
+            updated_at: timestamp,
+          });
+        }),
+      );
+    },
+    [db.pickItems, db.pickLists, db.categories],
+  );
 
   useEffect(() => {
     if (categoryOptions.length === 0) return;
@@ -204,43 +203,85 @@ const addProductToAutoLists = useCallback(
   }
 
   const addProduct = async () => {
-    // Resolve selected category name -> id if possible, otherwise create
-    let categoryIdToSave: string;
-    let chosenCategoryObj = categories.find((c) => c.name === category);
+    // clear previous field-level errors
+    setNameError('');
+    setBarcodeError('');
 
-    if (chosenCategoryObj) {
-      categoryIdToSave = chosenCategoryObj.id;
-    } else {
-      // create a category automatically (or you can prompt the user if you prefer)
-      const now = Date.now();
-      const newCatId = uuidv4();
-      await db.categories.add({ id: newCatId, name: category, created_at: now, updated_at: now });
-      categoryIdToSave = newCatId;
+    // Basic guard (button is disabled when not provided but extra safety)
+    if (!name || !category) {
+      setFeedback({ text: 'Name and category are required.', severity: 'error' });
+      return;
     }
 
     const timestamp = Date.now();
     const productId = uuidv4();
 
-    const newProduct: Product = {
-      id: productId,
-      name,
-      category: categoryIdToSave,
-      unit_type: DEFAULT_UNIT_TYPE,
-      bulk_name: DEFAULT_BULK_NAME,
-      barcode: barcode || undefined,
-      archived: false,
-      created_at: timestamp,
-      updated_at: timestamp,
-    };
+    try {
+      // Run uniqueness checks inside the try so we can handle the errors
+      await assertUniqueName(name);
+      await assertUniqueBarcode(barcode);
 
-    await db.transaction('rw', db.products, db.pickLists, db.pickItems, async () => {
-      await db.products.add(newProduct);
-      await addProductToAutoLists(newProduct, timestamp);
-    });
-    setName('');
-    setBarcode('');
-    setNameError('');
-    setFeedback({ text: 'Product added.', severity: 'success' });
+      // Use a transaction that includes categories too, and make category creation atomic
+      await db.transaction(
+        'rw',
+        db.categories,
+        db.products,
+        db.pickLists,
+        db.pickItems,
+        async () => {
+          // Determine or create the category within the transaction
+          let categoryIdToSave: string;
+          const existingCategory = await db.categories.where('name').equals(category).first();
+          if (existingCategory) {
+            categoryIdToSave = existingCategory.id;
+          } else {
+            const newCatId = uuidv4();
+            const now = Date.now();
+            await db.categories.add({ id: newCatId, name: category, created_at: now, updated_at: now });
+            categoryIdToSave = newCatId;
+          }
+
+          const newProduct: Product = {
+            id: productId,
+            name: name.trim(),
+            category: categoryIdToSave,
+            unit_type: DEFAULT_UNIT_TYPE,
+            bulk_name: DEFAULT_BULK_NAME,
+            barcode: barcode || undefined,
+            archived: false,
+            created_at: timestamp,
+            updated_at: timestamp,
+          };
+
+          await db.products.add(newProduct);
+
+          // add product to auto-add pick lists (this uses db.* but will execute within the same transaction)
+          await addProductToAutoLists(newProduct, timestamp);
+        },
+      );
+
+      // Clear inputs & show success feedback
+      setName('');
+      setBarcode('');
+      setNameError('');
+      setBarcodeError('');
+      setFeedback({ text: 'Product added.', severity: 'success' });
+    } catch (err: any) {
+      console.error('Failed to add product', err);
+
+      // Provide field-level errors for duplicates
+      if (err?.name === 'DuplicateNameError') {
+        setNameError(err.message || 'A product with this name already exists.');
+        return;
+      }
+      if (err?.name === 'DuplicateBarcodeError') {
+        setBarcodeError(err.message || 'This barcode is already assigned to another product.');
+        return;
+      }
+
+      // Generic DB failure
+      setFeedback({ text: `Failed to add product: ${err?.message ?? String(err)}`, severity: 'error' });
+    }
   };
 
   const updateProduct = async (
@@ -251,46 +292,77 @@ const addProductToAutoLists = useCallback(
       barcode?: string;
     },
   ) => {
-    await assertUniqueName(updates.name, productId);
-    await assertUniqueBarcode(updates.barcode, productId);
+    // Clear previous errors
+    setNameError('');
+    setBarcodeError('');
 
-    const existing = await db.products.get(productId);
-    if (!existing) return;
+    try {
+      await assertUniqueName(updates.name, productId);
+      await assertUniqueBarcode(updates.barcode, productId);
 
-      // Map the provided category name back to the id (if it exists), or create one
-      let categoryIdToSave = updates.category;
-      const matchingCategory = categories.find((c) => c.name === updates.category);
-      if (matchingCategory) {
-        categoryIdToSave = matchingCategory.id;
-      } else {
-        // If updates.category already looks like an id, keep it. Otherwise create a new category
-        const isExistingId = categories.some((c) => c.id === updates.category);
-        if (!isExistingId) {
-          const newCatId = uuidv4();
-          const now = Date.now();
-          await db.categories.add({ id: newCatId, name: updates.category, created_at: now, updated_at: now });
-          categoryIdToSave = newCatId;
-        }
+      // Get existing product (we'll still update inside a transaction)
+      const existing = await db.products.get(productId);
+      if (!existing) return;
+
+      const normalizedName = updates.name.trim();
+      const oldNameKey = existing.name.trim().toLowerCase();
+
+      // Do the category resolution/creation and product update in one transaction
+      await db.transaction(
+        'rw',
+        db.categories,
+        db.products,
+        async () => {
+          // Map the provided category name back to the id (if it exists), or create one
+          let categoryIdToSave = updates.category;
+          const matchingCategory = await db.categories.where('name').equals(updates.category).first();
+          if (matchingCategory) {
+            categoryIdToSave = matchingCategory.id;
+          } else {
+            // If updates.category already looks like an id, check it exists
+            const isExistingId = await db.categories.get(updates.category);
+            if (!isExistingId) {
+              const newCatId = uuidv4();
+              const now = Date.now();
+              await db.categories.add({ id: newCatId, name: updates.category, created_at: now, updated_at: now });
+              categoryIdToSave = newCatId;
+            } else {
+              // updates.category was an id and exists — no change
+              categoryIdToSave = updates.category;
+            }
+          }
+
+          const updatedProduct: Product = {
+            ...existing,
+            ...updates,
+            name: normalizedName,
+            category: categoryIdToSave,
+            unit_type: DEFAULT_UNIT_TYPE,
+            bulk_name: DEFAULT_BULK_NAME,
+            updated_at: Date.now(),
+          };
+
+          await db.products.put(updatedProduct);
+          // Remove duplicates that used to have the same old name
+          await db.products
+            .filter((product) => product.id !== productId && product.name.trim().toLowerCase() === oldNameKey)
+            .delete();
+        },
+      );
+
+      setFeedback({ text: 'Product updated.', severity: 'success' });
+    } catch (err: any) {
+      console.error('Failed to update product', err);
+      if (err?.name === 'DuplicateNameError') {
+        setNameError(err.message || 'A product with this name already exists.');
+        return;
       }
-
-
-    const normalizedName = updates.name.trim();
-    const oldNameKey = existing.name.trim().toLowerCase();
-    const updatedProduct: Product = {
-      ...existing,
-      ...updates,
-      name: normalizedName,
-      category: categoryIdToSave,
-      unit_type: DEFAULT_UNIT_TYPE,
-      bulk_name: DEFAULT_BULK_NAME,
-      updated_at: Date.now(),
-    };
-
-    await db.products.put(updatedProduct);
-    await db.products
-      .filter((product) => product.id !== productId && product.name.trim().toLowerCase() === oldNameKey)
-      .delete();
-    setFeedback({ text: 'Product updated.', severity: 'success' });
+      if (err?.name === 'DuplicateBarcodeError') {
+        setBarcodeError(err.message || 'This barcode is already assigned to another product.');
+        return;
+      }
+      setFeedback({ text: `Failed to update product: ${err?.message ?? String(err)}`, severity: 'error' });
+    }
   };
 
   const deleteProduct = async (productId: string) => {

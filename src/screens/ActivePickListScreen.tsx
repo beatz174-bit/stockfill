@@ -15,6 +15,7 @@ import {
   RadioGroup,
   Radio,
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 import { Link as RouterLink, useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -48,6 +49,10 @@ export const ActivePickListScreen = () => {
   const [itemState, setItemState] = useState<PickItem[]>(items ?? []);
   const [isBatchUpdating, setIsBatchUpdating] = useState(false);
   const [packagingFilter, setPackagingFilter] = useState<'all' | 'units' | 'cartons'>('all');
+
+  // NEW: search within the list and category filter for the visible list
+  const [listSearch, setListSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | string>('all');
 
   // Keep local item state in sync with DB-driven `items`
   useEffect(() => {
@@ -179,9 +184,7 @@ export const ActivePickListScreen = () => {
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    const availableProducts = categoryFilteredProducts.filter(
-      (product: Product) => !productIdsInList.has(product.id),
-    );
+    const availableProducts = categoryFilteredProducts.filter((product: Product) => !productIdsInList.has(product.id));
 
     if (!normalizedQuery) return availableProducts;
 
@@ -330,6 +333,62 @@ export const ActivePickListScreen = () => {
     return arr;
   }, [itemsAfterShowPicked, productMap, packagingFilter]);
 
+  // --- NEW: build category options from pickList.categories (fallback to all categories) ---
+  const categoryOptions = useMemo(() => {
+    // helper maps
+    const idToName = new Map(categoriesList.map((c) => [c.id, c.name]));
+    const nameToId = new Map(categoriesList.map((c) => [c.name.trim().toLowerCase(), c.id]));
+
+    if (!pickList?.categories || pickList.categories.length === 0) {
+      // fallback: show all categories
+      return categoriesList
+        .map((c) => ({ id: c.id, name: c.name }))
+        .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    }
+
+    // Build from pickList.categories while resolving legacy names -> ids
+    const seen = new Map<string, string>();
+    pickList.categories.forEach((entry: string) => {
+      if (!entry) return;
+
+      if (idToName.has(entry)) {
+        seen.set(entry, idToName.get(entry)!);
+      } else {
+        const resolved = nameToId.get(entry.trim().toLowerCase());
+        if (resolved) {
+          seen.set(resolved, idToName.get(resolved)!);
+        }
+      }
+    });
+
+    // Convert to array and sort by name
+    return Array.from(seen.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  }, [pickList?.categories, categoriesList]);
+
+  // --- NEW: apply categoryFilter and listSearch to visibleItems ---
+  const visibleItemsFiltered = useMemo(() => {
+    const q = listSearch.trim().toLowerCase();
+    let arr = visibleItems;
+
+    if (categoryFilter !== 'all') {
+      arr = arr.filter((item) => {
+        const product = productMap.get(item.product_id);
+        return (product?.category ?? '') === categoryFilter;
+      });
+    }
+
+    if (!q) return arr;
+
+    return arr.filter((item) => {
+      const product = productMap.get(item.product_id);
+      const catName = categoriesById.get(product?.category ?? '') ?? product?.category ?? '';
+      const searchableText = `${product?.name ?? ''} ${catName} ${product?.barcode ?? ''}`.toLowerCase();
+      return searchableText.includes(q);
+    });
+  }, [visibleItems, productMap, listSearch, categoryFilter, categoriesById]);
+
   return (
     <Container sx={{ py: 4 }}>
       <Stack spacing={2} mb={2}>
@@ -416,6 +475,49 @@ export const ActivePickListScreen = () => {
               </Button>
             </Stack>
           </Stack>
+
+          {/* NEW: Search List (left) and Category dropdown (right) on the same row */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            flexWrap="wrap"
+            rowGap={1}
+            sx={{ mt: 1 }}
+          >
+            <TextField
+              size="small"
+              placeholder="Search list"
+              variant="outlined"
+              value={listSearch}
+              onChange={(e) => setListSearch(e.target.value)}
+              sx={{ flexGrow: 1, minWidth: 160 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <TextField
+              select
+              size="small"
+              SelectProps={{ native: true }}
+              label="Filter by category"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter((e.target.value as any) ?? 'all')}
+              sx={{ width: { xs: '100%', sm: 240 }, ml: { xs: 0, sm: 2 }, mt: { xs: 1, sm: 0 } }}
+            >
+              <option value="all">All categories</option>
+              {categoryOptions.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.name}
+                </option>
+              ))}
+            </TextField>
+          </Stack>
         </Stack>
       </Stack>
       {pickList?.notes ? (
@@ -424,18 +526,31 @@ export const ActivePickListScreen = () => {
         </Typography>
       ) : null}
       <Stack spacing={1}>
-        {visibleItems.map((item) => (
-          <PickItemRow
-            key={item.id}
-            item={item}
-            product={productMap.get(item.product_id)}
-            onIncrementQuantity={() => handleIncrementQuantity(item.id)}
-            onDecrementQuantity={() => handleDecrementQuantity(item.id)}
-            onToggleCarton={() => handleToggleCarton(item.id)}
-            onStatusChange={(status) => handleStatusChange(item.id, status)}
-            onDelete={() => handleDeleteItem(item.id)}
-          />
-        ))}
+        {/* NEW: empty-filter message */}
+        {visibleItemsFiltered.length === 0 ? (
+          visibleItems.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No items in this pick list
+            </Typography>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No items match the filter
+            </Typography>
+          )
+        ) : (
+          visibleItemsFiltered.map((item) => (
+            <PickItemRow
+              key={item.id}
+              item={item}
+              product={productMap.get(item.product_id)}
+              onIncrementQuantity={() => handleIncrementQuantity(item.id)}
+              onDecrementQuantity={() => handleDecrementQuantity(item.id)}
+              onToggleCarton={() => handleToggleCarton(item.id)}
+              onStatusChange={(status) => handleStatusChange(item.id, status)}
+              onDelete={() => handleDeleteItem(item.id)}
+            />
+          ))
+        )}
       </Stack>
       <Button fullWidth sx={{ mt: 3 }} variant="outlined" onClick={returnToLists}>
         Save and Return

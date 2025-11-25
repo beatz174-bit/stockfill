@@ -68,7 +68,6 @@ export const PickItemRow = ({
 
   const handleRowClick = () => {
     if (!isNarrowScreen || isControlsOpen) return;
-
     setIsControlsOpen(true);
   };
 
@@ -84,7 +83,6 @@ export const PickItemRow = ({
 
   const handleRowKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!isNarrowScreen) return;
-
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       setIsControlsOpen(true);
@@ -134,19 +132,18 @@ export const PickItemRow = ({
               component="span"
               variant="subtitle1"
               noWrap
-              sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 600 }}
+              sx={{
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+              }}
             >
-              {product?.name ?? 'Unknown product'}
-            </Typography>
-            <Typography
-              component="span"
-              variant="subtitle1"
-              noWrap
-              sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}
-            >
-              Qty: {item.quantity} {packagingLabel}
+              {`${item.quantity} x ${product?.name ?? 'Unknown product'}`}
             </Typography>
           </Stack>
+
           {isNarrowScreen && (
             <Typography variant="caption" color="text.secondary" noWrap>
               Tap to adjust quantity and packaging
@@ -154,6 +151,7 @@ export const PickItemRow = ({
           )}
         </Stack>
       </Stack>
+
       {isNarrowScreen ? (
         <IconButton aria-label="Open item controls" onClick={openControls}>
           <MoreHoriz />
@@ -175,6 +173,7 @@ export const PickItemRow = ({
           >
             <Inventory2 />
           </IconButton>
+
           <IconButton
             aria-label="Decrease quantity"
             color="primary"
@@ -185,6 +184,7 @@ export const PickItemRow = ({
           >
             <Remove />
           </IconButton>
+
           <IconButton
             aria-label="Increase quantity"
             color="primary"
@@ -195,6 +195,7 @@ export const PickItemRow = ({
           >
             <Add />
           </IconButton>
+
           <IconButton
             color="error"
             onClick={(event) => {
@@ -220,21 +221,32 @@ export const PickItemRow = ({
             id="item-controls-title"
             sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
           >
-            <Typography variant="h6" noWrap sx={{ minWidth: 0, flex: 1 }}>
-              {product?.name ?? 'Unknown product'}
-            </Typography>
-            <IconButton
-              aria-label="Close controls"
-              onClick={handleCloseControls}
+            <Typography
+              component="span"
+              variant="subtitle1"
+              noWrap
+              sx={{
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+              }}
             >
+              {`${item.quantity} x ${product?.name ?? 'Unknown product'}`}
+            </Typography>
+
+            <IconButton aria-label="Close controls" onClick={handleCloseControls}>
               <Close />
             </IconButton>
           </DialogTitle>
+
           <DialogContent>
             <Stack spacing={2} alignItems="stretch">
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                 Quantity: {item.quantity} {packagingLabel}
               </Typography>
+
               <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap">
                 <IconButton
                   aria-label={`Switch to ${item.is_carton ? 'unit' : 'carton'} packaging`}
@@ -251,6 +263,7 @@ export const PickItemRow = ({
                 >
                   <Inventory2 />
                 </IconButton>
+
                 <IconButton
                   aria-label="Decrease quantity"
                   color="primary"
@@ -261,6 +274,7 @@ export const PickItemRow = ({
                 >
                   <Remove />
                 </IconButton>
+
                 <IconButton
                   aria-label="Increase quantity"
                   color="primary"
@@ -271,6 +285,7 @@ export const PickItemRow = ({
                 >
                   <Add />
                 </IconButton>
+
                 <IconButton
                   color="error"
                   onClick={(event) => {

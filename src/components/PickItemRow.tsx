@@ -1,3 +1,4 @@
+// src/components/PickItemRow.tsx
 import { Add, Close, Delete, Inventory2, MoreHoriz, Remove } from '@mui/icons-material';
 import {
   Button,
@@ -96,7 +97,6 @@ export const PickItemRow = ({
   return (
     <Stack
       direction="row"
-      alignItems="center"
       justifyContent="space-between"
       spacing={1.5}
       sx={{
@@ -105,6 +105,8 @@ export const PickItemRow = ({
         bgcolor: 'background.paper',
         boxShadow: 1,
         cursor: isNarrowScreen ? 'pointer' : 'default',
+        /* top-align on xs so multi-line titles don't get centered/truncated */
+        alignItems: { xs: 'flex-start', sm: 'center' },
       }}
       onClick={handleRowClick}
       role={isNarrowScreen ? 'button' : undefined}
@@ -124,20 +126,24 @@ export const PickItemRow = ({
           <Stack
             direction="row"
             spacing={1}
-            alignItems="center"
             data-testid="pick-item-title-row"
-            sx={{ minWidth: 0 }}
+            sx={{ minWidth: 0, alignItems: { xs: 'flex-start', sm: 'center' } }}
           >
+            {/* Make the product name a block-level, flexible element so it can wrap */}
             <Typography
-              component="span"
+              component="div"
               variant="subtitle1"
-              noWrap
               sx={{
+                /* allow the text to take up remaining width and wrap */
                 minWidth: 0,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                display: 'block',
+                width: '100%',
+                flex: '1 1 auto',
+                overflowWrap: 'anywhere',
+                wordBreak: 'break-word',
+                whiteSpace: 'normal',
                 fontWeight: 600,
-                whiteSpace: 'nowrap',
+                alignSelf: 'flex-start',
               }}
             >
               {`${item.quantity} x ${product?.name ?? 'Unknown product'}`}
@@ -219,18 +225,21 @@ export const PickItemRow = ({
         >
           <DialogTitle
             id="item-controls-title"
-            sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+            sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}
           >
             <Typography
-              component="span"
+              component="div"
               variant="subtitle1"
-              noWrap
               sx={{
                 minWidth: 0,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
+                display: 'block',
+                width: '100%',
+                flex: '1 1 auto',
+                overflowWrap: 'anywhere',
+                wordBreak: 'break-word',
+                whiteSpace: 'normal',
                 fontWeight: 600,
-                whiteSpace: 'nowrap',
+                alignSelf: 'flex-start',
               }}
             >
               {`${item.quantity} x ${product?.name ?? 'Unknown product'}`}

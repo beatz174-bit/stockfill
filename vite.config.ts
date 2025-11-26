@@ -14,6 +14,7 @@ export default defineConfig({
     port: 5173,
   },
   build: {
+    sourcemap: true,
     outDir: 'dist',
     minify: 'esbuild', // fast minifier
     rollupOptions: {
@@ -52,6 +53,9 @@ export default defineConfig({
         },
       },
     },
+    commonjsOptions: {
+      transformMixedEsModules: true
+    }
   },
   test: {
     include: ['src/**/*.{test,spec}.{ts,tsx}'],

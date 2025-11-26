@@ -394,6 +394,7 @@ const ManageProductsScreen = () => {
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
               sx={{ minWidth: 200 }}
+              data-testid="select-filter-by-category"
             >
               <MenuItem value="all">All categories</MenuItem>
               {categoryOptions.map((opt) => (
@@ -410,8 +411,8 @@ const ManageProductsScreen = () => {
             label="Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            inputProps={{ 'data-testid': 'product-name-input' }}
             error={!!nameError}
+            data-testid="select-add-product-category"
           />
           {nameError ? <div data-testid="name-error">{nameError}</div> : null}
 

@@ -127,6 +127,7 @@ const StartPickListScreen = () => {
           label="Area"
           value={areaId}
           onChange={(event) => setAreaId(event.target.value)}
+          data-testid="select-area"
         >
           {areas.map((area) => (
             <MenuItem key={area.id} value={area.id}>

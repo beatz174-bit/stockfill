@@ -4,26 +4,19 @@ import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
 
-function packageNameFromId(id: string) {
-  const match = id.match(/node_modules[/\\]((?:@[^/\\]+[/\\])?[^/\\]+)/);
-  return match ? match[1] : null;
-}
-
 export default defineConfig({
   plugins: [
     react(),
-    // keep open: false so it doesn't try to open a browser in Docker/CI
     visualizer({ filename: 'dist/stats.html', open: false })
   ],
   resolve: {
     alias: {
-      // ensure only one copy of react/react-dom is used
+      // force single copies of react/react-dom
       react: path.resolve(__dirname, 'node_modules/react'),
-      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom')
     }
   },
   optimizeDeps: {
-    // prebundle to make dev stable
     include: [
       'react',
       'react-dom',
@@ -34,18 +27,17 @@ export default defineConfig({
       '@emotion/react',
       '@emotion/styled',
       '@emotion/cache',
-      '@emotion/react/jsx-runtime'
+      '@emotion/react/jsx-runtime',
+      'hoist-non-react-statics' // ensure it is pre-bundled with others
     ]
   },
   server: {
-    port: 5173,
+    port: 5173
   },
   build: {
-    // keep false in container to reduce memory pressure; set true for debugging
     sourcemap: false,
     outDir: 'dist',
-    // esbuild is much lighter than terser: choose esbuild for local/CI builds.
-    // If you want terser for production, switch to 'terser' on a beefy CI runner.
+    // esbuild is lighter. If you want terser for final prod, run it on a beefy CI runner.
     minify: 'esbuild',
     chunkSizeWarningLimit: 2000,
     rollupOptions: {
@@ -53,35 +45,34 @@ export default defineConfig({
         manualChunks(id: string) {
           if (!id) return;
           if (id.includes('node_modules')) {
-            // Put React + MUI + Emotion + styled engine + router into a single vendor chunk
-            if (/node_modules[/\\](react|react-dom|react-router-dom|@mui|@emotion|@mui[/\\]styled-engine)/.test(id)) {
-              return 'react-vendor';
+            // Put everything from node_modules into the same vendor chunk,
+            // except a few very large libs we keep separate for load reasons.
+            if (
+              id.includes('jszip') ||
+              id.includes('papaparse') ||
+              id.includes('dexie') ||
+              id.includes('@zxing')
+            ) {
+              // keep these large libraries separate
+              if (id.includes('jszip')) return 'jszip';
+              if (id.includes('papaparse')) return 'papaparse';
+              if (id.includes('dexie')) return 'dexie';
+              if (id.includes('@zxing')) return 'zxing';
             }
-
-            // Keep very large libraries in their own chunk to avoid one giant file
-            if (id.includes('jszip')) return 'jszip';
-            if (id.includes('papaparse')) return 'papaparse';
-            if (id.includes('dexie')) return 'dexie';
-            if (id.includes('@zxing')) return 'zxing';
-
-            // Default: small per-package chunk
-            const pkg = packageNameFromId(id);
-            if (pkg) {
-              return `npm.${pkg.replace('/', '__').replace('@', '')}`;
-            }
+            // Everything else -> single vendor chunk
             return 'vendor';
           }
-        },
-      },
+        }
+      }
     },
     commonjsOptions: {
-      transformMixedEsModules: true,
+      transformMixedEsModules: true
     }
   },
   test: {
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
-    exclude: ['e2e/**/*'],
-  },
+    exclude: ['e2e/**/*']
+  }
 });

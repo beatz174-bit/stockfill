@@ -1,6 +1,8 @@
+// vite.config.ts
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { visualizer } from  'rollup-plugin-visualizer';
+import { visualizer } from 'rollup-plugin-visualizer';
+import path from 'path';
 
 function packageNameFromId(id: string) {
   // Extract the package name from a node_modules path, including scoped packages.
@@ -10,20 +12,50 @@ function packageNameFromId(id: string) {
 
 export default defineConfig({
   plugins: [react(), visualizer({ filename: 'dist/stats.html', open: true })],
+  resolve: {
+    alias: {
+      // Force single copies of react/react-dom to avoid duplicates
+      react: path.resolve(__dirname, 'node_modules/react'),
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom')
+    }
+  },
+  optimizeDeps: {
+    // Prebundle React / MUI / Emotion so deps are stable during dev
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@mui/material',
+      '@mui/system',
+      '@mui/styled-engine',
+      '@emotion/react',
+      '@emotion/styled',
+      '@emotion/cache',
+      '@emotion/react/jsx-runtime'
+    ]
+  },
   server: {
     port: 5173,
   },
   build: {
     sourcemap: true,
     outDir: 'dist',
-    minify: 'esbuild', // fast minifier
+    // Use terser (safer wrt TDZ/minifier reordering). Use minify: false for debugging.
+    minify: 'terser',
     rollupOptions: {
       output: {
         manualChunks(id: string) {
           if (!id) return;
           if (id.includes('node_modules')) {
-            // Always group react + router into one chunk
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+            // Put react/react-dom + emotion + styled engine in the same chunk
+            // so initialization order is stable for mui/emotion runtime code.
+            if (
+              id.includes('react') ||
+              id.includes('react-dom') ||
+              id.includes('react-router-dom') ||
+              id.includes('@emotion') ||
+              id.includes('@mui/styled-engine')
+            ) {
               return 'react-vendor';
             }
 
@@ -32,9 +64,6 @@ export default defineConfig({
             if (id.includes('@mui/material/esm/styles') || id.includes('@mui/material/styles')) return 'mui-styles';
             // remaining @mui material code -> mui-core (covers components, utils, etc.)
             if (id.includes('@mui/material') || id.includes('@mui/base')) return 'mui-core';
-            // emotion / styled engine split
-            if (id.includes('@emotion') || id.includes('@mui/styled-engine')) return 'mui-styled';
-
 
             // Keep large libs in their own chunk to avoid a huge 'vendor'
             if (id.includes('jszip')) return 'jszip';

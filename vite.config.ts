@@ -5,22 +5,25 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
 
 function packageNameFromId(id: string) {
-  // Extract the package name from a node_modules path, including scoped packages.
-  const match = id.match(/node_modules\/((?:@[^/]+\/)?[^/]+)/);
+  const match = id.match(/node_modules[/\\]((?:@[^/\\]+[/\\])?[^/\\]+)/);
   return match ? match[1] : null;
 }
 
 export default defineConfig({
-  plugins: [react(), visualizer({ filename: 'dist/stats.html', open: true })],
+  plugins: [
+    react(),
+    // keep open: false so it doesn't try to open a browser in Docker/CI
+    visualizer({ filename: 'dist/stats.html', open: false })
+  ],
   resolve: {
     alias: {
-      // Force single copies of react/react-dom to avoid duplicates
+      // ensure only one copy of react/react-dom is used
       react: path.resolve(__dirname, 'node_modules/react'),
-      'react-dom': path.resolve(__dirname, 'node_modules/react-dom')
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
     }
   },
   optimizeDeps: {
-    // Prebundle React / MUI / Emotion so deps are stable during dev
+    // prebundle to make dev stable
     include: [
       'react',
       'react-dom',
@@ -38,43 +41,32 @@ export default defineConfig({
     port: 5173,
   },
   build: {
-    sourcemap: true,
+    // keep false in container to reduce memory pressure; set true for debugging
+    sourcemap: false,
     outDir: 'dist',
-    // Use terser (safer wrt TDZ/minifier reordering). Use minify: false for debugging.
-    minify: 'terser',
+    // esbuild is much lighter than terser: choose esbuild for local/CI builds.
+    // If you want terser for production, switch to 'terser' on a beefy CI runner.
+    minify: 'esbuild',
+    chunkSizeWarningLimit: 2000,
     rollupOptions: {
       output: {
         manualChunks(id: string) {
           if (!id) return;
           if (id.includes('node_modules')) {
-            // Put react/react-dom + emotion + styled engine in the same chunk
-            // so initialization order is stable for mui/emotion runtime code.
-            if (
-              id.includes('react') ||
-              id.includes('react-dom') ||
-              id.includes('react-router-dom') ||
-              id.includes('@emotion') ||
-              id.includes('@mui/styled-engine')
-            ) {
+            // Put React + MUI + Emotion + styled engine + router into a single vendor chunk
+            if (/node_modules[/\\](react|react-dom|react-router-dom|@mui|@emotion|@mui[/\\]styled-engine)/.test(id)) {
               return 'react-vendor';
             }
 
-            // MUI splits: specific first, generic later
-            if (id.includes('@mui/icons-material')) return 'mui-icons';
-            if (id.includes('@mui/material/esm/styles') || id.includes('@mui/material/styles')) return 'mui-styles';
-            // remaining @mui material code -> mui-core (covers components, utils, etc.)
-            if (id.includes('@mui/material') || id.includes('@mui/base')) return 'mui-core';
-
-            // Keep large libs in their own chunk to avoid a huge 'vendor'
+            // Keep very large libraries in their own chunk to avoid one giant file
             if (id.includes('jszip')) return 'jszip';
             if (id.includes('papaparse')) return 'papaparse';
             if (id.includes('dexie')) return 'dexie';
             if (id.includes('@zxing')) return 'zxing';
 
-            // Default: create a per-package chunk name so vendor is split up.
+            // Default: small per-package chunk
             const pkg = packageNameFromId(id);
             if (pkg) {
-              // normalize '@' from scoped packages (can't use '/' in filenames)
               return `npm.${pkg.replace('/', '__').replace('@', '')}`;
             }
             return 'vendor';
@@ -83,7 +75,7 @@ export default defineConfig({
       },
     },
     commonjsOptions: {
-      transformMixedEsModules: true
+      transformMixedEsModules: true,
     }
   },
   test: {

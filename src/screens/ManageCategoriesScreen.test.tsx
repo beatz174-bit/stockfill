@@ -1,3 +1,4 @@
+// src/screens/ManageCategoriesScreen.test.tsx
 import { MemoryRouter } from 'react-router-dom';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -26,10 +27,22 @@ const categoryAddMock = vi.fn();
 const categoryUpdateMock = vi.fn();
 const productModifyMock = vi.fn();
 
+// Improved DB mock: products.where(...).equals(value) returns an object implementing count() and modify().
+// count() resolves to 1 when equals('Snacks') is called (simulate one product referencing the category name),
+// otherwise resolves to 0. modify() calls our productModifyMock so tests can assert it was invoked.
+//
+// Also, transaction accepts a variable number of args and treats the last arg as the callback,
+// which mirrors the real db.transaction usage in the component.
 vi.mock('../context/DBProvider', () => ({
   useDatabase: () => ({
-    transaction: async (_mode: string, _tableA: unknown, _tableB: unknown, callback: () => Promise<void>) => {
-      await callback();
+    transaction: async (...args: unknown[]) => {
+      const callback = args[args.length - 1];
+      if (typeof callback === 'function') {
+        // run the callback (which may perform db operations)
+        await (callback as () => Promise<void>)();
+      } else {
+        // nothing to do if no callback provided
+      }
     },
     categories: {
       add: categoryAddMock,
@@ -38,10 +51,24 @@ vi.mock('../context/DBProvider', () => ({
     },
     products: {
       where: () => ({
-        equals: () => ({
-          modify: productModifyMock,
+        equals: (value: string) => ({
+          // count returns promise resolving to number of products matching 'value'
+          count: async () => {
+            if (typeof value === 'string' && value.toLowerCase() === 'snacks') return 1;
+            return 0;
+          },
+          // modify is implemented so saveCategory can call it; record when called
+          modify: async (changes: any) => {
+            productModifyMock(changes);
+            // simulate modifying and returning something
+            return undefined;
+          },
         }),
       }),
+    },
+    pickLists: {
+      toArray: async () => [],
+      update: async () => undefined,
     },
   }),
 }));
@@ -65,6 +92,8 @@ describe('ManageCategoriesScreen deletion safeguards', () => {
     await user.click(screen.getByRole('button', { name: /delete snacks/i }));
 
     expect(categoryDeleteMock).not.toHaveBeenCalled();
+
+    // The Alert may contain the full sentence; match a portion of it (case-insensitive)
     expect(
       await screen.findByText(/cannot delete 'snacks' while 1 product\(s\) use it/i),
     ).toBeVisible();

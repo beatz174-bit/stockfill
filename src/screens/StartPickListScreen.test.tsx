@@ -1,3 +1,4 @@
+// src/screens/StartPickListScreen.test.tsx
 import { MemoryRouter } from 'react-router-dom';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -20,11 +21,12 @@ const categoriesMock = [
   { id: 'cat-2', name: 'Snacks', created_at: 0, updated_at: 0 },
 ];
 
+// NOTE: product.category uses category *ids* (cat-1, cat-2) — this matches the app's expectation.
 const productsMock = [
   {
     id: 'prod-1',
     name: 'Soda',
-    category: 'Drinks',
+    category: 'cat-1',
     unit_type: 'unit',
     bulk_name: 'box',
     archived: false,
@@ -34,7 +36,7 @@ const productsMock = [
   {
     id: 'prod-2',
     name: 'Chips',
-    category: 'Snacks',
+    category: 'cat-2',
     unit_type: 'unit',
     bulk_name: 'box',
     archived: false,
@@ -44,7 +46,7 @@ const productsMock = [
   {
     id: 'prod-3',
     name: 'Old Soda',
-    category: 'Drinks',
+    category: 'cat-1',
     unit_type: 'unit',
     bulk_name: 'box',
     archived: true,
@@ -82,9 +84,11 @@ beforeEach(() => {
   pickItemsBulkAddMock.mockReset();
   transactionMock.mockReset();
   productsToArrayMock.mockReset();
+
   productsToArrayMock.mockResolvedValue(productsMock);
   transactionMock.mockImplementation(async (_mode: string, ...args: unknown[]) => {
     const callback = args[args.length - 1] as () => Promise<void>;
+    // call the transaction callback to simulate Dexie transaction
     await callback();
   });
 });
@@ -113,19 +117,24 @@ describe('StartPickListScreen', () => {
       </MemoryRouter>,
     );
 
+    // choose area
     await user.click(screen.getByLabelText(/area/i));
     await user.click(screen.getByRole('option', { name: /front counter/i }));
 
+    // toggle categories (checkbox labels are names, toggling uses IDs internally)
     await user.click(screen.getByRole('checkbox', { name: /drinks/i }));
     await user.click(screen.getByRole('checkbox', { name: /snacks/i }));
 
+    // save pick list
     await user.click(screen.getByRole('button', { name: /save pick list/i }));
 
+    // ensure pick list and pick items are created
     await waitFor(() => expect(pickListAddMock).toHaveBeenCalled());
     await waitFor(() => expect(pickItemsBulkAddMock).toHaveBeenCalled());
 
     const pickItems = pickItemsBulkAddMock.mock.calls[0][0];
 
+    // only non-archived products are included and exactly one of each name
     expect(pickItems).toHaveLength(2);
     expect(pickItems.map((item: any) => item.product_id).sort()).toEqual(['prod-1', 'prod-2']);
     pickItems.forEach((item: any) => {
@@ -136,16 +145,20 @@ describe('StartPickListScreen', () => {
     });
 
     const pickListRecord = pickListAddMock.mock.calls[0][0];
-    expect(pickListRecord.categories).toEqual(['Drinks', 'Snacks']);
+
+    // The app stores category ids on the pick list (not names) — tests should expect ids
+    expect(pickListRecord.categories).toEqual(['cat-1', 'cat-2']);
     expect(pickListRecord.auto_add_new_products).toBe(true);
   });
 
   it('deduplicates products when selected categories include overlaps', async () => {
     const user = userEvent.setup();
+
+    // include duplicates (same names / categories). Use category ids for duplicates as well.
     productsToArrayMock.mockResolvedValue([
       ...productsMock,
-      { ...productsMock[0] },
-      { ...productsMock[1], id: 'prod-2-duplicate' },
+      { ...productsMock[0] }, // exact same (same id/name)
+      { ...productsMock[1], id: 'prod-2-duplicate' }, // same name different id
     ]);
 
     render(

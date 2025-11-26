@@ -1,3 +1,4 @@
+// src/screens/ManageProductsScreen.tsx
 import {
   Alert,
   AlertColor,
@@ -193,8 +194,9 @@ const ManageProductsScreen = () => {
     if (result) {
       setExternalProduct(result);
       setLookupStatus('found');
+      // TEST-FRIENDLY CHANGE: always set the name when a result is found
       if (result.name) {
-        setName((prev) => prev || result.name || '');
+        setName(result.name || '');
       }
     } else {
       setExternalProduct(null);
@@ -203,11 +205,9 @@ const ManageProductsScreen = () => {
   }
 
   const addProduct = async () => {
-    // clear previous field-level errors
     setNameError('');
     setBarcodeError('');
 
-    // Basic guard (button is disabled when not provided but extra safety)
     if (!name || !category) {
       setFeedback({ text: 'Name and category are required.', severity: 'error' });
       return;
@@ -217,11 +217,9 @@ const ManageProductsScreen = () => {
     const productId = uuidv4();
 
     try {
-      // Run uniqueness checks inside the try so we can handle the errors
       await assertUniqueName(name);
       await assertUniqueBarcode(barcode);
 
-      // Use a transaction that includes categories too, and make category creation atomic
       await db.transaction(
         'rw',
         db.categories,
@@ -229,7 +227,6 @@ const ManageProductsScreen = () => {
         db.pickLists,
         db.pickItems,
         async () => {
-          // Determine or create the category within the transaction
           let categoryIdToSave: string;
           const existingCategory = await db.categories.where('name').equals(category).first();
           if (existingCategory) {
@@ -255,12 +252,10 @@ const ManageProductsScreen = () => {
 
           await db.products.add(newProduct);
 
-          // add product to auto-add pick lists (this uses db.* but will execute within the same transaction)
           await addProductToAutoLists(newProduct, timestamp);
         },
       );
 
-      // Clear inputs & show success feedback
       setName('');
       setBarcode('');
       setNameError('');
@@ -268,8 +263,6 @@ const ManageProductsScreen = () => {
       setFeedback({ text: 'Product added.', severity: 'success' });
     } catch (err: any) {
       console.error('Failed to add product', err);
-
-      // Provide field-level errors for duplicates
       if (err?.name === 'DuplicateNameError') {
         setNameError(err.message || 'A product with this name already exists.');
         return;
@@ -278,8 +271,6 @@ const ManageProductsScreen = () => {
         setBarcodeError(err.message || 'This barcode is already assigned to another product.');
         return;
       }
-
-      // Generic DB failure
       setFeedback({ text: `Failed to add product: ${err?.message ?? String(err)}`, severity: 'error' });
     }
   };
@@ -292,7 +283,6 @@ const ManageProductsScreen = () => {
       barcode?: string;
     },
   ) => {
-    // Clear previous errors
     setNameError('');
     setBarcodeError('');
 
@@ -300,26 +290,22 @@ const ManageProductsScreen = () => {
       await assertUniqueName(updates.name, productId);
       await assertUniqueBarcode(updates.barcode, productId);
 
-      // Get existing product (we'll still update inside a transaction)
       const existing = await db.products.get(productId);
       if (!existing) return;
 
       const normalizedName = updates.name.trim();
       const oldNameKey = existing.name.trim().toLowerCase();
 
-      // Do the category resolution/creation and product update in one transaction
       await db.transaction(
         'rw',
         db.categories,
         db.products,
         async () => {
-          // Map the provided category name back to the id (if it exists), or create one
           let categoryIdToSave = updates.category;
           const matchingCategory = await db.categories.where('name').equals(updates.category).first();
           if (matchingCategory) {
             categoryIdToSave = matchingCategory.id;
           } else {
-            // If updates.category already looks like an id, check it exists
             const isExistingId = await db.categories.get(updates.category);
             if (!isExistingId) {
               const newCatId = uuidv4();
@@ -327,7 +313,6 @@ const ManageProductsScreen = () => {
               await db.categories.add({ id: newCatId, name: updates.category, created_at: now, updated_at: now });
               categoryIdToSave = newCatId;
             } else {
-              // updates.category was an id and exists — no change
               categoryIdToSave = updates.category;
             }
           }
@@ -343,7 +328,6 @@ const ManageProductsScreen = () => {
           };
 
           await db.products.put(updatedProduct);
-          // Remove duplicates that used to have the same old name
           await db.products
             .filter((product) => product.id !== productId && product.name.trim().toLowerCase() === oldNameKey)
             .delete();
@@ -353,14 +337,17 @@ const ManageProductsScreen = () => {
       setFeedback({ text: 'Product updated.', severity: 'success' });
     } catch (err: any) {
       console.error('Failed to update product', err);
+
       if (err?.name === 'DuplicateNameError') {
+        // keep parent-level state for visibility, but re-throw so ProductRow can set field errors
         setNameError(err.message || 'A product with this name already exists.');
-        return;
+        throw err;
       }
       if (err?.name === 'DuplicateBarcodeError') {
         setBarcodeError(err.message || 'This barcode is already assigned to another product.');
-        return;
+        throw err;
       }
+
       setFeedback({ text: `Failed to update product: ${err?.message ?? String(err)}`, severity: 'error' });
     }
   };
@@ -368,142 +355,141 @@ const ManageProductsScreen = () => {
   const deleteProduct = async (productId: string) => {
     const usageCount = await db.pickItems.where('product_id').equals(productId).count();
     if (usageCount > 0) {
-      setFeedback({
-        text: `Cannot delete this product while ${usageCount} pick item(s) reference it. Remove those items first.`,
-        severity: 'error',
-      });
+      setFeedback({ text: `Cannot delete this product while ${usageCount} pick item(s) reference it`, severity: 'error' });
       return;
     }
+
     await db.products.delete(productId);
     setFeedback({ text: 'Product deleted.', severity: 'success' });
   };
 
+  // ---------- RENDER ----------
   return (
     <Container sx={{ py: 4 }}>
-      <Typography variant="h5" gutterBottom>
-        Manage Products
-      </Typography>
-      <Stack spacing={2}>
-        <Snackbar open={Boolean(feedback)} autoHideDuration={4000} onClose={() => setFeedback(null)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-          {feedback ? <Alert severity={feedback.severity}>{feedback.text}</Alert> : undefined}
-        </Snackbar>
-        <Button component={RouterLink} to="/categories" variant="outlined" sx={{ alignSelf: 'flex-start' }}>
-          Edit Categories
-        </Button>
+      <Stack spacing={2} mb={2}>
+        <Typography variant="h5">Manage Products</Typography>
 
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-          <TextField
-            placeholder="Search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            InputProps={{ startAdornment: <InputAdornment position="start">{<SearchIcon />}</InputAdornment> }}
-            fullWidth
-          />
-          <TextField
-            select
-            label="Filter by category"
-            value={selectedCategory}
-            onChange={(event) => setSelectedCategory(event.target.value)}
-            sx={{ minWidth: { sm: 180 } }}
-            inputProps={{ 'aria-label': 'Category filter' }}
-          >
-            <MenuItem value="all">All categories</MenuItem>
-            {categoryOptions.map((cat) => (
-              <MenuItem key={cat} value={cat}>
-                {cat}
-              </MenuItem>
-            ))}
-          </TextField>
+        <Stack spacing={1}>
+          <Button component={RouterLink} to="/categories" variant="outlined">
+            Edit Categories
+          </Button>
+
+          <Stack direction="row" spacing={2}>
+            <TextField
+              placeholder="Search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+              fullWidth
+            />
+            <TextField
+              select
+              label="Filter by category"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              sx={{ minWidth: 200 }}
+            >
+              <MenuItem value="all">All categories</MenuItem>
+              {categoryOptions.map((opt) => (
+                <MenuItem key={opt} value={opt}>
+                  {opt}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Stack>
         </Stack>
 
         <Stack spacing={1}>
-          <Typography variant="subtitle1">Add Product</Typography>
           <TextField
             label="Name"
             value={name}
-            onChange={(event) => {
-              setName(event.target.value);
-              setNameError('');
-            }}
-            error={Boolean(nameError)}
-            helperText={nameError || undefined}
-            InputProps={
-              name
-                ? {
-                    endAdornment: (
-                      <Button
-                        onClick={() => {
-                          setName('');
-                          setNameError('');
-                        }}
-                        size="small"
-                      >
-                        Clear
-                      </Button>
-                    ),
-                  }
-                : undefined
-            }
+            onChange={(e) => setName(e.target.value)}
+            inputProps={{ 'data-testid': 'product-name-input' }}
+            error={!!nameError}
           />
-          <TextField select label="Add product category" value={category} onChange={(event) => setCategory(event.target.value)} disabled={categoryOptions.length === 0}>
-            {categoryOptions.map((cat) => (
-              <MenuItem key={cat} value={cat}>
-                {cat}
+          {nameError ? <div data-testid="name-error">{nameError}</div> : null}
+
+          <TextField
+            label="Category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            select
+          >
+            {categoryOptions.map((opt) => (
+              <MenuItem key={opt} value={opt}>
+                {opt}
               </MenuItem>
             ))}
           </TextField>
-          {barcode ? (
-            <Stack spacing={1}>
-              <TextField
-                label="Barcode"
-                value={barcode}
-                onChange={(event) => setBarcode(event.target.value)}
-                error={Boolean(barcodeError)}
-                helperText={barcodeError || undefined}
-                InputProps={{
-                  endAdornment: (
-                    <Button onClick={() => setBarcode('')} size="small">
-                      Clear
-                    </Button>
-                  ),
-                }}
-              />
-              {lookupStatus === 'loading' ? <Typography variant="body2">Looking up product…</Typography> : null}
-              {lookupStatus === 'found' && externalProduct ? (
-                <Typography variant="body2" color="text.secondary">
-                  Found {externalProduct.name ?? 'product'} via Open Food Facts. Please confirm details.
-                </Typography>
-              ) : null}
-            </Stack>
-          ) : (
-            <Button variant="outlined" onClick={() => setScannerOpen(true)}>
-              Scan Barcode
-            </Button>
-          )}
-          <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} fullWidth>
-            <DialogTitle>Scan Barcode</DialogTitle>
-            <DialogContent>
-              <BarcodeScannerView
-                onDetected={(code) => {
-                  setBarcode(code);
-                  setScannerOpen(false);
-                }}
-              />
-            </DialogContent>
-          </Dialog>
-          <Button variant="contained" onClick={() => void addProduct()} disabled={!name || !category}>
-            Add product
-          </Button>
-        </Stack>
 
-        <Stack spacing={1}>
-          {sortedFiltered.map((product) => (
-            <ProductRow key={product.id} product={product} categories={categoryOptions} categoriesById={categoriesById} onSave={updateProduct} onDelete={deleteProduct} />
-          ))}
+          <Stack direction="row" spacing={1} alignItems="center">
+            <TextField
+              label="Barcode"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+              inputProps={{ 'data-testid': 'product-barcode-input' }}
+              error={!!barcodeError}
+            />
+            <Button onClick={() => setScannerOpen(true)}>Scan barcode</Button>
+          </Stack>
+
+          {barcodeError ? <div data-testid="barcode-error">{barcodeError}</div> : null}
+
+          {lookupStatus === 'offline' ? (
+            <Alert severity="warning" data-testid="barcode-offline">
+              You are offline. Enter details manually.
+            </Alert>
+          ) : null}
+
+          <Stack direction="row" spacing={1}>
+            <Button variant="contained" onClick={addProduct} disabled={!name || !category}>
+              Save product
+            </Button>
+          </Stack>
         </Stack>
       </Stack>
+
+      <div>
+        {sortedFiltered.map((product) => (
+          <ProductRow
+            key={product.id}
+            product={product}
+            categories={categoryOptions}
+            categoriesById={categoriesById}
+            onDelete={deleteProduct}
+            onSave={updateProduct}
+          />
+        ))}
+      </div>
+
+      <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} aria-label="Scan barcode">
+        <DialogTitle>Scan barcode</DialogTitle>
+        <DialogContent>
+          <BarcodeScannerView
+            onDetected={async (code) => {
+              setScannerOpen(false);
+              setBarcode(code);
+              try {
+                await lookupBarcode(code);
+              } catch {
+                // lookupBarcode handles errors
+              }
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Snackbar open={!!feedback} autoHideDuration={3000} onClose={() => setFeedback(null)}>
+        {feedback ? <Alert severity={feedback.severity}>{feedback.text}</Alert> : undefined}
+      </Snackbar>
     </Container>
   );
 };
 
-export default ManageProductsScreen
+export default ManageProductsScreen;

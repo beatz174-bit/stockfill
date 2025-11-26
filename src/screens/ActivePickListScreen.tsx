@@ -403,6 +403,7 @@ const ActivePickListScreen = () => {
             onSelect={(product: Product) => {
               void addOrUpdateItem(product);
             }}
+            onQueryChange={(q: string) => setQuery(q)}
           />
 
           {filteredProducts.length === 0 ? (
@@ -420,7 +421,7 @@ const ActivePickListScreen = () => {
             flexWrap="wrap"
             rowGap={1}
           >
-            <FormControl component="fieldset" sx={{ ml: { xs: 0, sm: 2 } }}>
+            <FormControl component="fieldset" data-testid="packaging-filter-group" sx={{ ml: { xs: 0, sm: 2 } }}>
               <FormLabel component="legend" sx={{ fontSize: '0.875rem' }}>
                 Packaging
               </FormLabel>
@@ -435,21 +436,21 @@ const ActivePickListScreen = () => {
                   value="all"
                   control={<Radio size="small" />}
                   label="All"
-                  data-testid="packaging-all"
+                  data-testid="packaging-filter-all"
                 />
                 <FormControlLabel
                   value="units"
                   control={<Radio size="small" />}
                   label="Units"
                   disabled={packagingInfo.visibleCount === 0 || packagingInfo.uniquePackagingCount === 1}
-                  data-testid="packaging-units"
+                  data-testid="packaging-filter-units"
                 />
                 <FormControlLabel
                   value="cartons"
                   control={<Radio size="small" />}
                   label="Cartons"
                   disabled={packagingInfo.visibleCount === 0 || packagingInfo.uniquePackagingCount === 1}
-                  data-testid="packaging-cartons"
+                  data-testid="packaging-filter-cartons"
                 />
               </RadioGroup>
             </FormControl>

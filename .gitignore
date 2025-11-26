@@ -8,3 +8,4 @@ playwright-report/
 .tmp/
 coverage/
 build/
+testrun.log

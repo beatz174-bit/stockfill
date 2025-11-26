@@ -1,3 +1,4 @@
+// src/components/ProductAutocomplete.tsx
 import {
   Autocomplete,
   IconButton,
@@ -16,12 +17,14 @@ interface ProductAutocompleteProps {
   availableProducts: Product[];
   onSelect: (product: Product) => void;
   placeholder?: string;
+  onQueryChange?: (q: string) => void;
 }
 
 export const ProductAutocomplete = ({
   availableProducts,
   onSelect,
   placeholder = 'Search products',
+  onQueryChange,
 }: ProductAutocompleteProps) => {
   const categories = useCategories();
   const categoriesById = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
@@ -35,6 +38,7 @@ export const ProductAutocomplete = ({
     onSelect(selectedProduct);
     setSelectedProduct(null);
     setQuery('');
+    if (onQueryChange) onQueryChange('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProduct]);
 
@@ -57,8 +61,14 @@ export const ProductAutocomplete = ({
       onChange={(_, value) => setSelectedProduct(value ?? null)}
       inputValue={query}
       onInputChange={(_, value, reason) => {
-        if (reason === 'input') setQuery(value);
-        if (reason === 'clear') setQuery('');
+        if (reason === 'input') {
+          setQuery(value);
+          if (onQueryChange) onQueryChange(value);
+        }
+        if (reason === 'clear') {
+          setQuery('');
+          if (onQueryChange) onQueryChange('');
+        }
       }}
       filterOptions={(options) => options}
       noOptionsText="No available products"
@@ -67,6 +77,12 @@ export const ProductAutocomplete = ({
         <TextField
           {...params}
           placeholder={placeholder}
+          /* Add accessible name and stable test id */
+          inputProps={{
+            ...params.inputProps,
+            'aria-label': placeholder,
+            'data-testid': 'product-search-input',
+          }}
           InputProps={{
             ...params.InputProps,
             startAdornment: (
@@ -74,12 +90,12 @@ export const ProductAutocomplete = ({
                 <InputAdornment position="start">
                   <SearchIcon />
                 </InputAdornment>
-                {params.InputProps.startAdornment}
+                {params.InputProps?.startAdornment}
               </>
             ),
             endAdornment: (
               <>
-                {params.InputProps.endAdornment}
+                {params.InputProps?.endAdornment}
                 <InputAdornment position="end">
                   <Tooltip title="Add a new product">
                     <IconButton aria-label="Add product" component={RouterLink} to="/products" size="small">

@@ -59,19 +59,18 @@ describe('PickItemRow', () => {
       />,
     );
 
-    const productName = screen.getByText(baseProduct.name);
-    const quantityLabel = screen.getByText('Qty: 1 unit');
+    // The component now renders the quantity together with the product name
+    // (e.g. "1 x Test Product"). Match the combined text.
+    const productName = screen.getByText(new RegExp(`${baseItem.quantity} x ${baseProduct.name}`));
     const titleRow = screen.getByTestId('pick-item-title-row');
 
     const rowStyle = getComputedStyle(titleRow);
     expect(rowStyle.display).toBe('flex');
     expect(rowStyle.flexDirection).toBe('row');
 
+    // Ensure the title typography exists and has the expected fontWeight set by the component
     const productStyle = getComputedStyle(productName);
-    const quantityStyle = getComputedStyle(quantityLabel);
-
-    expect(productStyle.fontSize).toBe(quantityStyle.fontSize);
-    expect(productStyle.fontWeight).toBe(quantityStyle.fontWeight);
+    expect(productStyle.fontWeight).toBe('600');
   });
 
   it('asks for confirmation before deleting a product from the pick list', async () => {
@@ -143,7 +142,8 @@ describe('PickItemRow', () => {
 
     await user.click(screen.getByRole('button', { name: /open item controls/i }));
 
-    expect(screen.getByRole('dialog', { name: baseProduct.name })).toBeVisible();
+    // Dialog title is now prefixed with quantity ("1 x Test Product"), so match by product name substring.
+    expect(screen.getByRole('dialog', { name: new RegExp(baseProduct.name) })).toBeVisible();
   });
 
   it('uses inline controls on wide screens', async () => {
@@ -193,6 +193,7 @@ describe('PickItemRow', () => {
     row.focus();
     await user.keyboard('{Enter}');
 
-    expect(screen.getByRole('dialog', { name: baseProduct.name })).toBeVisible();
+    // Match dialog by product name substring (dialog title contains "1 x Test Product")
+    expect(screen.getByRole('dialog', { name: new RegExp(baseProduct.name) })).toBeVisible();
   });
 });

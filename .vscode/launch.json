@@ -29,7 +29,7 @@
       "name": "Unit Test Coverage",
       "type": "node-terminal",
       "request": "launch",
-      "command": "npx vitest run --coverage",
+      "command": "npm run test:coverage",
       "cwd": "${workspaceFolder}"
     }
   ]

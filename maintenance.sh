@@ -4,6 +4,8 @@ set -euo pipefail
 echo "=== Codex maintenance starting ==="
 pwd
 
+npx npm-check-updates -u
+
 # ----------------------------
 # 1) Refresh Node deps if needed
 # ----------------------------
@@ -36,8 +38,6 @@ if [ -f package.json ]; then
 else
   echo "-> No package.json; skipping Node maintenance."
 fi
-
-npx npm-check-updates -u
 
 # ----------------------------
 # 2) Refresh Playwright Chromium if Playwright version changed

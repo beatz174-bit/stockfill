@@ -1,6 +1,26 @@
 import { defineConfig, devices } from '@playwright/test';
+import { defineCoverageReporterConfig } from '@bgotink/playwright-coverage';
+import path from 'path';
 
 export default defineConfig({
+    reporter: [
+    ['list'],
+    [
+      '@bgotink/playwright-coverage',
+      defineCoverageReporterConfig({
+        sourceRoot: process.cwd(), // root used to resolve source files
+        exclude: ['node_modules/**', 'e2e/**'], // exclude test sources and deps
+        resultDir: path.join(process.cwd(), 'e2e-coverage-report'),
+        reports: [
+          ['html'], // interactive HTML at results/e2e-coverage/index.html
+          ['lcovonly', { file: 'coverage.lcov' }], // LCOV for CI
+          ['text-summary', { file: null }], // summary in console
+        ],
+        // If your source maps produce wrong paths, add rewritePath:
+        // rewritePath: ({ absolutePath, relativePath }) => absolutePath
+      }),
+    ],
+  ],
   testDir: './e2e',
   fullyParallel: false,
   workers: 4,
@@ -10,15 +30,6 @@ export default defineConfig({
     headless: true,
     trace: 'on-first-retry',
   },
-  projects: [
-    {
-      name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        executablePath: process.env.CHROME_PATH,
-      },
-    },
-  ],
   webServer: {
     command: 'npm run dev -- --host --port 4173',
     url: 'http://127.0.0.1:4173',

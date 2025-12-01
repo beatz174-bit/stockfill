@@ -96,6 +96,6 @@ describe('ProductRow', () => {
     await user.click(screen.getByLabelText(/edit sparkling water/i));
     await user.click(screen.getByRole('button', { name: /clear/i }));
 
-    expect(screen.getByRole('button', { name: /scan barcode/i })).toBeVisible();
+    expect(screen.getByRole('button', { name: /scan/i })).toBeVisible();
   });
 });

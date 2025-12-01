@@ -94,8 +94,8 @@ describe('ProductRow error handling', () => {
     // When barcode is empty, scanner button is shown and opens dialog
     await user.click(screen.getByLabelText(/cancel edit/i));
     await user.click(screen.getByLabelText(/edit product one/i));
-    await waitFor(() => expect(screen.getByRole('button', { name: /scan barcode/i })).toBeInTheDocument());
-    await user.click(screen.getByRole('button', { name: /scan barcode/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /scan/i })).toBeInTheDocument());
+    await user.click(screen.getByRole('button', { name: /scan/i }));
     expect(screen.getByRole('dialog', { name: /scan barcode/i })).toBeInTheDocument();
     await user.click(screen.getByText(/mock scan/i));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: /scan barcode/i })).not.toBeInTheDocument());

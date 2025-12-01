@@ -52,7 +52,7 @@ describe('ProductRow edit/save and scanner behaviour', () => {
     const clearButton = screen.getByText('Clear');
     await userEvent.click(clearButton);
 
-    const scanBtn = screen.getByRole('button', { name: /Scan Barcode/i });
+    const scanBtn = screen.getByRole('button', { name: /scan/i });
     await userEvent.click(scanBtn);
 
     const mockScan = await screen.findByText(/Mock Scan/i);
@@ -131,7 +131,7 @@ describe('ProductRow edit/save and scanner behaviour', () => {
 
     if (!barcodeField) {
       // If not present, click the Scan button, use the mock scanner and wait for the input
-      const scanBtn = screen.getByRole('button', { name: /Scan Barcode/i });
+      const scanBtn = screen.getByRole('button', { name: /scan/i });
       await userEvent.click(scanBtn);
       const mockScanButton = await screen.findByText(/Mock Scan/i);
       await userEvent.click(mockScanButton);

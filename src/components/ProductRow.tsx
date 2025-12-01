@@ -78,7 +78,6 @@ export const ProductRow = ({ product, categories, categoriesById, onSave, onDele
 
   const handleCancel = () => {
     setIsEditing(false);
-    setFormState(getInitialFormState(product, categoriesById));
     setFieldErrors({});
   };
 
@@ -102,33 +101,34 @@ export const ProductRow = ({ product, categories, categoriesById, onSave, onDele
                 </option>
               ))}
             </TextField>
-            {formState.barcode ? (
-              <TextField
-                label="Barcode"
-                value={formState.barcode}
-                onChange={handleChange('barcode')}
-                size="small"
-                error={Boolean(fieldErrors.barcode)}
-                helperText={fieldErrors.barcode || undefined}
-                InputProps={{
-                  endAdornment: (
+            <TextField
+              label="Barcode"
+              value={formState.barcode}
+              onChange={handleChange('barcode')}
+              size="small"
+              error={Boolean(fieldErrors.barcode)}
+              helperText={fieldErrors.barcode || undefined}
+              InputProps={{
+                endAdornment: (
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    <Button size="small" onClick={() => setIsScannerOpen(true)} aria-label="Scan">
+                      Scan barcode
+                    </Button>
                     <Button
                       size="small"
                       onClick={() => {
                         setFormState((prev) => ({ ...prev, barcode: '' }));
                         setFieldErrors((prev) => ({ ...prev, barcode: undefined }));
                       }}
+                      aria-label="Clear"
+                      disabled={!formState.barcode}
                     >
                       Clear
                     </Button>
-                  ),
-                }}
-              />
-            ) : (
-              <Button variant="outlined" onClick={() => setIsScannerOpen(true)}>
-                Scan Barcode
-              </Button>
-            )}
+                  </Stack>
+                ),
+              }}
+            />
             <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
               <IconButton aria-label={`Delete ${product.name}`} onClick={() => onDelete(product.id)} size="small" color="error">
                 <DeleteIcon fontSize="small" />

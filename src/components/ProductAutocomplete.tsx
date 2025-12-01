@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import { useMemo, useState, useEffect } from 'react';
 import { useCategories } from '../hooks/dataHooks';
 import { Product } from '../models/Product';
@@ -97,16 +98,33 @@ export const ProductAutocomplete = ({
             endAdornment: (
               <>
                 {params.InputProps?.endAdornment}
-                <InputAdornment position="end">
+                <InputAdornment position="end" sx={{ gap: 0.5 }}>
+                  <Tooltip title="Clear search">
+                    <span>
+                      <IconButton
+                        aria-label="Clear"
+                        size="small"
+                        onClick={() => {
+                          setQuery('');
+                          if (onQueryChange) onQueryChange('');
+                        }}
+                        disabled={query.length === 0}
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
                   <Tooltip title="Add a new product">
-                    <IconButton
-                      aria-label="Add product"
-                      size="small"
-                      onClick={onAddProduct}
-                      disabled={!onAddProduct}
-                    >
-                      <AddCircleOutlineIcon />
-                    </IconButton>
+                    <span>
+                      <IconButton
+                        aria-label="Add product"
+                        size="small"
+                        onClick={onAddProduct}
+                        disabled={!onAddProduct}
+                      >
+                        <AddCircleOutlineIcon />
+                      </IconButton>
+                    </span>
                   </Tooltip>
                 </InputAdornment>
               </>

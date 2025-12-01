@@ -46,6 +46,7 @@ export const EditableEntityList = ({
   onUpdate,
   onDelete,
 }: EditableEntityListProps) => {
+  const [nameOverrides, setNameOverrides] = useState<Record<string, string>>({});
   const [newName, setNewName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
@@ -92,6 +93,7 @@ export const EditableEntityList = ({
     try {
       const success = applyOutcome(setFeedback, await onUpdate(editingId, trimmed), `${entityLabel} updated.`);
       if (success) {
+        setNameOverrides((prev) => ({ ...prev, [editingId]: trimmed }));
         cancelEditing();
       }
     } catch (error) {
@@ -104,6 +106,13 @@ export const EditableEntityList = ({
       const success = applyOutcome(setFeedback, await onDelete(id, name), `${entityLabel} deleted.`);
       if (success && editingId === id) {
         cancelEditing();
+      }
+      if (success) {
+        setNameOverrides((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
       }
     } catch (error) {
       setFeedback({ text: `Unable to delete ${entityLabel.toLowerCase()}.`, severity: 'error' });
@@ -129,46 +138,49 @@ export const EditableEntityList = ({
         </Button>
       </Stack>
       <List>
-        {entities.map((entity) => (
-          <ListItem key={entity.id} divider>
-            {editingId === entity.id ? (
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
-                <TextField
-                  size="small"
-                  fullWidth
-                  value={editName}
-                  onChange={(event) => setEditName(event.target.value)}
-                />
-                <IconButton color="primary" onClick={handleSave} disabled={!canSave} aria-label={`Save ${entityLabel}`}>
-                  <CheckIcon />
-                </IconButton>
-                <IconButton onClick={cancelEditing} aria-label="Cancel editing">
-                  <CloseIcon />
-                </IconButton>
-              </Stack>
-            ) : (
-              <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
-                <ListItemText primary={entity.name} secondary={entity.secondaryText} />
-                <Stack direction="row" spacing={0.5}>
-                  <IconButton
-                    onClick={() => startEditing(entity.id, entity.name)}
-                    aria-label={`Edit ${entity.name}`}
+        {entities.map((entity) => {
+          const displayName = nameOverrides[entity.id] ?? entity.name;
+          return (
+            <ListItem key={entity.id} divider>
+              {editingId === entity.id ? (
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
+                  <TextField
                     size="small"
-                  >
-                    <EditIcon fontSize="small" />
+                    fullWidth
+                    value={editName}
+                    onChange={(event) => setEditName(event.target.value)}
+                  />
+                  <IconButton color="primary" onClick={handleSave} disabled={!canSave} aria-label={`Save ${entityLabel}`}>
+                    <CheckIcon />
                   </IconButton>
-                  <IconButton
-                    onClick={() => handleDelete(entity.id, entity.name)}
-                    aria-label={`Delete ${entity.name}`}
-                    size="small"
-                  >
-                    <DeleteIcon fontSize="small" />
+                  <IconButton onClick={cancelEditing} aria-label="Cancel editing">
+                    <CloseIcon />
                   </IconButton>
                 </Stack>
-              </Stack>
-            )}
-          </ListItem>
-        ))}
+              ) : (
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
+                  <ListItemText primary={displayName} secondary={entity.secondaryText} />
+                  <Stack direction="row" spacing={0.5}>
+                    <IconButton
+                      onClick={() => startEditing(entity.id, displayName)}
+                      aria-label={`Edit ${displayName}`}
+                      size="small"
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleDelete(entity.id, displayName)}
+                      aria-label={`Delete ${displayName}`}
+                      size="small"
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                </Stack>
+              )}
+            </ListItem>
+          );
+        })}
       </List>
     </Stack>
   );

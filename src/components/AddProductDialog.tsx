@@ -77,6 +77,12 @@ export const AddProductDialog = ({
   }, [open, categoryOptions, initialBarcode]);
 
   useEffect(() => {
+    if (!open || !barcode) return;
+    void lookupBarcode(barcode);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, barcode]);
+
+  useEffect(() => {
     if (!barcode) {
       setLookupStatus('idle');
       setExternalProduct(null);
@@ -181,7 +187,7 @@ export const AddProductDialog = ({
 
   async function lookupBarcode(code: string) {
     if (!code) return;
-    if (typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine) {
+    if (typeof navigator !== 'undefined' && 'onLine' in navigator && navigator.onLine === false) {
       setLookupStatus('offline');
       setExternalProduct(null);
       return;

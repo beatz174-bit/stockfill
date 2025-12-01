@@ -9,7 +9,8 @@ export interface ExternalProductInfo {
 const BASE_URL = 'https://world.openfoodfacts.org/api/v2/product';
 const REQUEST_TIMEOUT_MS = 5000;
 
-const isOffline = () => typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine;
+const isOffline = () =>
+  typeof navigator !== 'undefined' && 'onLine' in navigator && navigator.onLine === false;
 
 export const fetchProductFromOFF = async (barcode: string): Promise<ExternalProductInfo | null> => {
   if (!barcode || isOffline()) {

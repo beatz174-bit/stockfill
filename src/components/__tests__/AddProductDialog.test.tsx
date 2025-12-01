@@ -3,11 +3,13 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { AddProductDialog } from '../AddProductDialog';
 import { createMockDb } from '../../testUtils/mockDb';
+import * as offModule from '../../modules/openFoodFacts';
 import type { Product } from '../../models/Product';
 
 let mockDb = createMockDb();
 const mockUseProducts = vi.fn();
-const mockFetchProductFromOFF = vi.fn();
+const fetchProductSpy = vi.spyOn(offModule, 'fetchProductFromOFF');
+let onlineSpy: ReturnType<typeof vi.spyOn> | undefined;
 
 vi.mock('../../context/DBProvider', () => ({
   useDatabase: () => mockDb,
@@ -25,21 +27,21 @@ vi.mock('../BarcodeScannerView', () => ({
   ),
 }));
 
-vi.mock('../modules/openFoodFacts', () => ({
-  fetchProductFromOFF: (...args: unknown[]) => mockFetchProductFromOFF(...args),
-}));
-
 const defaultCategories = ['Fresh', 'Pantry'];
 
 describe('AddProductDialog', () => {
   beforeEach(() => {
     mockDb = createMockDb();
     mockUseProducts.mockReturnValue([]);
-    mockFetchProductFromOFF.mockReset();
+    fetchProductSpy.mockReset();
+    fetchProductSpy.mockResolvedValue(null);
+    onlineSpy?.mockRestore();
+    onlineSpy = vi.spyOn(window.navigator, 'onLine', 'get');
+    onlineSpy.mockReturnValue(true);
   });
 
   it('shows offline alert when barcode lookup attempted offline', async () => {
-    vi.spyOn(window.navigator, 'onLine', 'get').mockReturnValue(false);
+    onlineSpy?.mockReturnValue(false);
 
     render(
       <AddProductDialog
@@ -55,7 +57,7 @@ describe('AddProductDialog', () => {
   });
 
   it('applies initialBarcode and triggers lookup', async () => {
-    mockFetchProductFromOFF.mockResolvedValue({ name: 'From OFF' });
+    fetchProductSpy.mockResolvedValue({ name: 'From OFF' });
 
     render(
       <AddProductDialog
@@ -66,7 +68,7 @@ describe('AddProductDialog', () => {
       />,
     );
 
-    await waitFor(() => expect(mockFetchProductFromOFF).toHaveBeenCalledWith('999'));
+    await waitFor(() => expect(fetchProductSpy).toHaveBeenCalledWith('999'));
     expect(screen.getByTestId('product-barcode-input')).toHaveValue('999');
     await waitFor(() => expect(screen.getByLabelText(/name/i)).toHaveValue('From OFF'));
   });

@@ -58,8 +58,9 @@ describe('EditableEntityList', () => {
     await waitFor(() => expect(screen.getByText('x')).toBeInTheDocument());
 
     await user.click(screen.getByLabelText(/edit first/i));
-    await user.clear(screen.getByDisplayValue('First'));
-    await user.type(screen.getByDisplayValue('First'), 'Updated');
+    const firstInput = await screen.findByDisplayValue('First');
+    await user.clear(firstInput);
+    await user.type(firstInput, 'Updated');
     await user.click(screen.getByLabelText(/save item/i));
 
     await waitFor(() =>

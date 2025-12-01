@@ -23,8 +23,9 @@ if [ -f package.json ]; then
     # npm ci will reconcile. We do a cheap check by comparing mtime.
     if [ -f package-lock.json ]; then
       if [ package-lock.json -nt node_modules ]; then
-        echo "package-lock.json newer than node_modules; running npm ci..."
-        npm ci
+        echo "package-lock.json newer than node_modules; running npm install & npm prune..."
+        npm install
+        npm prune
       else
         echo "npm deps look current; skipping install."
       fi
@@ -35,6 +36,8 @@ if [ -f package.json ]; then
 else
   echo "-> No package.json; skipping Node maintenance."
 fi
+
+npx npm-check-updates -u
 
 # ----------------------------
 # 2) Refresh Playwright Chromium if Playwright version changed

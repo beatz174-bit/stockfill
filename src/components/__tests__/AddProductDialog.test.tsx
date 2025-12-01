@@ -57,7 +57,7 @@ describe('AddProductDialog', () => {
   });
 
   it('applies initialBarcode and triggers lookup', async () => {
-    fetchProductSpy.mockResolvedValue({ name: 'From OFF' });
+    fetchProductSpy.mockResolvedValue({ name: 'From OFF', source: 'openfoodfacts' });
 
     render(
       <AddProductDialog

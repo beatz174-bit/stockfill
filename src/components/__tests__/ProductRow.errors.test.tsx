@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { ProductRow } from '../ProductRow';
+import type { Product } from '../../models/Product';
 import { makeNamedError } from '../../test/makeNamedError';
 
 vi.mock('../BarcodeScannerView', () => ({
@@ -18,20 +19,23 @@ const categoriesById = new Map([
   ['cat-2', 'Drinks'],
 ]);
 
-const baseProduct = {
+const baseProduct: Product = {
   id: 'p1',
   name: 'Product One',
   category: 'cat-1',
   unit_type: 'unit',
   bulk_name: 'carton',
+  barcode: undefined,
   archived: false,
   created_at: 0,
   updated_at: 0,
 };
 
 describe('ProductRow error handling', () => {
-  let onSave: ReturnType<typeof vi.fn>;
-  let onDelete: ReturnType<typeof vi.fn>;
+  let onSave: ReturnType<
+    typeof vi.fn<(productId: string, updates: { name: string; category: string; barcode?: string }) => void>
+  >;
+  let onDelete: ReturnType<typeof vi.fn<(productId: string) => void>>;
 
   beforeEach(() => {
     onSave = vi.fn();

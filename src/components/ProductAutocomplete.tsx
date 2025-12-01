@@ -8,7 +8,6 @@ import {
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import SearchIcon from '@mui/icons-material/Search';
-import { Link as RouterLink } from 'react-router-dom';
 import { useMemo, useState, useEffect } from 'react';
 import { useCategories } from '../hooks/dataHooks';
 import { Product } from '../models/Product';
@@ -18,6 +17,7 @@ interface ProductAutocompleteProps {
   onSelect: (product: Product) => void;
   placeholder?: string;
   onQueryChange?: (q: string) => void;
+  onAddProduct?: () => void;
 }
 
 export const ProductAutocomplete = ({
@@ -25,6 +25,7 @@ export const ProductAutocomplete = ({
   onSelect,
   placeholder = 'Search products',
   onQueryChange,
+  onAddProduct,
 }: ProductAutocompleteProps) => {
   const categories = useCategories();
   const categoriesById = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
@@ -98,7 +99,12 @@ export const ProductAutocomplete = ({
                 {params.InputProps?.endAdornment}
                 <InputAdornment position="end">
                   <Tooltip title="Add a new product">
-                    <IconButton aria-label="Add product" component={RouterLink} to="/products" size="small">
+                    <IconButton
+                      aria-label="Add product"
+                      size="small"
+                      onClick={onAddProduct}
+                      disabled={!onAddProduct}
+                    >
                       <AddCircleOutlineIcon />
                     </IconButton>
                   </Tooltip>

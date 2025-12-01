@@ -24,6 +24,13 @@
       "env": {
         "CHROME_PATH": "<path to flatpak chrome wrapper>"
       }
+    },
+    {
+      "name": "Unit Test Coverage",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npx vitest run --coverage",
+      "cwd": "${workspaceFolder}"
     }
   ]
 }

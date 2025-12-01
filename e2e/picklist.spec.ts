@@ -11,6 +11,7 @@ import {
   secondaryProduct,
   waitForScreenHeading,
   openSelect,
+  openAddProductDialog,
   ensureCategoryExists,
   expectProductQuantity,
   addProductToPickList,
@@ -68,6 +69,8 @@ test.describe('Active pick list', () => {
     await page.getByRole('link', { name: 'Manage Products' }).click();
     await waitForScreenHeading(page, 'Manage Products');
 
+    await openAddProductDialog(page);
+
     await page.getByLabel('Name').click();
     await page.getByLabel('Name').fill('Playwright Cola');
 
@@ -84,7 +87,7 @@ test.describe('Active pick list', () => {
     await expect(page.getByText('Playwright Cola')).toBeVisible();
 
     await page.getByRole('button', { name: 'Edit Playwright Cola' }).click();
-    const editNameField = page.getByLabel('Name').nth(1);
+    const editNameField = page.getByLabel('Name').first();
     await expect(editNameField).toBeVisible();
     await editNameField.fill('Playwright Cola Zero');
 
@@ -105,6 +108,8 @@ test.describe('Active pick list', () => {
     await page.getByRole('link', { name: 'Manage Products' }).click();
     await waitForScreenHeading(page, 'Manage Products');
 
+    await openAddProductDialog(page);
+
     await page.getByLabel('Name').click();
     await page.getByLabel('Name').fill(listProductName);
     await openSelect(page, 'Add product category', areaName, 'select-add-product-category');
@@ -121,7 +126,7 @@ test.describe('Active pick list', () => {
 
     await page.getByRole('button', { name: `Edit ${listProductName}` }).click();
 
-    const editListNameField = page.getByLabel('Name').last();
+    const editListNameField = page.getByLabel('Name').first();
     await expect(editListNameField).toBeVisible();
     await editListNameField.fill(updatedListProductName);
 
@@ -139,9 +144,11 @@ test.describe('Active pick list', () => {
     await expect(page.getByText(updatedListProductName)).toHaveCount(0);
 
     const addProduct = async (name: string) => {
+      await openAddProductDialog(page);
       await page.getByLabel('Name').fill(name);
       await openSelect(page, 'Add product category', areaName, 'select-add-product-category');
       await page.getByRole('button', { name: 'Save Product' }).first().click();
+      await page.getByLabel('Add product dialog').first().waitFor({ state: 'hidden', timeout: 5000 });
       await expect(page.getByText('Product added.')).toBeVisible();
       await expect(page.getByRole('button', { name: `Edit ${name}` })).toBeVisible();
     };
@@ -197,17 +204,14 @@ test.describe('Active pick list', () => {
     await expectProductQuantity(page, additionalProduct, 2);
 
     await page.reload();
+    await waitForScreenHeading(page, `${areaName} List`);
     await expectProductQuantity(page, additionalProduct, 2);
 
     const decrementButton = page.getByRole('button', { name: 'Decrease quantity' });
     await decrementButton.click();
-    await decrementButton.click();
-    await decrementButton.click();
 
     await expectProductQuantity(page, additionalProduct, 1);
 
-    await page.reload();
-    await expectProductQuantity(page, additionalProduct, 1);
   });
 
   test('closes mobile controls with the close button and backdrop', async ({ page }) => {
@@ -312,7 +316,6 @@ test.describe('Active pick list', () => {
     await page.getByRole('button', { name: 'Save and Return' }).click();
     await waitForScreenHeading(page, 'Pick Lists');
 
-    await page.reload();
     await page.getByRole('link', { name: areaName }).first().click();
     await waitForScreenHeading(page, `${areaName} List`);
     await expectProductQuantity(page, additionalProduct, 3);

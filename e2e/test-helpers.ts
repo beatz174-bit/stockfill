@@ -25,6 +25,15 @@ export const waitForScreenHeading = async (page: Page, heading: string, timeout 
   await expect(page.getByRole('heading', { name: heading })).toBeVisible({ timeout });
 };
 
+export const openAddProductDialog = async (page: Page) => {
+  const dialog = page.getByLabel('Add product dialog');
+  const isDialogVisible = (await dialog.count()) > 0 && (await dialog.first().isVisible());
+  if (!isDialogVisible) {
+    await page.getByRole('button', { name: 'Add product' }).click();
+  }
+  await dialog.first().waitFor({ state: 'visible', timeout: 5000 });
+};
+
 export const openSelect = async (page: Page, label: string, optionName: string, testId?: string) => {
   const tryOpen = async (lbl: string) => {
     // 1) Try testId wrapper if provided
@@ -247,6 +256,8 @@ export const ensureProductsExist = async (page: Page, productNames: string[], ca
   for (const productName of productNames) {
     if ((await page.getByRole('button', { name: `Edit ${productName}` }).count()) > 0) continue;
 
+    await openAddProductDialog(page);
+
     const nameField = page.getByLabel('Name');
     await nameField.click();
     await nameField.fill(productName);
@@ -263,6 +274,8 @@ export const ensureProductsExist = async (page: Page, productNames: string[], ca
     } else {
       await page.locator('[aria-label="Save product"]').first().click();
     }
+
+    await page.getByLabel('Add product dialog').first().waitFor({ state: 'hidden', timeout: 5000 });
 
     await Promise.race([
       page.getByText('Product added.').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {}),

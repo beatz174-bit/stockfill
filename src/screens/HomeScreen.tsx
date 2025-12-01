@@ -19,6 +19,9 @@ const HomeScreen = () => (
       <Button component={RouterLink} to="/areas" variant="outlined">
         Manage Areas
       </Button>
+      <Button component={RouterLink} to="/categories" variant="outlined">
+        Manage Categories
+      </Button>
       <Button component={RouterLink} to="/scan" variant="outlined">
         Scan Barcode
       </Button>

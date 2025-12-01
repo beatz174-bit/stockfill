@@ -78,11 +78,7 @@ describe('ActivePickListScreen product search', () => {
    *  - prefer data-testid='product-search-input' if present (recommended),
    *  - otherwise fall back to placeholder 'Search products'.
    */
-  const getProductInput = () => {
-    const byTestId = screen.queryByTestId('product-search-input');
-    if (byTestId) return byTestId;
-    return screen.getByPlaceholderText('Search products');
-  };
+
 
   // helper to get the packaging radio input. Tests were expecting to call .querySelector('input')
   // on a wrapper with data-testid; preserve that behavior but return the actual radio element.
@@ -137,9 +133,11 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
-    const combobox = getProductInput();
+    const combobox = screen.getByRole('combobox', { name: /search products/i }) || screen.getByTestId('product-search-input');
     await user.click(combobox);
     await user.type(combobox, 'cola');
+
+    const listbox = await screen.findByRole('listbox');
 
     expect(await screen.findByRole('option', { name: /cola \(drinks\)/i })).toBeVisible();
     expect(screen.queryByRole('option', { name: /chips \(snacks\)/i })).not.toBeInTheDocument();
@@ -169,7 +167,7 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
-    const combobox = getProductInput();
+    const combobox = screen.getByRole('combobox', { name: /search products/i }) || screen.getByTestId('product-search-input');
     await user.click(combobox);
 
     const listbox = await screen.findByRole('listbox');
@@ -239,7 +237,7 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
-    const combobox = getProductInput();
+    const combobox = screen.getByRole('combobox', { name: /search products/i }) || screen.getByTestId('product-search-input');
     await user.click(combobox);
 
     const listbox = await screen.findByRole('listbox');
@@ -318,7 +316,7 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
-    const combobox = getProductInput();
+    const combobox = screen.getByRole('combobox', { name: /search products/i }) || screen.getByTestId('product-search-input');
     await user.click(combobox);
 
     const listbox = await screen.findByRole('listbox');
@@ -343,7 +341,7 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
-    const combobox = getProductInput();
+    const combobox = screen.getByRole('combobox', { name: /search products/i }) || screen.getByTestId('product-search-input');
     await user.click(combobox);
 
     const listbox = await screen.findByRole('listbox');
@@ -370,7 +368,7 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
-    const combobox = getProductInput();
+    const combobox = screen.getByRole('combobox', { name: /search products/i }) || screen.getByTestId('product-search-input');
     await user.click(combobox);
 
     const listbox = await screen.findByRole('listbox');
@@ -402,7 +400,7 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
-    const combobox = getProductInput();
+    const combobox = screen.getByRole('combobox', { name: /search products/i }) || screen.getByTestId('product-search-input');
     await user.click(combobox);
 
     const listbox = await screen.findByRole('listbox');
@@ -435,7 +433,7 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
-    const combobox = getProductInput();
+    const combobox = screen.getByRole('combobox', { name: /search products/i }) || screen.getByTestId('product-search-input');
     await user.click(combobox);
 
     const listbox = await screen.findByRole('listbox');
@@ -468,7 +466,7 @@ describe('ActivePickListScreen product search', () => {
       </MemoryRouter>,
     );
 
-    const combobox = getProductInput();
+    const combobox = screen.getByRole('combobox', { name: /search products/i }) || screen.getByTestId('product-search-input');
     await user.click(combobox);
 
     const listbox = await screen.findByRole('listbox');

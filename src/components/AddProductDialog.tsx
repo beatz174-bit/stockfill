@@ -264,7 +264,7 @@ export const AddProductDialog = ({
     resetForm();
     onClose();
   };
-
+const transitionProps = process.env.NODE_ENV === 'test' ? { timeout: 0 } : undefined;
   return (
     <Dialog
       open={open}
@@ -274,6 +274,7 @@ export const AddProductDialog = ({
       data-testid="add-product-dialog"      
       fullWidth
       maxWidth="sm"
+      TransitionProps={transitionProps}
       PaperProps={{ role: 'form' }}
       BackdropProps={{ 'data-testid': 'add-product-backdrop' } as WithTestId<BackdropProps>}
     >

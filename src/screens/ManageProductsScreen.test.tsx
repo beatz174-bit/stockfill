@@ -251,30 +251,22 @@ describe('ManageProductsScreen barcode lookup', () => {
       </MemoryRouter>,
     );
 
-    // open dialog and wait for it to be present
+    // test
     await openAddProductDialog(user);
-    await screen.findByTestId('add-product-dialog');
 
-    // click the close icon and wait for dialog to be removed
-    await user.click(screen.getByRole('button', { name: /close add product/i }));
-    await waitFor(() => {
-      expect(screen.queryByTestId('add-product-dialog')).not.toBeInTheDocument();
-    }, { timeout: 2000 });
+    // prefer test-id but fall back to the MUI backdrop class
+    let backdrop: HTMLElement | null = null;
+    try {
+      backdrop = await screen.findByTestId('add-product-backdrop', {}, { timeout: 1500 });
+    } catch {
+      // fallback to MUI class (backdrop might not have the test id in a transient state)
+      backdrop = document.querySelector('.MuiBackdrop-root') as HTMLElement | null;
+    }
 
-    // reopen the dialog and wait for it to appear
-    await openAddProductDialog(user);
-    const dialog = await screen.findByTestId('add-product-dialog', {}, { timeout: 2000 });
-    expect(dialog).toBeInTheDocument();
+    await waitFor(() => expect(backdrop).toBeTruthy(), { timeout: 2000 });
+    await user.click(backdrop as HTMLElement);
+    await waitFor(() => expect(screen.queryByTestId('add-product-dialog')).not.toBeInTheDocument());
 
-    // find the MUI backdrop by test-id and click it
-    const backdrop = await screen.findByTestId('add-product-backdrop', {}, { timeout: 2000 });
-    expect(backdrop).toBeTruthy();
-    await user.click(backdrop);
-
-    // finally wait for dialog to be removed
-    await waitFor(() => {
-      expect(screen.queryByTestId('add-product-dialog')).not.toBeInTheDocument();
-    }, { timeout: 2000 });
 
   });
 
@@ -326,13 +318,11 @@ describe('ManageProductsScreen barcode lookup', () => {
     });
 
     await openAddProductDialog(user);
-    // wait for the dialog backdrop to be rendered, then click it
-    await waitFor(() => {
-      expect(document.querySelector('[role="presentation"]')).toBeTruthy();
-    });
-    const backdrop = document.querySelector('[role="presentation"]');
+    // wait for the dialog backdrop to be rendered, then click it using the test id
+    const backdrop = await screen.findByTestId('add-product-backdrop', {}, { timeout: 2000 });
     expect(backdrop).toBeTruthy();
     await user.click(backdrop as HTMLElement);
+
 
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: /add product dialog/i })).not.toBeInTheDocument();

@@ -311,6 +311,10 @@ describe('ManageProductsScreen barcode lookup', () => {
     });
 
     await openAddProductDialog(user);
+    // wait for the dialog backdrop to be rendered, then click it
+    await waitFor(() => {
+      expect(document.querySelector('[role="presentation"]')).toBeTruthy();
+    });
     const backdrop = document.querySelector('[role="presentation"]');
     expect(backdrop).toBeTruthy();
     await user.click(backdrop as HTMLElement);

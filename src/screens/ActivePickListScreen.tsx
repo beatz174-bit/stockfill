@@ -1,22 +1,23 @@
 // src/screens/ActivePickListScreen.tsx
 import {
+  Alert,
+  AlertColor,
   Button,
   Checkbox,
   Container,
   FormControlLabel,
-  IconButton,
   InputAdornment,
   Stack,
   TextField,
-  Tooltip,
   Typography,
   FormControl,
   FormLabel,
   RadioGroup,
   Radio,
+  Snackbar,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import { Link as RouterLink, useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -31,6 +32,7 @@ import { PickItemRow } from '../components/PickItemRow';
 import { PickItem } from '../models/PickItem';
 import { Product } from '../models/Product';
 import { ProductAutocomplete } from '../components/ProductAutocomplete';
+import { AddProductDialog } from '../components/AddProductDialog';
 
 const normalizeName = (name: string) => name.trim().toLowerCase();
 
@@ -49,6 +51,8 @@ const ActivePickListScreen = () => {
   const [itemState, setItemState] = useState<PickItem[]>(items ?? []);
   const [isBatchUpdating, setIsBatchUpdating] = useState(false);
   const [packagingFilter, setPackagingFilter] = useState<'all' | 'units' | 'cartons'>('all');
+  const [addProductDialogOpen, setAddProductDialogOpen] = useState(false);
+  const [feedback, setFeedback] = useState<{ text: string; severity: AlertColor } | null>(null);
 
   // NEW: search within the list and category filter for the visible list
   const [listSearch, setListSearch] = useState('');
@@ -153,6 +157,14 @@ const ActivePickListScreen = () => {
   // Build a category id -> name map for display and name -> id map for resolution
   const categoriesById = useMemo(() => new Map(categoriesList.map((c) => [c.id, c.name])), [categoriesList]);
   const categoryNameToId = useMemo(() => new Map(categoriesList.map((c) => [c.name.trim().toLowerCase(), c.id])), [categoriesList]);
+
+  const addProductCategoryOptions = useMemo(() => {
+    const categoryNames = categoriesList.map((item) => item.name);
+    const productCategories = products.map(
+      (product) => categoriesById.get(product.category) ?? product.category ?? '',
+    );
+    return Array.from(new Set([...categoryNames, ...productCategories].filter(Boolean)));
+  }, [categoriesList, products, categoriesById]);
 
   // Filter products by pickList.categories (now stored as ids). Fallback: resolve name -> id
   const categoryFilteredProducts = useMemo(() => {
@@ -311,6 +323,10 @@ const ActivePickListScreen = () => {
     navigate('/pick-lists');
   };
 
+  const handleAddProductClose = () => {
+    setAddProductDialogOpen(false);
+  };
+
   // Sort the items that are actually visible (after showPicked and packaging filter)
   const visibleItems = useMemo(() => {
     let arr = [...itemsAfterShowPicked];
@@ -404,6 +420,7 @@ const ActivePickListScreen = () => {
               void addOrUpdateItem(product);
             }}
             onQueryChange={(q: string) => setQuery(q)}
+            onAddProduct={() => setAddProductDialogOpen(true)}
           />
 
           {filteredProducts.length === 0 ? (
@@ -556,8 +573,17 @@ const ActivePickListScreen = () => {
       <Button fullWidth sx={{ mt: 3 }} variant="outlined" onClick={returnToLists}>
         Save and Return
       </Button>
+      <AddProductDialog
+        open={addProductDialogOpen}
+        onClose={handleAddProductClose}
+        categoryOptions={addProductCategoryOptions}
+        onFeedback={setFeedback}
+      />
+      <Snackbar open={!!feedback} autoHideDuration={3000} onClose={() => setFeedback(null)}>
+        {feedback ? <Alert severity={feedback.severity}>{feedback.text}</Alert> : undefined}
+      </Snackbar>
     </Container>
   );
 };
 
-export default ActivePickListScreen
+export default ActivePickListScreen;

@@ -1,3 +1,10 @@
+// src/testUtils/mockDb.ts
+import type { Product } from '../models/Product';
+import type { Category } from '../models/Category';
+import type { Area } from '../models/Area';
+import type { PickList } from '../models/PickList';
+import type { PickItem } from '../models/PickItem';
+
 export class MockTable<T extends { id: string }> {
   items: T[];
 
@@ -55,14 +62,21 @@ export class MockTable<T extends { id: string }> {
   }
 }
 
-export const createMockDb = (data?: any) => {
+export const createMockDb = (data?: {
+  products?: Product[];
+  categories?: Category[];
+  areas?: Area[];
+  pickLists?: PickList[];
+  pickItems?: PickItem[];
+  importExportLogs?: any[];
+}) => {
   return {
-    products: new MockTable(data?.products ?? []),
-    categories: new MockTable(data?.categories ?? []),
-    areas: new MockTable(data?.areas ?? []),
-    pickLists: new MockTable(data?.pickLists ?? []),
-    pickItems: new MockTable(data?.pickItems ?? []),
-    importExportLogs: new MockTable<any>([]),
+    products: new MockTable<Product>(data?.products ?? []),
+    categories: new MockTable<Category>(data?.categories ?? []),
+    areas: new MockTable<Area>(data?.areas ?? []),
+    pickLists: new MockTable<PickList>(data?.pickLists ?? []),
+    pickItems: new MockTable<PickItem>(data?.pickItems ?? []),
+    importExportLogs: new MockTable<any>(data?.importExportLogs ?? []),
     transaction: async (_mode: string, ...args: any[]) => {
       const cb = args[args.length - 1];
       if (typeof cb === 'function') return cb();

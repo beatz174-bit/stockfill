@@ -19,6 +19,10 @@ import { useProducts } from '../hooks/dataHooks';
 import { BarcodeScannerView } from './BarcodeScannerView';
 import { ExternalProductInfo, fetchProductFromOFF } from '../modules/openFoodFacts';
 import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE, Product } from '../models/Product';
+import type { BackdropProps } from '@mui/material/Backdrop';
+import type { FormHelperTextProps } from '@mui/material/FormHelperText';
+
+type WithTestId<T> = Partial<T> & { 'data-testid'?: string };
 
 export type AddProductDialogProps = {
   open: boolean;
@@ -271,7 +275,7 @@ export const AddProductDialog = ({
       fullWidth
       maxWidth="sm"
       PaperProps={{ role: 'form' }}
-      BackdropProps={{ 'data-testid': 'add-product-backdrop' }}
+      BackdropProps={{ 'data-testid': 'add-product-backdrop' } as WithTestId<BackdropProps>}
     >
       <DialogTitle id="add-product-dialog-title" sx={{ pr: 6 }}>
         Add product
@@ -312,7 +316,7 @@ export const AddProductDialog = ({
               inputProps={{ 'data-testid': 'product-barcode-input' }}
               error={!!barcodeError}
               helperText={barcodeError || ' '}
-              FormHelperTextProps={{ 'data-testid': 'barcode-error' }}
+              FormHelperTextProps={{ 'data-testid': 'barcode-error' } as WithTestId<FormHelperTextProps>}
               fullWidth
             />
             <Button onClick={() => setScannerOpen(true)}>Scan barcode</Button>
@@ -340,7 +344,7 @@ export const AddProductDialog = ({
         onClose={() => setScannerOpen(false)}
         aria-label="Scan barcode"
         data-testid="scan-barcode-dialog"
-        BackdropProps={{ 'data-testid': 'scan-barcode-backdrop' }}
+        BackdropProps={{ 'data-testid': 'scan-barcode-backdrop' } as WithTestId<BackdropProps>}
       >
         <DialogTitle>Scan barcode</DialogTitle>
         <DialogContent>

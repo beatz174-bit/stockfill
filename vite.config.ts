@@ -73,6 +73,14 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
-    exclude: ['e2e/**/*']
+    exclude: ['e2e/**/*'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      statements: 80,
+      branches: 80,
+      functions: 80,
+      lines: 80,
+    }
   }
 });

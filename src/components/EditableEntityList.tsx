@@ -14,17 +14,13 @@ import {
   TextField,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
+import { ActionOutcome, applyOutcome, FeedbackState } from '../utils/editableEntityUtils';
+export type { ActionOutcome, FeedbackState } from '../utils/editableEntityUtils';
 
 export interface EditableEntity {
   id: string;
   name: string;
   secondaryText?: string;
-}
-
-export interface ActionOutcome {
-  text?: string;
-  severity?: AlertColor;
-  success?: boolean;
 }
 
 interface EditableEntityListProps {
@@ -37,11 +33,6 @@ interface EditableEntityListProps {
   onAdd: (name: string) => Promise<ActionOutcome | void>;
   onUpdate: (id: string, name: string) => Promise<ActionOutcome | void>;
   onDelete: (id: string, name: string) => Promise<ActionOutcome | void>;
-}
-
-interface FeedbackState {
-  text: string;
-  severity: AlertColor;
 }
 
 export const EditableEntityList = ({
@@ -69,19 +60,11 @@ export const EditableEntityList = ({
     };
   }, [validateName]);
 
-  const applyOutcome = (outcome: ActionOutcome | void, defaultText: string, defaultSeverity: AlertColor = 'success') => {
-    const success = outcome?.success ?? outcome?.severity !== 'error';
-    const text = outcome?.text ?? defaultText;
-    const severity = outcome?.severity ?? defaultSeverity;
-    setFeedback({ text, severity });
-    return success;
-  };
-
   const handleAdd = async () => {
     const trimmed = newName.trim();
     if (!isNameValid(newName, null)) return;
     try {
-      const success = applyOutcome(await onAdd(trimmed), `${entityLabel} added.`);
+      const success = applyOutcome(setFeedback, await onAdd(trimmed), `${entityLabel} added.`);
       if (success) {
         setNewName('');
       }
@@ -107,7 +90,7 @@ export const EditableEntityList = ({
     if (!isNameValid(editName, editingId)) return;
 
     try {
-      const success = applyOutcome(await onUpdate(editingId, trimmed), `${entityLabel} updated.`);
+      const success = applyOutcome(setFeedback, await onUpdate(editingId, trimmed), `${entityLabel} updated.`);
       if (success) {
         cancelEditing();
       }
@@ -118,7 +101,7 @@ export const EditableEntityList = ({
 
   const handleDelete = async (id: string, name: string) => {
     try {
-      const success = applyOutcome(await onDelete(id, name), `${entityLabel} deleted.`);
+      const success = applyOutcome(setFeedback, await onDelete(id, name), `${entityLabel} deleted.`);
       if (success && editingId === id) {
         cancelEditing();
       }

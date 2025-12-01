@@ -33,8 +33,7 @@ import { PickItem } from '../models/PickItem';
 import { Product } from '../models/Product';
 import { ProductAutocomplete } from '../components/ProductAutocomplete';
 import { AddProductDialog } from '../components/AddProductDialog';
-
-const normalizeName = (name: string) => name.trim().toLowerCase();
+import { dedupeByIdThenNameAndSort, normalizeName } from '../utils/activePickListUtils';
 
 const ActivePickListScreen = () => {
   const { id } = useParams();
@@ -117,42 +116,7 @@ const ActivePickListScreen = () => {
     [areas, pickList?.area_id],
   );
 
-  const sortedProducts = useMemo(() => {
-    const dedupedById = new Map<string, Product>();
-
-    products.forEach((product: Product) => {
-      const existing = dedupedById.get(product.id);
-      if (!existing || product.updated_at > existing.updated_at) {
-        dedupedById.set(product.id, product);
-      }
-    });
-
-    const dedupedByName = new Map<string, Product>();
-
-    dedupedById.forEach((product: Product) => {
-      const normalizedName = product.name.trim().toLowerCase();
-      const existing = dedupedByName.get(normalizedName);
-
-      if (!existing || product.updated_at > existing.updated_at) {
-        dedupedByName.set(normalizedName, product);
-      }
-    });
-
-    return Array.from(dedupedByName.values()).sort((a, b) => {
-      const normalizedNameA = normalizeName(a.name);
-      const normalizedNameB = normalizeName(b.name);
-
-      const nameComparison = normalizedNameA.localeCompare(normalizedNameB, undefined, {
-        sensitivity: 'base',
-      });
-
-      if (nameComparison !== 0) {
-        return nameComparison;
-      }
-
-      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
-    });
-  }, [products]);
+  const sortedProducts = useMemo(() => dedupeByIdThenNameAndSort(products), [products]);
 
   // Build a category id -> name map for display and name -> id map for resolution
   const categoriesById = useMemo(() => new Map(categoriesList.map((c) => [c.id, c.name])), [categoriesList]);

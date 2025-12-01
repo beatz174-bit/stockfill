@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { useState } from 'react';
 import { NumericStepper } from '../NumericStepper';
 
@@ -53,5 +53,52 @@ describe('NumericStepper', () => {
 
     expect(screen.getByRole('button', { name: 'decrease Items' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'increase Items' })).toBeInTheDocument();
+  });
+
+  it('calls onChange with the minimum when decrease clicked at lower bound', async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn();
+    render(<NumericStepper label="Qty" value={1} min={1} onChange={handleChange} />);
+
+    await user.click(screen.getByRole('button', { name: /decrease qty/i }));
+
+    expect(handleChange).toHaveBeenCalledWith(1);
+  });
+
+  it('calls onChange with incremented value when increase clicked', async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn();
+    render(<NumericStepper label="Qty" value={2} min={1} onChange={handleChange} />);
+
+    await user.click(screen.getByRole('button', { name: /increase qty/i }));
+
+    expect(handleChange).toHaveBeenCalledWith(3);
+  });
+
+  it('parses typed value and calls onChange with numeric value', async () => {
+    const user = userEvent.setup();
+    const handleChange = vi.fn();
+    const Wrapper = () => {
+      const [value, setValue] = useState(2);
+      return (
+        <NumericStepper
+          label="Qty"
+          value={value}
+          min={1}
+          onChange={(val) => {
+            handleChange(val);
+            setValue(val);
+          }}
+        />
+      );
+    };
+
+    render(<Wrapper />);
+
+    const input = screen.getByRole('spinbutton', { name: /qty/i });
+    await user.clear(input);
+    await user.type(input, '7');
+
+    expect(handleChange).toHaveBeenLastCalledWith(7);
   });
 });

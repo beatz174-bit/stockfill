@@ -18,6 +18,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { Product } from '../models/Product';
 import { BarcodeScannerView } from './BarcodeScannerView';
+import { getInitialFormState, ProductFormState } from '../utils/productRowUtils';
 
 interface ProductRowProps {
   product: Product;
@@ -35,19 +36,6 @@ interface ProductRowProps {
   ) => Promise<void> | void;
   onDelete: (productId: string) => Promise<void> | void;
 }
-
-interface ProductFormState {
-  name: string;
-  category: string;
-  barcode: string;
-}
-
-const getInitialFormState = (product: Product, categoriesById: Map<string, string>): ProductFormState => ({
-  name: product.name,
-  // If product.category is an id, resolve to name; otherwise assume it is already a name
-  category: categoriesById.get(product.category) ?? product.category ?? '',
-  barcode: product.barcode ?? '',
-});
 
 export const ProductRow = ({ product, categories, categoriesById, onSave, onDelete }: ProductRowProps) => {
   const [isEditing, setIsEditing] = useState(false);

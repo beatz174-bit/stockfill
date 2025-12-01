@@ -266,11 +266,14 @@ export const AddProductDialog = ({
       open={open}
       onClose={handleDialogClose}
       aria-label="Add product dialog"
+      aria-labelledby="add-product-dialog-title"
+      data-testid="add-product-dialog"      
       fullWidth
       maxWidth="sm"
       PaperProps={{ role: 'form' }}
+      BackdropProps={{ 'data-testid': 'add-product-backdrop' }}
     >
-      <DialogTitle sx={{ pr: 6 }}>
+      <DialogTitle id="add-product-dialog-title" sx={{ pr: 6 }}>
         Add product
         <IconButton
           aria-label="Close add product"
@@ -332,7 +335,13 @@ export const AddProductDialog = ({
         </Stack>
       </DialogContent>
 
-      <Dialog open={scannerOpen} onClose={() => setScannerOpen(false)} aria-label="Scan barcode">
+      <Dialog
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        aria-label="Scan barcode"
+        data-testid="scan-barcode-dialog"
+        BackdropProps={{ 'data-testid': 'scan-barcode-backdrop' }}
+      >
         <DialogTitle>Scan barcode</DialogTitle>
         <DialogContent>
           <BarcodeScannerView

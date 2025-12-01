@@ -31,6 +31,13 @@
       "request": "launch",
       "command": "npm run test:coverage",
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Lint and Build",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npx tsc -noEmit && npm run build",
+      "cwd": "${workspaceFolder}"
     }
   ]
 }

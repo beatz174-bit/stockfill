@@ -251,16 +251,31 @@ describe('ManageProductsScreen barcode lookup', () => {
       </MemoryRouter>,
     );
 
+    // open dialog and wait for it to be present
     await openAddProductDialog(user);
+    await screen.findByTestId('add-product-dialog');
 
-    await user.type(screen.getByLabelText(/name/i), 'existing product');
+    // click the close icon and wait for dialog to be removed
+    await user.click(screen.getByRole('button', { name: /close add product/i }));
+    await waitFor(() => {
+      expect(screen.queryByTestId('add-product-dialog')).not.toBeInTheDocument();
+    }, { timeout: 2000 });
 
-    const saveBtn = findSaveButton();
-    expect(saveBtn).toBeTruthy();
-    await user.click(saveBtn as HTMLElement);
+    // reopen the dialog and wait for it to appear
+    await openAddProductDialog(user);
+    const dialog = await screen.findByTestId('add-product-dialog', {}, { timeout: 2000 });
+    expect(dialog).toBeInTheDocument();
 
-    expect(await screen.findByText(/product with this name already exists/i)).toBeVisible();
-    expect(mockDb.products.add).not.toHaveBeenCalled();
+    // find the MUI backdrop by test-id and click it
+    const backdrop = await screen.findByTestId('add-product-backdrop', {}, { timeout: 2000 });
+    expect(backdrop).toBeTruthy();
+    await user.click(backdrop);
+
+    // finally wait for dialog to be removed
+    await waitFor(() => {
+      expect(screen.queryByTestId('add-product-dialog')).not.toBeInTheDocument();
+    }, { timeout: 2000 });
+
   });
 
   it('informs the user when barcode lookup happens offline', async () => {

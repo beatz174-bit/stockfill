@@ -8,13 +8,11 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  InputAdornment,
   MenuItem,
   Stack,
   TextField,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import SearchIcon from '@mui/icons-material/Search';
 import { v4 as uuidv4 } from 'uuid';
 import { useDatabase } from '../context/DBProvider';
 import { BarcodeScannerView } from './BarcodeScannerView';
@@ -277,13 +275,6 @@ export const AddProductDialog = ({
             error={!!nameError}
             helperText={nameError || ' '}
             fullWidth
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
             data-testid="select-add-product-category"
           />
 

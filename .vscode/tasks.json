@@ -49,58 +49,27 @@
           "endsPattern": "Local:\\s+http://localhost:5173/"
         }
       },
-      {
-        "version": "2.0.0",
-        "tasks": [
-          {
-            "label": "npm: dev server",
-            "type": "npm",
-            "script": "dev",
-            "options": {
-              "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": {
-              "owner": "vite-dev",
-              "pattern": [
-                {
-                  "regexp": "^.*$",
-                  "file": 0,
-                  "location": 0,
-                  "message": 0
-                }
-              ],
-              "background": {
-                "activeOnStart": true,
-                "beginsPattern": ">.* dev",
-                "endsPattern": "Local:\\s+http://localhost:5173/"
-              }
-            },
-            "isBackground": true
-          },
-          {
-            "label": "npm: preview server",
-            "type": "npm",
-            "script": "preview",
-            "options": {
-              "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": {
-              "owner": "vite-preview",
-              "pattern": [
-                {
-                  "regexp": "^.*$",
-                  "file": 0,
-                  "location": 0,
-                  "message": 0
-                }
-              ],
-              "background": {
-                "activeOnStart": true,
-                "beginsPattern": ">.* preview",
-                "endsPattern": "Local:\\s+http://localhost:5173/"
-              }
-            },
-            "isBackground": true
-          }
-        ]
+      "isBackground": true
+    },
+    {
+      "label": "Run maintenance.sh on folder open",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "${workspaceFolder}/maintenance.sh"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "dedicated"
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
       }
+    }
+  ]
+}

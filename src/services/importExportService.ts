@@ -8,6 +8,11 @@ import { Category } from '../models/Category';
 import { PickItem, PickItemStatus } from '../models/PickItem';
 import { PickList } from '../models/PickList';
 import { Product, DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE } from '../models/Product';
+import { normalizeName, inferTypeFromName } from '../utils/stringUtils';
+import { coerceBoolean, coerceNumber } from '../utils/convUtils';
+import { triggerDownload } from '../platform/web';
+export { normalizeName, inferTypeFromName } from '../utils/stringUtils';
+export { coerceBoolean, coerceNumber } from '../utils/convUtils';
 
 export type DataType = 'areas' | 'categories' | 'products' | 'pick-lists' | 'pick-items';
 
@@ -30,30 +35,12 @@ interface ParsedFile {
   content: string;
 }
 
-const typeHints: Record<DataType, string[]> = {
-  areas: ['area'],
-  categories: ['category'],
-  products: ['product'],
-  'pick-lists': ['picklist', 'pick-list'],
-  'pick-items': ['pickitem', 'pick-item'],
-};
-
-export const normalizeName = (value?: string) =>
-  (value ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
-
-const inferTypeFromName = (name: string): DataType | undefined => {
-  const lowercase = name.toLowerCase();
-  return (Object.keys(typeHints) as DataType[]).find((key) =>
-    typeHints[key].some((hint) => lowercase.includes(hint)),
-  );
-};
-
 const parseCsv = async (content: string) => {
   const result = Papa.parse<Record<string, string>>(content, {
-  header: true,
-  skipEmptyLines: true,
-  transformHeader: (header: string) => header.trim().toLowerCase(),
-});
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: (header: string) => header.trim().toLowerCase(),
+  });
 
 
   if (result.errors.length > 0) {
@@ -100,15 +87,6 @@ const createLog = (
 });
 
 const serializeCsv = (rows: object[]) => Papa.unparse(rows, { quotes: true });
-
-const triggerDownload = (blob: Blob, filename: string) => {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-};
 
 export const exportData = async (
   db: StockFillDB,
@@ -250,18 +228,6 @@ const addOrUpdateMap = (map: Map<string, string>, key: string, value: string) =>
   }
 };
 
-const coerceBoolean = (value: string | boolean | undefined) => {
-  if (typeof value === 'boolean') return value;
-  if (!value) return false;
-  return value.toString().toLowerCase() === 'true';
-};
-
-const coerceNumber = (value: string | number | undefined) => {
-  if (typeof value === 'number') return value;
-  const parsed = Number(value ?? '');
-  return Number.isNaN(parsed) ? 0 : parsed;
-};
-
 export const importFiles = async (
   db: StockFillDB,
   files: File[],
@@ -297,7 +263,7 @@ for (const file of parsedFiles) {
     if (!selectedTypes.includes('products')) selectedTypes.push('products');
   } else {
     // Fallback to filename-based inference for older templates
-    const type = inferTypeFromName(file.name);
+    const type = inferTypeFromName(file.name) as DataType | undefined;
     if (!type) {
       addDetail(`Skipped ${file.name}: not product-centric and could not infer data type`);
       continue;

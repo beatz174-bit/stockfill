@@ -31,8 +31,7 @@ import { PickItemRow } from '../components/PickItemRow';
 import { PickItem } from '../models/PickItem';
 import { Product } from '../models/Product';
 import { ProductAutocomplete } from '../components/ProductAutocomplete';
-
-const normalizeName = (name: string) => name.trim().toLowerCase();
+import { normalizeName } from '../utils/stringUtils';
 
 const ActivePickListScreen = () => {
   const { id } = useParams();

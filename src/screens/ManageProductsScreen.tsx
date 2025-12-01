@@ -24,6 +24,7 @@ import { useDatabase } from '../context/DBProvider';
 import { BarcodeScannerView } from '../components/BarcodeScannerView';
 import { ExternalProductInfo, fetchProductFromOFF } from '../modules/openFoodFacts';
 import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE, Product } from '../models/Product';
+import { isOnline } from '../platform/web';
 
 const ManageProductsScreen = () => {
   const db = useDatabase();
@@ -184,7 +185,7 @@ const ManageProductsScreen = () => {
 
   async function lookupBarcode(code: string) {
     if (!code) return;
-    if (typeof navigator !== 'undefined' && 'onLine' in navigator && !navigator.onLine) {
+    if (!isOnline()) {
       setLookupStatus('offline');
       setExternalProduct(null);
       return;

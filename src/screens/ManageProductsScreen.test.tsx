@@ -131,6 +131,14 @@ beforeEach(() => {
 
   mockDb.categories.toArray.mockResolvedValue([]);
   mockDb.categories.where.mockImplementation(() => ({ equals: () => ({ first: async () => undefined }) }));
+
+  mockDb.products.filter.mockImplementation((predicate?: (product: any) => boolean) => ({
+    first: async () => {
+      const items = mockUseProducts();
+      return predicate ? items.find((item: any) => predicate(item)) : undefined;
+    },
+    delete: vi.fn(),
+  }));
 });
 
 function findSaveButton() {
@@ -143,6 +151,10 @@ function findSaveButton() {
     if (/save/i.test(text) || /add/i.test(text) || /save/i.test(aria) || /add/i.test(aria)) return b;
   }
   return allButtons.length ? allButtons[0] : null;
+}
+
+async function openAddProductDialog(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: /add product/i }));
 }
 
 describe('ManageProductsScreen barcode lookup', () => {
@@ -169,6 +181,8 @@ describe('ManageProductsScreen barcode lookup', () => {
         <ManageProductsScreen />
       </MemoryRouter>,
     );
+
+    await openAddProductDialog(user);
 
     await user.click(screen.getByRole('button', { name: /scan barcode/i }));
     await user.click(screen.getByRole('button', { name: /mock scan/i }));
@@ -199,6 +213,8 @@ describe('ManageProductsScreen barcode lookup', () => {
         <ManageProductsScreen />
       </MemoryRouter>,
     );
+
+    await openAddProductDialog(user);
 
     await user.type(screen.getByLabelText(/name/i), 'New Product');
     await user.click(screen.getByRole('button', { name: /scan barcode/i }));
@@ -235,6 +251,8 @@ describe('ManageProductsScreen barcode lookup', () => {
       </MemoryRouter>,
     );
 
+    await openAddProductDialog(user);
+
     await user.type(screen.getByLabelText(/name/i), 'existing product');
 
     const saveBtn = findSaveButton();
@@ -260,6 +278,8 @@ describe('ManageProductsScreen barcode lookup', () => {
         </MemoryRouter>,
       );
 
+      await openAddProductDialog(user);
+
       await user.click(screen.getByRole('button', { name: /scan barcode/i }));
       await user.click(screen.getByRole('button', { name: /mock scan/i }));
 
@@ -270,6 +290,34 @@ describe('ManageProductsScreen barcode lookup', () => {
         configurable: true,
       } as any);
     }
+  });
+
+  it('closes the add product dialog with the close icon and backdrop', async () => {
+    mockUseProducts.mockReturnValue([]);
+    mockUseCategories.mockReturnValue([{ id: 'cat-1', name: 'Snacks', created_at: 0, updated_at: 0 }]);
+
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <ManageProductsScreen />
+      </MemoryRouter>,
+    );
+
+    await openAddProductDialog(user);
+    await user.click(screen.getByRole('button', { name: /close add product/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: /add product dialog/i })).not.toBeInTheDocument();
+    });
+
+    await openAddProductDialog(user);
+    const backdrop = document.querySelector('[role="presentation"]');
+    expect(backdrop).toBeTruthy();
+    await user.click(backdrop as HTMLElement);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: /add product dialog/i })).not.toBeInTheDocument();
+    });
   });
 
   it('prevents updating a product to use an existing barcode', async () => {
@@ -437,6 +485,8 @@ describe('ManageProductsScreen auto-adding products to pick lists', () => {
         <ManageProductsScreen />
       </MemoryRouter>,
     );
+
+    await openAddProductDialog(user);
 
     await user.type(screen.getByLabelText(/name/i), 'Granola Bar');
     const saveBtn = findSaveButton();

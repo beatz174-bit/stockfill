@@ -20,12 +20,8 @@ const ManageCategoriesScreen = () => {
     }, {});
   }, [categories, products]);
 
-  const validateCategoryName = (value: string, editingId?: string | null) => {
-    const trimmed = value.trim();
-    if (!trimmed) return false;
-    return !categories.some(
-      (category) => category.id !== editingId && category.name.toLowerCase() === trimmed.toLowerCase(),
-    );
+  const validateCategoryName = (value: string) => {
+    return Boolean(value.trim());
   };
 
   const addCategory = async (name: string): Promise<ActionOutcome> => {

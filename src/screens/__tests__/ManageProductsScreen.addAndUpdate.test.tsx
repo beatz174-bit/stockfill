@@ -58,6 +58,7 @@ describe('ManageProductsScreen add and update flows', () => {
       </MemoryRouter>,
     );
 
+    await user.click(screen.getByRole('button', { name: /add product/i }));
     await user.type(screen.getByLabelText(/name/i), 'New Product');
     await selectCategory(user, 'Snacks');
     await user.type(screen.getByLabelText(/barcode/i), '111');
@@ -91,6 +92,7 @@ describe('ManageProductsScreen add and update flows', () => {
       </MemoryRouter>,
     );
 
+    await user.click(screen.getByRole('button', { name: /add product/i }));
     await user.type(screen.getByLabelText(/name/i), 'Another');
     await selectCategory(user, 'Snacks');
     await user.click(screen.getByText(/scan barcode/i));
@@ -139,6 +141,7 @@ describe('ManageProductsScreen add and update flows', () => {
       </MemoryRouter>,
     );
 
+    await user.click(screen.getByRole('button', { name: /add product/i }));
     await user.type(screen.getByLabelText(/name/i), 'Lettuce');
     await selectCategory(user, 'Fresh');
     await clickSaveButton(user);

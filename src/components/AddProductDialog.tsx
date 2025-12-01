@@ -15,6 +15,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import { v4 as uuidv4 } from 'uuid';
 import { useDatabase } from '../context/DBProvider';
+import { useProducts } from '../hooks/dataHooks';
 import { BarcodeScannerView } from './BarcodeScannerView';
 import { ExternalProductInfo, fetchProductFromOFF } from '../modules/openFoodFacts';
 import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE, Product } from '../models/Product';
@@ -35,6 +36,7 @@ export const AddProductDialog = ({
   initialBarcode,
 }: AddProductDialogProps) => {
   const db = useDatabase();
+  const products = useProducts();
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [barcode, setBarcode] = useState('');
@@ -83,20 +85,26 @@ export const AddProductDialog = ({
   const findBarcodeConflict = useCallback(
     async (value?: string) => {
       if (!value) return undefined;
-      const conflict = await db.products.where('barcode').equals(value).first();
-      return conflict ?? undefined;
+      const conflict = products.find((product) => product.barcode === value);
+      if (conflict) return conflict;
+      const dbConflict = await db.products.where('barcode').equals(value).first();
+      return dbConflict ?? undefined;
     },
-    [db.products],
+    [db.products, products],
   );
 
   const findNameConflict = useCallback(
     async (value?: string) => {
       if (!value) return undefined;
       const normalizedValue = value.trim().toLowerCase();
-      const conflict = await db.products.filter((product) => product.name.trim().toLowerCase() === normalizedValue).first();
-      return conflict ?? undefined;
+      const conflict = products.find((product) => product.name.trim().toLowerCase() === normalizedValue);
+      if (conflict) return conflict;
+      const dbConflict = await db.products
+        .filter((product) => product.name.trim().toLowerCase() === normalizedValue)
+        .first();
+      return dbConflict ?? undefined;
     },
-    [db.products],
+    [db.products, products],
   );
 
   const assertUniqueBarcode = useCallback(
@@ -254,7 +262,14 @@ export const AddProductDialog = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleDialogClose} aria-label="Add product dialog" fullWidth maxWidth="sm">
+    <Dialog
+      open={open}
+      onClose={handleDialogClose}
+      aria-label="Add product dialog"
+      fullWidth
+      maxWidth="sm"
+      PaperProps={{ role: 'form' }}
+    >
       <DialogTitle sx={{ pr: 6 }}>
         Add product
         <IconButton
@@ -294,6 +309,7 @@ export const AddProductDialog = ({
               inputProps={{ 'data-testid': 'product-barcode-input' }}
               error={!!barcodeError}
               helperText={barcodeError || ' '}
+              FormHelperTextProps={{ 'data-testid': 'barcode-error' }}
               fullWidth
             />
             <Button onClick={() => setScannerOpen(true)}>Scan barcode</Button>

@@ -1,5 +1,4 @@
-import { expect, test } from '@bgotink/playwright-coverage';
-import type { Page } from '@playwright/test';
+import { expect, test, Page } from './fixtures';
 
 import {
   areaName,

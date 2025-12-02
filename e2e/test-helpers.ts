@@ -1,5 +1,6 @@
 // e2e/test-helpers.ts
-import { expect, Page } from '@playwright/test';
+import { expect } from './fixtures';
+import type { Page } from '@playwright/test';
 
 /* -----------------------
    Shared constants

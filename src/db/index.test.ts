@@ -49,7 +49,7 @@ vi.mock('dexie', () => {
     }
   }
 
-  class TableMock<T> {}
+  class TableMock {}
 
   return { default: DexieMock, Table: TableMock };
 });

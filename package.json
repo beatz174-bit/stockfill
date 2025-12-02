@@ -8,10 +8,9 @@
     "build": "tsc && cp src/pwa/manifest.json public/manifest.json && cp src/pwa/service-worker.js public/service-worker.js && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
-    "test": "vitest",
-    "test:coverage": "vitest run --coverage",
+    "test:unit": "vitest",
     "test:e2e": "playwright test",
-    "coverage:unit": "npm run test:coverage",
+    "coverage:unit": "vitest run --coverage",
     "coverage:e2e": "node -e \"const fs=require('fs'); const path=require('path'); const target=path.join('coverage-reports','e2e'); fs.rmSync(target,{recursive:true,force:true});\" && npm run test:e2e && node scripts/remap-and-report.cjs",
     "coverage:merge": "node -e \"const fs=require('fs'); fs.mkdirSync('coverage-reports/merged',{recursive:true});\" && node scripts/merge-lcov.cjs 'coverage-reports/unit/lcov.info' 'coverage-reports/e2e/lcov.info' > coverage-reports/merged/merged.lcov && node scripts/normalize-lcov.cjs coverage-reports/merged/merged.lcov && (command -v genhtml >/dev/null 2>&1 && genhtml coverage-reports/merged/merged.normalized.lcov -o coverage-reports/merged || echo 'genhtml not found, skipping HTML merge output')",
     "coverage:ci": "npm run coverage:unit && npm run coverage:e2e && npm run coverage:merge"

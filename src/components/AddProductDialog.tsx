@@ -59,32 +59,6 @@ export const AddProductDialog = ({
     setScannerOpen(false);
   }, []);
 
-  useEffect(() => {
-    if (open) {
-      if (categoryOptions.length > 0 && !categoryOptions.includes(category)) {
-        setCategory(categoryOptions[0]);
-      }
-      if (initialBarcode) {
-        setBarcode(initialBarcode);
-        void lookupBarcode(initialBarcode);
-      }
-    } else {
-      resetForm();
-    }
-  }, [category, categoryOptions, initialBarcode, lookupBarcode, open, resetForm]);
-
-  useEffect(() => {
-    if (!open || !barcode) return;
-    void lookupBarcode(barcode);
-  }, [barcode, lookupBarcode, open]);
-
-  useEffect(() => {
-    if (!barcode) {
-      setLookupStatus('idle');
-    }
-    setBarcodeError('');
-  }, [barcode]);
-
   const categoryMap = useMemo(() => new Map(categoryOptions.map((c) => [c, c])), [categoryOptions]);
 
   const findBarcodeConflict = useCallback(
@@ -197,6 +171,32 @@ export const AddProductDialog = ({
       setLookupStatus('notfound');
     }
   }, []);
+
+  useEffect(() => {
+    if (open) {
+      if (categoryOptions.length > 0 && !categoryOptions.includes(category)) {
+        setCategory(categoryOptions[0]);
+      }
+      if (initialBarcode) {
+        setBarcode(initialBarcode);
+        void lookupBarcode(initialBarcode);
+      }
+    } else {
+      resetForm();
+    }
+  }, [category, categoryOptions, initialBarcode, lookupBarcode, open, resetForm]);
+
+  useEffect(() => {
+    if (!open || !barcode) return;
+    void lookupBarcode(barcode);
+  }, [barcode, lookupBarcode, open]);
+
+  useEffect(() => {
+    if (!barcode) {
+      setLookupStatus('idle');
+    }
+    setBarcodeError('');
+  }, [barcode]);
 
   const handleSubmit = async () => {
     setNameError('');

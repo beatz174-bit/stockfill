@@ -9,4 +9,4 @@ playwright-report/
 coverage/
 build/
 testrun.log
-e2e-coverage-report/
+coverage-reports/

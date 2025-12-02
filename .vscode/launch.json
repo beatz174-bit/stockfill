@@ -21,9 +21,9 @@
       "request": "launch",
       "command": "npm run test:e2e",
       "cwd": "${workspaceFolder}",
-      "env": {
-        "CHROME_PATH": "<path to flatpak chrome wrapper>"
-      }
+      // "env": {
+      //   "CHROME_PATH": "<path to flatpak chrome wrapper>"
+      // }
     },
     {
       "name": "Unit Test Coverage",
@@ -37,6 +37,13 @@
       "type": "node-terminal",
       "request": "launch",
       "command": "npx tsc -noEmit && npm run build",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Full CI Coverage test",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run coverage:ci",
       "cwd": "${workspaceFolder}"
     }
   ]

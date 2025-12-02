@@ -3,12 +3,22 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
+import istanbul from 'vite-plugin-istanbul';
+
+const isE2E = Boolean(process.env.E2E_COVERAGE)
 
 export default defineConfig({
   plugins: [
     react(),
-    visualizer({ filename: 'dist/stats.html', open: false })
-  ],
+    visualizer({ filename: 'dist/stats.html', open: false }),
+    isE2E &&
+      istanbul({
+        include: 'src/**/*',
+        extension: ['.js', '.ts', '.jsx', '.tsx'],
+        requireEnv: false,     // allow instrumenting unconditionally for CI e2e builds
+        cypress: true,         // enables window.__coverage__ instrumentation style
+      }),
+  ].filter(Boolean),
   resolve: {
     alias: {
       // force single copies of react/react-dom
@@ -35,7 +45,7 @@ export default defineConfig({
     port: 5173
   },
   build: {
-    sourcemap: false,
+    sourcemap: true,
     outDir: 'dist',
     // esbuild is lighter. If you want terser for final prod, run it on a beefy CI runner.
     minify: 'esbuild',

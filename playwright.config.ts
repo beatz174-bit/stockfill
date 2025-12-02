@@ -22,6 +22,7 @@ export default defineConfig({
     ],
   ],
   testDir: './e2e',
+  testIgnore: ['**/unit/**'],
   fullyParallel: false,
   workers: 4,
   retries: process.env.CI ? 2 : 0,

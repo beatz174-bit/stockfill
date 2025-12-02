@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ActionOutcome, EditableEntityList } from '../components/EditableEntityList';
 import { useDatabase } from '../context/DBProvider';
 import { useCategories, useProducts } from '../hooks/dataHooks';
+import type { PickList } from '../models/PickList';
 
 const ManageCategoriesScreen = () => {
   const db = useDatabase();
@@ -55,10 +56,11 @@ const ManageCategoriesScreen = () => {
       const pickLists = await db.pickLists.toArray();
       await Promise.all(
         pickLists.map(async (pickList) => {
-          if (!Array.isArray((pickList as any).categories)) return;
-          const needsUpdate = (pickList as any).categories.includes(category.name);
+          const pickListCategories = (pickList as PickList).categories;
+          if (!Array.isArray(pickListCategories)) return;
+          const needsUpdate = pickListCategories.includes(category.name);
           if (!needsUpdate) return;
-          const updatedCategories = (pickList as any).categories.map((existing: string) =>
+          const updatedCategories = pickListCategories.map((existing: string) =>
             existing === category.name ? trimmed : existing,
           );
           await db.pickLists.update(pickList.id, { categories: updatedCategories });

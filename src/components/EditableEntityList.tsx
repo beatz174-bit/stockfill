@@ -4,7 +4,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import {
   Alert,
-  AlertColor,
   Button,
   IconButton,
   List,
@@ -70,7 +69,8 @@ export const EditableEntityList = ({
         setNewName('');
       }
     } catch (error) {
-      setFeedback({ text: `Unable to add ${entityLabel.toLowerCase()}.`, severity: 'error' });
+      const message = error instanceof Error ? error.message : String(error);
+      setFeedback({ text: `Unable to add ${entityLabel.toLowerCase()}: ${message}`, severity: 'error' });
     }
   };
 
@@ -97,7 +97,8 @@ export const EditableEntityList = ({
         cancelEditing();
       }
     } catch (error) {
-      setFeedback({ text: `Unable to update ${entityLabel.toLowerCase()}.`, severity: 'error' });
+      const message = error instanceof Error ? error.message : String(error);
+      setFeedback({ text: `Unable to update ${entityLabel.toLowerCase()}: ${message}`, severity: 'error' });
     }
   };
 
@@ -115,7 +116,8 @@ export const EditableEntityList = ({
         });
       }
     } catch (error) {
-      setFeedback({ text: `Unable to delete ${entityLabel.toLowerCase()}.`, severity: 'error' });
+      const message = error instanceof Error ? error.message : String(error);
+      setFeedback({ text: `Unable to delete ${entityLabel.toLowerCase()}: ${message}`, severity: 'error' });
     }
   };
 

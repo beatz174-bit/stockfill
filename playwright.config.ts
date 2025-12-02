@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
 import { defineCoverageReporterConfig } from '@bgotink/playwright-coverage';
 import path from 'path';
 

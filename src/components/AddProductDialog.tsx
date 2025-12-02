@@ -17,7 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useDatabase } from '../context/DBProvider';
 import { useProducts } from '../hooks/dataHooks';
 import { BarcodeScannerView } from './BarcodeScannerView';
-import { ExternalProductInfo, fetchProductFromOFF } from '../modules/openFoodFacts';
+import { fetchProductFromOFF } from '../modules/openFoodFacts';
 import { DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE, Product } from '../models/Product';
 import type { BackdropProps } from '@mui/material/Backdrop';
 import type { FormHelperTextProps } from '@mui/material/FormHelperText';
@@ -48,7 +48,6 @@ export const AddProductDialog = ({
   const [nameError, setNameError] = useState('');
   const [scannerOpen, setScannerOpen] = useState(false);
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'loading' | 'found' | 'notfound' | 'offline'>('idle');
-  const [externalProduct, setExternalProduct] = useState<ExternalProductInfo | null>(null);
 
   const resetForm = useCallback(() => {
     setName('');
@@ -57,38 +56,8 @@ export const AddProductDialog = ({
     setBarcodeError('');
     setNameError('');
     setLookupStatus('idle');
-    setExternalProduct(null);
     setScannerOpen(false);
   }, []);
-
-  useEffect(() => {
-    if (open) {
-      if (categoryOptions.length > 0 && !categoryOptions.includes(category)) {
-        setCategory(categoryOptions[0]);
-      }
-      if (initialBarcode) {
-        setBarcode(initialBarcode);
-        void lookupBarcode(initialBarcode);
-      }
-    } else {
-      resetForm();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, categoryOptions, initialBarcode]);
-
-  useEffect(() => {
-    if (!open || !barcode) return;
-    void lookupBarcode(barcode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, barcode]);
-
-  useEffect(() => {
-    if (!barcode) {
-      setLookupStatus('idle');
-      setExternalProduct(null);
-    }
-    setBarcodeError('');
-  }, [barcode]);
 
   const categoryMap = useMemo(() => new Map(categoryOptions.map((c) => [c, c])), [categoryOptions]);
 
@@ -185,26 +154,49 @@ export const AddProductDialog = ({
     [db.pickItems, db.pickLists, db.categories],
   );
 
-  async function lookupBarcode(code: string) {
+  const lookupBarcode = useCallback(async (code: string) => {
     if (!code) return;
     if (typeof navigator !== 'undefined' && 'onLine' in navigator && navigator.onLine === false) {
       setLookupStatus('offline');
-      setExternalProduct(null);
       return;
     }
     setLookupStatus('loading');
     const result = await fetchProductFromOFF(code);
     if (result) {
-      setExternalProduct(result);
       setLookupStatus('found');
       if (result.name) {
         setName(result.name || '');
       }
     } else {
-      setExternalProduct(null);
       setLookupStatus('notfound');
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      if (categoryOptions.length > 0 && !categoryOptions.includes(category)) {
+        setCategory(categoryOptions[0]);
+      }
+      if (initialBarcode) {
+        setBarcode(initialBarcode);
+        void lookupBarcode(initialBarcode);
+      }
+    } else {
+      resetForm();
+    }
+  }, [category, categoryOptions, initialBarcode, lookupBarcode, open, resetForm]);
+
+  useEffect(() => {
+    if (!open || !barcode) return;
+    void lookupBarcode(barcode);
+  }, [barcode, lookupBarcode, open]);
+
+  useEffect(() => {
+    if (!barcode) {
+      setLookupStatus('idle');
+    }
+    setBarcodeError('');
+  }, [barcode]);
 
   const handleSubmit = async () => {
     setNameError('');
@@ -253,16 +245,17 @@ export const AddProductDialog = ({
       onFeedback?.({ text: 'Product added.', severity: 'success' });
       resetForm();
       onClose();
-    } catch (err: any) {
-      if (err?.name === 'DuplicateNameError') {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'DuplicateNameError') {
         setNameError(err.message || 'A product with this name already exists.');
         return;
       }
-      if (err?.name === 'DuplicateBarcodeError') {
+      if (err instanceof Error && err.name === 'DuplicateBarcodeError') {
         setBarcodeError(err.message || 'This barcode is already assigned to another product.');
         return;
       }
-      onFeedback?.({ text: `Failed to add product: ${err?.message ?? String(err)}`, severity: 'error' });
+      const fallbackMessage = err instanceof Error ? err.message : String(err);
+      onFeedback?.({ text: `Failed to add product: ${fallbackMessage}`, severity: 'error' });
     }
   };
 

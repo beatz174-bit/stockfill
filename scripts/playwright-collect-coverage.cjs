@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { test } = require('@playwright/test');
 
-test.afterEach(async ({ page }, testInfo) => {
+test.afterEach(async ({ page }) => {
   try {
     // evaluate coverage from the page
     const coverage = await page.evaluate(() => (globalThis.__coverage__ || {}));

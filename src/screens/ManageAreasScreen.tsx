@@ -44,7 +44,7 @@ const ManageAreasScreen = () => {
         entities={areas.map((area) => ({ id: area.id, name: area.name }))}
         onAdd={addArea}
         onUpdate={saveArea}
-        onDelete={(areaId, areaName) => deleteArea(areaId)}
+        onDelete={(areaId) => deleteArea(areaId)}
       />
     </Container>
   );

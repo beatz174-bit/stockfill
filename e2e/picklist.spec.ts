@@ -1,4 +1,4 @@
-import { expect, test, Page } from './fixtures';
+import { expect, test } from './fixtures';
 
 import {
   areaName,

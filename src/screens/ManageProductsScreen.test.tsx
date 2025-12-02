@@ -483,7 +483,7 @@ describe('ManageProductsScreen auto-adding products to pick lists', () => {
     // ensure the categories DB has a 'Snacks' row
     mockDb.categories.toArray.mockResolvedValue([{ id: 'cat-1', name: 'Snacks', created_at: 0, updated_at: 0 }]);
     mockDb.categories.where.mockImplementation(() => ({
-      equals: (value: string) => ({
+      equals: () => ({
         first: async () => ({ id: 'cat-1', name: 'Snacks', created_at: 0, updated_at: 0 }),
       }),
     }));

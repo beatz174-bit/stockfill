@@ -1,6 +1,7 @@
 // src/db/migrations.ts
-import { StockFillDB } from './index';
 import { v4 as uuidv4 } from 'uuid';
+import type { PickList } from '../models/PickList';
+import { StockFillDB } from './index';
 
 export const applyMigrations = async (db: StockFillDB) => {
   // Ensure DB is open and ready
@@ -58,9 +59,10 @@ export const applyMigrations = async (db: StockFillDB) => {
     const pickLists = await db.pickLists.toArray();
     await Promise.all(
       pickLists.map(async (pl) => {
-        if (!Array.isArray((pl as any).categories)) return;
+        const categories = (pl as PickList).categories;
+        if (!Array.isArray(categories)) return;
 
-        const newCats = (pl as any).categories.map((entry: string) => {
+        const newCats = categories.map((entry: string) => {
           // If the entry is already an id we know, keep it
           if (updatedById.has(entry)) return entry;
           // If entry is a name, return its id (if exists)
@@ -71,7 +73,7 @@ export const applyMigrations = async (db: StockFillDB) => {
         });
 
         // Update only if changed
-        if (JSON.stringify(newCats) !== JSON.stringify((pl as any).categories)) {
+        if (JSON.stringify(newCats) !== JSON.stringify(categories)) {
           await db.pickLists.update(pl.id, { categories: newCats });
         }
       }),

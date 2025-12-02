@@ -29,7 +29,7 @@ vi.mock('../context/DBProvider', () => ({
       update: updateMock,
       get: vi.fn(async (id: string) => (pickItemsMock() || []).find((it) => it.id === id)),
       delete: deleteMock,
-      where: (_f: string) => ({
+      where: () => ({
         equals: (val: any) => ({
           toArray: async () => (pickItemsMock() || []).filter((it) => it.pick_list_id === val),
           count: async () => (pickItemsMock() || []).filter((it) => it.pick_list_id === val).length,

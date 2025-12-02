@@ -7,17 +7,15 @@ const coverageDir = path.join(process.cwd(), 'coverage-reports', 'e2e', '.nyc_ou
 
 async function writeCoverageFile(page: Page, testInfo: TestInfo) {
   try {
-    const coverage = await page.evaluate(() => (globalThis as any).__coverage__ ?? null);
+    const coverage = await page.evaluate(
+      () => (globalThis as { __coverage__?: unknown }).__coverage__ ?? null,
+    );
     if (!coverage || Object.keys(coverage).length === 0) return;
 
     await fs.mkdir(coverageDir, { recursive: true });
 
     const titleParts =
-      typeof testInfo.titlePath === 'function'
-        ? testInfo.titlePath()
-        : Array.isArray((testInfo as any).titlePath)
-          ? (testInfo as any).titlePath
-          : [testInfo.title];
+      typeof testInfo.titlePath === 'function' ? testInfo.titlePath() : [testInfo.title];
     const safeTitle = titleParts
       .filter(Boolean)
       .map((part) => part.replace(/[^a-zA-Z0-9-_]+/g, '_'))
@@ -35,8 +33,8 @@ async function writeCoverageFile(page: Page, testInfo: TestInfo) {
 }
 
 export const test = base.extend({
-  page: async ({ page }, use, testInfo) => {
-    await use(page);
+  page: async ({ page }, applyPageFixture, testInfo) => {
+    await applyPageFixture(page);
     await writeCoverageFile(page, testInfo);
   },
 });

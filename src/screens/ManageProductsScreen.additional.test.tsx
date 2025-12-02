@@ -83,8 +83,8 @@ describe('ManageProductsScreen update product category creation branch', () => {
     productsDb.get.mockResolvedValue(existingProduct);
 
     // products.where('barcode').equals(value).first() must exist for uniqueness check
-    productsDb.where.mockImplementation((field?: string) => ({
-      equals: (value?: string) => ({
+    productsDb.where.mockImplementation(() => ({
+      equals: () => ({
         first: async () => undefined,
       }),
     }));

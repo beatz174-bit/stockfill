@@ -4,6 +4,7 @@ import type { Category } from '../models/Category';
 import type { Area } from '../models/Area';
 import type { PickList } from '../models/PickList';
 import type { PickItem } from '../models/PickItem';
+import type { ImportExportLog } from '../models/ImportExportLog';
 
 export class MockTable<T extends { id: string }> {
   items: T[];
@@ -39,19 +40,19 @@ export class MockTable<T extends { id: string }> {
     this.items = this.items.filter((i) => i.id !== id);
   }
 
-  where(field: string) {
+  where<K extends keyof T>(field: K) {
     return {
-      equals: (val: any) => ({
-        first: async () => this.items.find((it: any) => it[field] === val),
-        count: async () => this.items.filter((it: any) => it[field] === val).length,
-        filter: (pred: (it: any) => boolean) => ({
-          first: async () => this.items.find((it: any) => it[field] === val && pred(it)),
+      equals: (val: T[K]) => ({
+        first: async () => this.items.find((it) => it[field] === val),
+        count: async () => this.items.filter((it) => it[field] === val).length,
+        filter: (pred: (it: T) => boolean) => ({
+          first: async () => this.items.find((it) => it[field] === val && pred(it)),
         }),
       }),
     };
   }
 
-  filter(pred: (it: any) => boolean) {
+  filter(pred: (it: T) => boolean) {
     const filtered = this.items.filter(pred);
     return {
       delete: async () => {
@@ -68,7 +69,7 @@ export const createMockDb = (data?: {
   areas?: Area[];
   pickLists?: PickList[];
   pickItems?: PickItem[];
-  importExportLogs?: any[];
+  importExportLogs?: ImportExportLog[];
 }) => {
   return {
     products: new MockTable<Product>(data?.products ?? []),
@@ -76,9 +77,12 @@ export const createMockDb = (data?: {
     areas: new MockTable<Area>(data?.areas ?? []),
     pickLists: new MockTable<PickList>(data?.pickLists ?? []),
     pickItems: new MockTable<PickItem>(data?.pickItems ?? []),
-    importExportLogs: new MockTable<any>(data?.importExportLogs ?? []),
-    transaction: async (_mode: string, ...args: any[]) => {
-      const cb = args[args.length - 1];
+    importExportLogs: new MockTable<ImportExportLog>(data?.importExportLogs ?? []),
+    transaction: async (
+      _mode: string,
+      ...args: Array<MockTable<unknown> | (() => unknown)>
+    ) => {
+      const cb = args.at(-1);
       if (typeof cb === 'function') return cb();
       return undefined;
     },

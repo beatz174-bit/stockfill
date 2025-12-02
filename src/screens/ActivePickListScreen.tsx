@@ -489,7 +489,7 @@ const ActivePickListScreen = () => {
               SelectProps={{ native: true }}
               label="Filter by category"
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter((e.target.value as any) ?? 'all')}
+              onChange={(e) => setCategoryFilter(e.target.value || 'all')}
               sx={{ width: { xs: '100%', sm: 240 }, ml: { xs: 0, sm: 2 }, mt: { xs: 1, sm: 0 } }}
             >
               <option value="all">All categories</option>

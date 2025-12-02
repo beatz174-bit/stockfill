@@ -36,7 +36,7 @@ vi.mock('../context/DBProvider', () => ({
     categories: { add: categoryAddMock, update: categoryUpdateMock, delete: categoryDeleteMock },
     products: {
       where: () => ({
-        equals: (_: string) => ({
+        equals: () => ({
           count: async () => 0,
           modify: async (changes: any) => productModifyMock(changes),
         }),

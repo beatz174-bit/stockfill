@@ -1,6 +1,6 @@
 // src/components/ProductRow.additional.test.tsx
 import React from 'react';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 

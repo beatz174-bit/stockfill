@@ -1,5 +1,5 @@
 // src/services/importExportService.additional.test.ts
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import JSZip from 'jszip';
 import { importFiles } from './importExportService';
 import { createMockDb } from '../testUtils/mockDb';

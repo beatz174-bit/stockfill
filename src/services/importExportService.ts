@@ -3,13 +3,8 @@ import Papa from 'papaparse';
 import { v4 as uuidv4 } from 'uuid';
 import { StockFillDB } from '../db';
 import { ImportExportLog, ImportExportLogSummary } from '../models/ImportExportLog';
-import { Area } from '../models/Area';
-import { Category } from '../models/Category';
-import { PickItem, PickItemStatus } from '../models/PickItem';
-import { PickList } from '../models/PickList';
 import { Product, DEFAULT_BULK_NAME, DEFAULT_UNIT_TYPE } from '../models/Product';
 import { normalizeName, inferTypeFromName } from '../utils/stringUtils';
-import { coerceBoolean, coerceNumber } from '../utils/convUtils';
 import { triggerDownload } from '../platform/web';
 export { normalizeName, inferTypeFromName } from '../utils/stringUtils';
 export { coerceBoolean, coerceNumber } from '../utils/convUtils';
@@ -56,7 +51,6 @@ const readFiles = async (files: File[]) => {
     if (file.name.toLowerCase().endsWith('.zip')) {
       const zip = await JSZip.loadAsync(file);
       const entries = Object.values(zip.files).filter((entry) => !entry.dir);
-      // eslint-disable-next-line no-await-in-loop
       for (const entry of entries) {
         const content = await entry.async('string');
         parsed.push({ name: entry.name, content });
@@ -244,25 +238,25 @@ export const importFiles = async (
 
   const parsedRows: Partial<Record<DataType, Record<string, string>[]>> = {};
 
-let productRows: Record<string, string>[] = [];
+  const productRows: Record<string, string>[] = [];
 
-for (const file of parsedFiles) {
-  const rows = await parseCsv(file.content);
-  addDetail(`Parsed ${rows.length} rows from ${file.name}`);
-  if (!rows || rows.length === 0) continue;
+  for (const file of parsedFiles) {
+    const rows = await parseCsv(file.content);
+    addDetail(`Parsed ${rows.length} rows from ${file.name}`);
+    if (!rows || rows.length === 0) continue;
 
-  // Look at headers of first row to decide if it's product-centric
-  const headerKeys = Object.keys(rows[0]).map(h => h.trim().toLowerCase());
-  const isProductCentric =
-    headerKeys.includes('category') && (headerKeys.includes('name') || headerKeys.includes('product_name'));
+    // Look at headers of first row to decide if it's product-centric
+    const headerKeys = Object.keys(rows[0]).map((header) => header.trim().toLowerCase());
+    const isProductCentric =
+      headerKeys.includes('category') && (headerKeys.includes('name') || headerKeys.includes('product_name'));
 
-  if (isProductCentric) {
-    // Collect product rows for product-centric import
-    productRows.push(...rows);
-    // record that we detected products (for logging later)
-    if (!selectedTypes.includes('products')) selectedTypes.push('products');
-  } else {
-    // Fallback to filename-based inference for older templates
+    if (isProductCentric) {
+      // Collect product rows for product-centric import
+      productRows.push(...rows);
+      // record that we detected products (for logging later)
+      if (!selectedTypes.includes('products')) selectedTypes.push('products');
+    } else {
+      // Fallback to filename-based inference for older templates
     const type = inferTypeFromName(file.name) as DataType | undefined;
     if (!type) {
       addDetail(`Skipped ${file.name}: not product-centric and could not infer data type`);
@@ -306,82 +300,77 @@ for (const file of parsedFiles) {
   });
 
   try {
-    await db.transaction(
-  'rw',
-  [db.categories, db.products],
-  async () => {
-if (productRows.length > 0) {
-  // 1) Make a unique list of category names from CSV (normalized)
-  const uniqueCategoryNames = new Map<string, string>(); // normalized -> raw
-  for (const row of productRows) {
-    const rawCat = (row.category ?? '').trim();
-    if (!rawCat) continue;
-    const norm = normalizeName(rawCat);
-    if (norm && !uniqueCategoryNames.has(norm)) uniqueCategoryNames.set(norm, rawCat);
-  }
+    await db.transaction('rw', [db.categories, db.products], async () => {
+      if (productRows.length > 0) {
+        // 1) Make a unique list of category names from CSV (normalized)
+        const uniqueCategoryNames = new Map<string, string>(); // normalized -> raw
+        for (const row of productRows) {
+          const rawCat = (row.category ?? '').trim();
+          if (!rawCat) continue;
+          const norm = normalizeName(rawCat);
+          if (norm && !uniqueCategoryNames.has(norm)) uniqueCategoryNames.set(norm, rawCat);
+        }
 
-  // 2) Create missing categories in DB
-  for (const [norm, raw] of uniqueCategoryNames) {
-    if (!categoryNameToId.has(norm)) {
-      const newId = uuidv4();
-      categoryNameToId.set(norm, newId);
-      await db.categories.add({
-        id: newId,
-        name: raw,
-        created_at: now,
-        updated_at: now,
-      });
-      addDetail(`Created category "${raw}"`);
-    }
-  }
+        // 2) Create missing categories in DB
+        for (const [norm, raw] of uniqueCategoryNames) {
+          if (!categoryNameToId.has(norm)) {
+            const newId = uuidv4();
+            categoryNameToId.set(norm, newId);
+            await db.categories.add({
+              id: newId,
+              name: raw,
+              created_at: now,
+              updated_at: now,
+            });
+            addDetail(`Created category "${raw}"`);
+          }
+        }
 
-  // 3) Create products, linking to categories
-  for (const row of productRows) {
-    const nameRaw = (row.product_name ?? row.name ?? '').trim();
-    const name = normalizeName(nameRaw);
-    if (!name) {
-      addDetail('Skipped product with empty name');
-      skipped += 1;
-      continue;
-    }
-    if (productNameToId.has(name)) {
-      addDetail(`Product "${nameRaw}" exists, skipping`);
-      skipped += 1;
-      continue;
-    }
+        // 3) Create products, linking to categories
+        for (const row of productRows) {
+          const nameRaw = (row.product_name ?? row.name ?? '').trim();
+          const name = normalizeName(nameRaw);
+          if (!name) {
+            addDetail('Skipped product with empty name');
+            skipped += 1;
+            continue;
+          }
+          if (productNameToId.has(name)) {
+            addDetail(`Product "${nameRaw}" exists, skipping`);
+            skipped += 1;
+            continue;
+          }
 
-    const catRaw = (row.category ?? '').trim();
-    const categoryId = catRaw ? categoryNameToId.get(normalizeName(catRaw)) : undefined;
+          const catRaw = (row.category ?? '').trim();
+          const categoryId = catRaw ? categoryNameToId.get(normalizeName(catRaw)) : undefined;
 
-    const barcode = row.barcode?.trim();
-    if (barcode && barcodeToProductId.has(barcode)) {
-      addDetail(`Barcode ${barcode} already exists, clearing for product "${nameRaw}"`);
-    }
+          const barcode = row.barcode?.trim();
+          if (barcode && barcodeToProductId.has(barcode)) {
+            addDetail(`Barcode ${barcode} already exists, clearing for product "${nameRaw}"`);
+          }
 
-    const id = uuidv4();
-    const product: Product = {
-      id,
-      name: nameRaw,
-      category: categoryId ?? '',
-      unit_type: DEFAULT_UNIT_TYPE,
-      bulk_name: DEFAULT_BULK_NAME,
-      barcode: barcode && !barcodeToProductId.has(barcode) ? barcode : undefined,
-      archived: false,
-      created_at: now,
-      updated_at: now,
-    };
-    await db.products.add(product);
-    productNameToId.set(name, id);
-    if (product.barcode) {
-      barcodeToProductId.set(product.barcode, id);
-    }
-    inserted += 1;
-    addDetail(`Created product "${product.name}"`);
-  }
-}
-
-      },
-    );
+          const id = uuidv4();
+          const product: Product = {
+            id,
+            name: nameRaw,
+            category: categoryId ?? '',
+            unit_type: DEFAULT_UNIT_TYPE,
+            bulk_name: DEFAULT_BULK_NAME,
+            barcode: barcode && !barcodeToProductId.has(barcode) ? barcode : undefined,
+            archived: false,
+            created_at: now,
+            updated_at: now,
+          };
+          await db.products.add(product);
+          productNameToId.set(name, id);
+          if (product.barcode) {
+            barcodeToProductId.set(product.barcode, id);
+          }
+          inserted += 1;
+          addDetail(`Created product "${product.name}"`);
+        }
+      }
+    });
   } catch (error) {
     errors += 1;
     addDetail(`Import failed: ${(error as Error).message}`);

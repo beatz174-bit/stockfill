@@ -112,7 +112,6 @@ const ManageProductsScreen = () => {
       setPendingBarcode(state.newBarcode);
       setAddProductDialogOpen(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
   const updateProduct = async (
@@ -172,14 +171,15 @@ const ManageProductsScreen = () => {
       );
 
       setFeedback({ text: 'Product updated.', severity: 'success' });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to update product', err);
 
-      if (err?.name === 'DuplicateNameError' || err?.name === 'DuplicateBarcodeError') {
+      if (err instanceof Error && (err.name === 'DuplicateNameError' || err.name === 'DuplicateBarcodeError')) {
         throw err;
       }
 
-      setFeedback({ text: `Failed to update product: ${err?.message ?? String(err)}`, severity: 'error' });
+      const message = err instanceof Error ? err.message : String(err);
+      setFeedback({ text: `Failed to update product: ${message}`, severity: 'error' });
     }
   };
 

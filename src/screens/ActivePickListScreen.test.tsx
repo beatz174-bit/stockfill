@@ -79,17 +79,6 @@ describe('ActivePickListScreen product search', () => {
    *  - otherwise fall back to placeholder 'Search products'.
    */
 
-
-  // helper to get the packaging radio input. Tests were expecting to call .querySelector('input')
-  // on a wrapper with data-testid; preserve that behavior but return the actual radio element.
-  const getPackagingRadioInput = (testId: 'packaging-filter-all' | 'packaging-filter-units' | 'packaging-filter-cartons') => {
-    const wrapper = screen.getByTestId(testId);
-    // FormControlLabel renders the input nested — find it
-    const input = (wrapper as HTMLElement).querySelector('input');
-    if (!input) throw new Error(`Could not find input inside ${testId}`);
-    return input;
-  };
-
   // Keep the original getRadio shape for minimal change
   const getRadio = (testId: string) => {
     // try testid wrapper -> radio inside, otherwise find radio by label name
@@ -136,8 +125,6 @@ describe('ActivePickListScreen product search', () => {
     const combobox = screen.getByRole('combobox', { name: /search products/i }) || screen.getByTestId('product-search-input');
     await user.click(combobox);
     await user.type(combobox, 'cola');
-
-    const listbox = await screen.findByRole('listbox');
 
     expect(await screen.findByRole('option', { name: /cola \(drinks\)/i })).toBeVisible();
     expect(screen.queryByRole('option', { name: /chips \(snacks\)/i })).not.toBeInTheDocument();

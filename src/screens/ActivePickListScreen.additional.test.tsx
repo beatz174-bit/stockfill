@@ -1,11 +1,12 @@
 // src/screens/ActivePickListScreen.additional.test.tsx
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { render, screen, within, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import ActivePickListScreen from './ActivePickListScreen';
 import { PickItem } from '../models/PickItem';
 import { Product } from '../models/Product';
+import { Category } from '../models/Category';
 
 const addMock = vi.fn();
 const updateMock = vi.fn();
@@ -15,7 +16,7 @@ const productsMock = vi.fn<() => Product[]>();
 const pickListMock = vi.fn();
 
 // allow tests to mutate categories returned by the mocked hook
-let categoriesVar: any[] = [{ id: 'cat-1', name: 'Drinks', created_at: 0, updated_at: 0 }];
+let categoriesVar: Category[] = [{ id: 'cat-1', name: 'Drinks', created_at: 0, updated_at: 0 }];
 
 vi.mock('../hooks/dataHooks', () => ({
   usePickItems: () => pickItemsMock(),
@@ -35,7 +36,7 @@ vi.mock('../context/DBProvider', () => ({
         return items.find((it) => it.id === id);
       }),
       delete: deleteMock,
-      where: (_f: string) => ({
+      where: () => ({
         equals: (val: any) => ({
           toArray: async () => {
             const items: PickItem[] = pickItemsMock() ?? [];
@@ -96,12 +97,6 @@ beforeEach(() => {
 });
 
 describe('ActivePickListScreen - additional branches', () => {
-  const getProductInput = () => {
-    const byTestId = screen.queryByTestId('product-search-input');
-    if (byTestId) return byTestId;
-    return screen.getByPlaceholderText('Search products');
-  };
-
   it('increments / decrements / toggles carton / toggles status / deletes an item', async () => {
     pickItemsMock.mockReturnValue([
       {

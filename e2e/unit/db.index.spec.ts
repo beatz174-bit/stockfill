@@ -59,7 +59,7 @@ describe('db/index initializeDatabase', () => {
     const { db } = await import('../../src/db');
 
     expect(version).toHaveBeenCalled();
-    expect((version as any).mock.calls.length).toBeGreaterThanOrEqual(1);
+    expect(version.mock.calls.length).toBeGreaterThanOrEqual(1);
     expect(db).toBeDefined();
   });
 });

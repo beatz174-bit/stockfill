@@ -1,5 +1,5 @@
 import { describe, expect, test, vi, beforeEach } from 'vitest';
-import { makeMockDb } from './utils/mockDb';
+import { makeMockDb } from '../utils/mockDb';
 
 vi.mock('uuid', () => ({ v4: vi.fn(() => 'mock-uuid') }));
 
@@ -18,7 +18,7 @@ describe('applyMigrations', () => {
       { id: 'p1', category: 'Beverages', name: 'Cola' },
     ]);
 
-    const { applyMigrations } = await import('../src/db/migrations');
+    const { applyMigrations } = await import('../../src/db/migrations');
     await applyMigrations(db as any);
 
     expect(db.categories.add).toHaveBeenCalledWith(
@@ -36,7 +36,7 @@ describe('applyMigrations', () => {
       { id: 'p2', category: 'cat-1', name: 'Chips' },
     ]);
 
-    const { applyMigrations } = await import('../src/db/migrations');
+    const { applyMigrations } = await import('../../src/db/migrations');
     await applyMigrations(db as any);
 
     expect(db.categories.add).not.toHaveBeenCalled();
@@ -53,7 +53,7 @@ describe('applyMigrations', () => {
       { id: 'pl-1', categories: ['Fruit'] },
     ]);
 
-    const { applyMigrations } = await import('../src/db/migrations');
+    const { applyMigrations } = await import('../../src/db/migrations');
     await applyMigrations(db as any);
 
     expect(db.pickLists.update).toHaveBeenCalledWith('pl-1', { categories: ['cat-fruit'] });

@@ -80,10 +80,10 @@ export default defineConfig({
     }
   },
   test: {
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}', 'e2e/unit/**/*.{test,spec}.{ts,tsx}'],
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
-    exclude: ['e2e/**/*'],
+    exclude: ['e2e/*.spec.ts', 'e2e/fixtures.ts', 'e2e/test-helpers.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],

@@ -23,7 +23,7 @@ describe('useBarcodeScanner', () => {
   });
 
   test('falls back to ZXing reader when BarcodeDetector is unavailable', async () => {
-    const { useBarcodeScanner } = await import('../src/hooks/useBarcodeScanner');
+    const { useBarcodeScanner } = await import('../../src/hooks/useBarcodeScanner');
     const { result } = renderHook(() => useBarcodeScanner());
     result.current.videoRef.current = document.createElement('video');
 
@@ -39,13 +39,14 @@ describe('useBarcodeScanner', () => {
 
     const play = vi.fn().mockResolvedValue(undefined);
     const getVideoTracks = vi.fn().mockReturnValue([{ stop: vi.fn() }]);
-    const stream = { getVideoTracks } as any;
+    const getTracks = vi.fn().mockReturnValue([{ stop: vi.fn() }]);
+    const stream = { getVideoTracks, getTracks } as any;
     navigator.mediaDevices = {
       getUserMedia: vi.fn().mockResolvedValue(stream),
     } as any;
     (globalThis as any).createImageBitmap = vi.fn().mockResolvedValue({});
 
-    const { useBarcodeScanner } = await import('../src/hooks/useBarcodeScanner');
+    const { useBarcodeScanner } = await import('../../src/hooks/useBarcodeScanner');
     const { result } = renderHook(() => useBarcodeScanner());
     const video = document.createElement('video');
     Object.defineProperty(video, 'play', { value: play });

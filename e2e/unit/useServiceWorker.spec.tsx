@@ -2,7 +2,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { describe, expect, test, vi, beforeEach } from 'vitest';
 
 const setupHook = async () => {
-  const module = await import('../src/hooks/useServiceWorker');
+  const module = await import('../../src/hooks/useServiceWorker');
   return module.useServiceWorker;
 };
 

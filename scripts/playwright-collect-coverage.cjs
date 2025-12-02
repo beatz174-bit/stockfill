@@ -8,7 +8,7 @@ test.afterEach(async ({ page }, testInfo) => {
     // evaluate coverage from the page
     const coverage = await page.evaluate(() => (globalThis.__coverage__ || {}));
     if (coverage && Object.keys(coverage).length) {
-      const dir = path.join(process.cwd(), '.nyc_output');
+      const dir = path.join(process.cwd(), 'coverage-reports', 'e2e', '.nyc_output');
       fs.mkdirSync(dir, { recursive: true });
 
       // unique file per worker/test

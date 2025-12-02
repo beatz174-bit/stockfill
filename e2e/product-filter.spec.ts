@@ -1,4 +1,4 @@
-import { expect, test } from '@bgotink/playwright-coverage';
+import { expect, test } from './fixtures';
 import {
   ensureProductsExist,
   areaName,

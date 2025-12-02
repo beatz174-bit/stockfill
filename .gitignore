@@ -10,3 +10,4 @@ coverage/
 build/
 testrun.log
 coverage-reports/
+.nfs*

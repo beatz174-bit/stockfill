@@ -80,7 +80,7 @@ export const createMockDb = (data?: {
     importExportLogs: new MockTable<ImportExportLog>(data?.importExportLogs ?? []),
     transaction: async (
       _mode: string,
-      ...args: Array<MockTable<unknown> | (() => unknown)>
+      ...args: Array<MockTable<{ id: string }> | (() => unknown)>
     ) => {
       const cb = args.at(-1);
       if (typeof cb === 'function') return cb();

@@ -20,17 +20,17 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^7.3.5",
-    "@mui/material": "^7.3.5",
+    "@mui/icons-material": "^7.3.6",
+    "@mui/material": "^7.3.6",
     "@zxing/browser": "^0.1.5",
     "date-fns": "^4.1.0",
     "dexie": "^4.2.1",
     "jszip": "^3.10.1",
     "npm-check-updates": "^19.1.2",
     "papaparse": "^5.5.3",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-router-dom": "^7.9.6",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "react-router-dom": "^7.10.0",
     "terser": "^5.44.1",
     "uuid": "^13.0.0"
   },
@@ -47,8 +47,8 @@
     "@typescript-eslint/eslint-plugin": "^8.48.1",
     "@typescript-eslint/parser": "^8.48.1",
     "@vitejs/plugin-react": "^5.1.1",
-    "@vitest/coverage-v8": "^4.0.14",
-    "@vitest/ui": "^4.0.14",
+    "@vitest/coverage-v8": "^4.0.15",
+    "@vitest/ui": "^4.0.15",
     "cross-env": "^10.1.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
@@ -59,12 +59,12 @@
     "istanbul-reports": "^3.2.0",
     "jsdom": "^27.2.0",
     "lcov-result-merger": "^5.0.1",
-    "msw": "^2.12.3",
+    "msw": "^2.12.4",
     "rollup-plugin-visualizer": "^6.0.5",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.48.1",
     "vite": "^7.2.6",
     "vite-plugin-istanbul": "^7.2.1",
-    "vitest": "^4.0.14"
+    "vitest": "^4.0.15"
   }
 }
